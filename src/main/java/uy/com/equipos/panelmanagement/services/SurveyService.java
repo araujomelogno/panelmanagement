@@ -1,10 +1,14 @@
 package uy.com.equipos.panelmanagement.services;
 
+import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Optional;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
+import jakarta.persistence.criteria.Predicate;
 import uy.com.equipos.panelmanagement.data.Survey;
 import uy.com.equipos.panelmanagement.data.SurveyRepository;
 
@@ -35,6 +39,23 @@ public class SurveyService {
 
     public Page<Survey> list(Pageable pageable, Specification<Survey> filter) {
         return repository.findAll(filter, pageable);
+    }
+
+    public Page<Survey> list(Pageable pageable, String name, LocalDate initDate, String link) {
+        Specification<Survey> spec = (root, query, cb) -> {
+            List<Predicate> predicates = new ArrayList<>();
+            if (name != null && !name.isEmpty()) {
+                predicates.add(cb.like(cb.lower(root.get("name")), "%" + name.toLowerCase() + "%"));
+            }
+            if (initDate != null) {
+                predicates.add(cb.equal(root.get("initDate"), initDate));
+            }
+            if (link != null && !link.isEmpty()) {
+                predicates.add(cb.like(cb.lower(root.get("link")), "%" + link.toLowerCase() + "%"));
+            }
+            return cb.and(predicates.toArray(new Predicate[0]));
+        };
+        return repository.findAll(spec, pageable);
     }
 
     public int count() {
