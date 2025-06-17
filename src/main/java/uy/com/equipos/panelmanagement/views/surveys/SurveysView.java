@@ -41,6 +41,12 @@ public class SurveysView extends Div implements BeforeEnterObserver {
     private final String SURVEY_EDIT_ROUTE_TEMPLATE = "surveys/%s/edit";
 
     private final Grid<Survey> grid = new Grid<>(Survey.class, false);
+    private Div editorLayoutDiv; // Declarado como miembro de la clase
+
+    // Campos de filtro
+    private TextField nameFilter = new TextField();
+    private DatePicker initDateFilter = new DatePicker();
+    private TextField linkFilter = new TextField();
 
     // Campos de filtro
     private TextField nameFilter = new TextField();
@@ -69,7 +75,6 @@ public class SurveysView extends Div implements BeforeEnterObserver {
         grid.addColumn(Survey::getName).setHeader("Nombre").setKey("name").setAutoWidth(true);
         grid.addColumn(Survey::getInitDate).setHeader("Fecha de Inicio").setKey("initDate").setAutoWidth(true);
         grid.addColumn(Survey::getLink).setHeader("Enlace").setKey("link").setAutoWidth(true);
-
         grid.addThemeVariants(GridVariant.LUMO_NO_BORDER);
 
         // Create UI - SplitLayout
@@ -77,10 +82,11 @@ public class SurveysView extends Div implements BeforeEnterObserver {
         // createGridLayout ahora puede acceder a las keys de las columnas de forma segura
         createGridLayout(splitLayout);
         createEditorLayout(splitLayout);
+
+        editorLayoutDiv.setVisible(false); // Ocultar el editor inicialmente
         add(splitLayout);
 
         // Configurar placeholders para filtros
-
         nameFilter.setPlaceholder("Filtrar por Nombre");
         initDateFilter.setPlaceholder("Filtrar por Fecha de Inicio");
         linkFilter.setPlaceholder("Filtrar por Enlace");
@@ -107,9 +113,10 @@ public class SurveysView extends Div implements BeforeEnterObserver {
         // when a row is selected or deselected, populate form
         grid.asSingleSelect().addValueChangeListener(event -> {
             if (event.getValue() != null) {
+                editorLayoutDiv.setVisible(true);
                 UI.getCurrent().navigate(String.format(SURVEY_EDIT_ROUTE_TEMPLATE, event.getValue().getId()));
             } else {
-                clearForm();
+                clearForm(); // clearForm ahora también oculta el editor
                 UI.getCurrent().navigate(SurveysView.class);
             }
         });
@@ -154,19 +161,25 @@ public class SurveysView extends Div implements BeforeEnterObserver {
             Optional<Survey> surveyFromBackend = surveyService.get(surveyId.get());
             if (surveyFromBackend.isPresent()) {
                 populateForm(surveyFromBackend.get());
+                editorLayoutDiv.setVisible(true);
             } else {
                 Notification.show(String.format("La encuesta solicitada no fue encontrada, ID = %s", surveyId.get()), 3000,
                         Notification.Position.BOTTOM_START);
                 // when a row is selected but the data is no longer available,
                 // refresh grid
                 refreshGrid();
+                if (editorLayoutDiv != null) {
+                    editorLayoutDiv.setVisible(false);
+                }
                 event.forwardTo(SurveysView.class);
             }
+        } else {
+            clearForm(); // Asegurar que el editor esté oculto si no hay ID
         }
     }
 
     private void createEditorLayout(SplitLayout splitLayout) {
-        Div editorLayoutDiv = new Div();
+        editorLayoutDiv = new Div(); // Instanciar el miembro de la clase
         editorLayoutDiv.setClassName("editor-layout");
 
         Div editorDiv = new Div();
@@ -213,6 +226,9 @@ public class SurveysView extends Div implements BeforeEnterObserver {
 
     private void clearForm() {
         populateForm(null);
+        if (editorLayoutDiv != null) { // Buena práctica verificar nulidad
+            editorLayoutDiv.setVisible(false);
+        }
     }
 
     private void populateForm(Survey value) {

@@ -39,6 +39,11 @@ public class PropiertiesView extends Div implements BeforeEnterObserver {
     private final String PANELISTPROPERTY_EDIT_ROUTE_TEMPLATE = "master-detail/%s/edit";
 
     private final Grid<PanelistProperty> grid = new Grid<>(PanelistProperty.class, false);
+    private Div editorLayoutDiv; // Declarado como miembro de la clase
+
+    // Campos de filtro
+    private TextField nameFilter = new TextField();
+    private TextField typeFilter = new TextField();
 
     // Campos de filtro
     private TextField nameFilter = new TextField();
@@ -63,7 +68,6 @@ public class PropiertiesView extends Div implements BeforeEnterObserver {
         // Configurar columnas del Grid PRIMERO
         grid.addColumn(PanelistProperty::getName).setHeader("Nombre").setKey("name").setAutoWidth(true);
         grid.addColumn(PanelistProperty::getType).setHeader("Tipo").setKey("type").setAutoWidth(true);
-
         grid.addThemeVariants(GridVariant.LUMO_NO_BORDER);
 
         // Create UI - SplitLayout
@@ -71,13 +75,13 @@ public class PropiertiesView extends Div implements BeforeEnterObserver {
         // createGridLayout ahora puede acceder a las keys de las columnas de forma segura
         createGridLayout(splitLayout);
         createEditorLayout(splitLayout);
+
+        editorLayoutDiv.setVisible(false); // Ocultar el editor inicialmente
         add(splitLayout);
 
         // Configurar placeholders para filtros
-
         nameFilter.setPlaceholder("Filtrar por Nombre");
         typeFilter.setPlaceholder("Filtrar por Tipo");
-
 
         // Añadir listeners para refrescar el grid
         nameFilter.addValueChangeListener(e -> grid.getDataProvider().refreshAll());
@@ -98,9 +102,10 @@ public class PropiertiesView extends Div implements BeforeEnterObserver {
         // when a row is selected or deselected, populate form
         grid.asSingleSelect().addValueChangeListener(event -> {
             if (event.getValue() != null) {
+                editorLayoutDiv.setVisible(true);
                 UI.getCurrent().navigate(String.format(PANELISTPROPERTY_EDIT_ROUTE_TEMPLATE, event.getValue().getId()));
             } else {
-                clearForm();
+                clearForm(); // clearForm ahora también oculta el editor
                 UI.getCurrent().navigate(PropiertiesView.class);
             }
         });
@@ -146,19 +151,25 @@ public class PropiertiesView extends Div implements BeforeEnterObserver {
                     .get(panelistPropertyId.get());
             if (panelistPropertyFromBackend.isPresent()) {
                 populateForm(panelistPropertyFromBackend.get());
+                editorLayoutDiv.setVisible(true);
             } else {
                 Notification.show(String.format("La propiedad de panelista solicitada no fue encontrada, ID = %s",
                         panelistPropertyId.get()), 3000, Notification.Position.BOTTOM_START);
                 // when a row is selected but the data is no longer available,
                 // refresh grid
                 refreshGrid();
+                if (editorLayoutDiv != null) {
+                    editorLayoutDiv.setVisible(false);
+                }
                 event.forwardTo(PropiertiesView.class);
             }
+        } else {
+            clearForm(); // Asegurar que el editor esté oculto si no hay ID
         }
     }
 
     private void createEditorLayout(SplitLayout splitLayout) {
-        Div editorLayoutDiv = new Div();
+        editorLayoutDiv = new Div(); // Instanciar el miembro de la clase
         editorLayoutDiv.setClassName("editor-layout");
 
         Div editorDiv = new Div();
@@ -203,6 +214,9 @@ public class PropiertiesView extends Div implements BeforeEnterObserver {
 
     private void clearForm() {
         populateForm(null);
+        if (editorLayoutDiv != null) { // Buena práctica verificar nulidad
+            editorLayoutDiv.setVisible(false);
+        }
     }
 
     private void populateForm(PanelistProperty value) {

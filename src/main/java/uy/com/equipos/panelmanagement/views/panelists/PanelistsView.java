@@ -41,6 +41,17 @@ public class PanelistsView extends Div implements BeforeEnterObserver {
     private final String PANELIST_EDIT_ROUTE_TEMPLATE = "panelists/%s/edit";
 
     private final Grid<Panelist> grid = new Grid<>(Panelist.class, false);
+    private Div editorLayoutDiv; // Declarado como miembro de la clase
+
+    // Campos de filtro
+    private TextField firstNameFilter = new TextField();
+    private TextField lastNameFilter = new TextField();
+    private TextField emailFilter = new TextField();
+    private TextField phoneFilter = new TextField();
+    private DatePicker dateOfBirthFilter = new DatePicker();
+    private TextField occupationFilter = new TextField();
+    private DatePicker lastContactedFilter = new DatePicker();
+    private DatePicker lastInterviewedFilter = new DatePicker();
 
     // Campos de filtro
     private TextField firstNameFilter = new TextField();
@@ -84,7 +95,6 @@ public class PanelistsView extends Div implements BeforeEnterObserver {
         grid.addColumn(Panelist::getOccupation).setHeader("Ocupación").setKey("occupation").setAutoWidth(true);
         grid.addColumn(Panelist::getLastContacted).setHeader("Último Contacto").setKey("lastContacted").setAutoWidth(true);
         grid.addColumn(Panelist::getLastInterviewed).setHeader("Última Entrevista").setKey("lastInterviewed").setAutoWidth(true);
-
         grid.addThemeVariants(GridVariant.LUMO_NO_BORDER);
 
         // Create UI - SplitLayout
@@ -92,9 +102,10 @@ public class PanelistsView extends Div implements BeforeEnterObserver {
         // createGridLayout ahora puede acceder a las keys de las columnas de forma segura
         createGridLayout(splitLayout);
         createEditorLayout(splitLayout);
+
+        editorLayoutDiv.setVisible(false); // Ocultar el editor inicialmente
         add(splitLayout);
 
-        // Configurar placeholders para filtros
 
         firstNameFilter.setPlaceholder("Filtrar por Nombre");
         lastNameFilter.setPlaceholder("Filtrar por Apellido");
@@ -104,7 +115,6 @@ public class PanelistsView extends Div implements BeforeEnterObserver {
         occupationFilter.setPlaceholder("Filtrar por Ocupación");
         lastContactedFilter.setPlaceholder("Filtrar por Último Contacto");
         lastInterviewedFilter.setPlaceholder("Filtrar por Última Entrevista");
-
 
         // Añadir listeners para refrescar el grid
         firstNameFilter.addValueChangeListener(e -> grid.getDataProvider().refreshAll());
@@ -143,9 +153,10 @@ public class PanelistsView extends Div implements BeforeEnterObserver {
         // when a row is selected or deselected, populate form
         grid.asSingleSelect().addValueChangeListener(event -> {
             if (event.getValue() != null) {
+                editorLayoutDiv.setVisible(true);
                 UI.getCurrent().navigate(String.format(PANELIST_EDIT_ROUTE_TEMPLATE, event.getValue().getId()));
             } else {
-                clearForm();
+                clearForm(); // clearForm ahora también oculta el editor
                 UI.getCurrent().navigate(PanelistsView.class);
             }
         });
@@ -190,19 +201,25 @@ public class PanelistsView extends Div implements BeforeEnterObserver {
             Optional<Panelist> panelistFromBackend = panelistService.get(panelistId.get());
             if (panelistFromBackend.isPresent()) {
                 populateForm(panelistFromBackend.get());
+                editorLayoutDiv.setVisible(true);
             } else {
                 Notification.show(String.format("El panelista solicitado no fue encontrado, ID = %s", panelistId.get()),
                         3000, Notification.Position.BOTTOM_START);
                 // when a row is selected but the data is no longer available,
                 // refresh grid
                 refreshGrid();
+                if (editorLayoutDiv != null) { // Asegurar que no sea nulo si beforeEnter se llama muy temprano
+                    editorLayoutDiv.setVisible(false);
+                }
                 event.forwardTo(PanelistsView.class);
             }
+        } else {
+            clearForm(); // Asegurar que el editor esté oculto si no hay ID
         }
     }
 
     private void createEditorLayout(SplitLayout splitLayout) {
-        Div editorLayoutDiv = new Div();
+        editorLayoutDiv = new Div(); // Instanciar el miembro de la clase
         editorLayoutDiv.setClassName("editor-layout");
 
         Div editorDiv = new Div();
@@ -259,6 +276,9 @@ public class PanelistsView extends Div implements BeforeEnterObserver {
 
     private void clearForm() {
         populateForm(null);
+        if (editorLayoutDiv != null) { // Buena práctica verificar nulidad
+            editorLayoutDiv.setVisible(false);
+        }
     }
 
     private void populateForm(Panelist value) {

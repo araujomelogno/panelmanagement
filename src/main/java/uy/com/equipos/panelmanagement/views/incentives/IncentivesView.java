@@ -40,6 +40,11 @@ public class IncentivesView extends Div implements BeforeEnterObserver {
     private final String INCENTIVE_EDIT_ROUTE_TEMPLATE = "incentives/%s/edit";
 
     private final Grid<Incentive> grid = new Grid<>(Incentive.class, false);
+    private Div editorLayoutDiv; // Declarado como miembro de la clase
+
+    // Campos de filtro
+    private TextField nameFilter = new TextField();
+    private TextField quantityAvailableFilter = new TextField();
 
     // Campos de filtro
     private TextField nameFilter = new TextField();
@@ -64,6 +69,11 @@ public class IncentivesView extends Div implements BeforeEnterObserver {
         grid.addColumn(Incentive::getName).setHeader("Nombre").setKey("name").setAutoWidth(true);
         grid.addColumn(Incentive::getQuantityAvailable).setHeader("Cantidad Disponible").setKey("quantityAvailable").setAutoWidth(true);
 
+
+        // Configurar columnas del Grid PRIMERO
+        grid.addColumn(Incentive::getName).setHeader("Nombre").setKey("name").setAutoWidth(true);
+        grid.addColumn(Incentive::getQuantityAvailable).setHeader("Cantidad Disponible").setKey("quantityAvailable").setAutoWidth(true);
+
         grid.addThemeVariants(GridVariant.LUMO_NO_BORDER);
 
         // Create UI - SplitLayout
@@ -71,12 +81,13 @@ public class IncentivesView extends Div implements BeforeEnterObserver {
         // createGridLayout ahora puede acceder a las keys de las columnas de forma segura
         createGridLayout(splitLayout);
         createEditorLayout(splitLayout);
+
+        editorLayoutDiv.setVisible(false); // Ocultar el editor inicialmente
         add(splitLayout);
 
         // Configurar placeholders para filtros
-
-        nameFilter.setPlaceholder("Filtrar por nombre");
-        quantityAvailableFilter.setPlaceholder("Filtrar por cantidad");
+        nameFilter.setPlaceholder("Filtrar por Nombre");
+        quantityAvailableFilter.setPlaceholder("Filtrar por Cantidad");
 
 
         // Añadir listeners para refrescar el grid
@@ -98,9 +109,10 @@ public class IncentivesView extends Div implements BeforeEnterObserver {
         // when a row is selected or deselected, populate form
         grid.asSingleSelect().addValueChangeListener(event -> {
             if (event.getValue() != null) {
+                editorLayoutDiv.setVisible(true);
                 UI.getCurrent().navigate(String.format(INCENTIVE_EDIT_ROUTE_TEMPLATE, event.getValue().getId()));
             } else {
-                clearForm();
+                clearForm(); // clearForm ahora también oculta el editor
                 UI.getCurrent().navigate(IncentivesView.class);
             }
         });
@@ -148,19 +160,25 @@ public class IncentivesView extends Div implements BeforeEnterObserver {
             Optional<Incentive> incentiveFromBackend = incentiveService.get(incentiveId.get());
             if (incentiveFromBackend.isPresent()) {
                 populateForm(incentiveFromBackend.get());
+                editorLayoutDiv.setVisible(true);
             } else {
                 Notification.show(String.format("El incentivo solicitado no fue encontrado, ID = %s", incentiveId.get()),
                         3000, Notification.Position.BOTTOM_START);
                 // when a row is selected but the data is no longer available,
                 // refresh grid
                 refreshGrid();
+                if (editorLayoutDiv != null) {
+                    editorLayoutDiv.setVisible(false);
+                }
                 event.forwardTo(IncentivesView.class);
             }
+        } else {
+            clearForm(); // Asegurar que el editor esté oculto si no hay ID
         }
     }
 
     private void createEditorLayout(SplitLayout splitLayout) {
-        Div editorLayoutDiv = new Div();
+        editorLayoutDiv = new Div(); // Instanciar el miembro de la clase
         editorLayoutDiv.setClassName("editor-layout");
 
         Div editorDiv = new Div();
@@ -205,6 +223,9 @@ public class IncentivesView extends Div implements BeforeEnterObserver {
 
     private void clearForm() {
         populateForm(null);
+        if (editorLayoutDiv != null) { // Buena práctica verificar nulidad
+            editorLayoutDiv.setVisible(false);
+        }
     }
 
     private void populateForm(Incentive value) {

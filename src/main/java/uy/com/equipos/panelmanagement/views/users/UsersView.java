@@ -39,6 +39,11 @@ public class UsersView extends Div implements BeforeEnterObserver {
     private final String APPUSER_EDIT_ROUTE_TEMPLATE = "users/%s/edit";
 
     private final Grid<AppUser> grid = new Grid<>(AppUser.class, false);
+    private Div editorLayoutDiv; // Declarado como miembro de la clase
+
+    // Campos de filtro
+    private TextField nameFilter = new TextField();
+    private TextField emailFilter = new TextField();
 
     // Campos de filtro
     private TextField nameFilter = new TextField();
@@ -66,21 +71,22 @@ public class UsersView extends Div implements BeforeEnterObserver {
         grid.addColumn(AppUser::getName).setHeader("Nombre").setKey("name").setAutoWidth(true);
         grid.addColumn(AppUser::getPassword).setHeader("Contraseña").setAutoWidth(true);
         grid.addColumn(AppUser::getEmail).setHeader("Correo Electrónico").setKey("email").setAutoWidth(true);
-
         grid.addThemeVariants(GridVariant.LUMO_NO_BORDER);
+
 
         // Create UI - SplitLayout
         SplitLayout splitLayout = new SplitLayout();
         // createGridLayout ahora puede acceder a las keys de las columnas de forma segura
         createGridLayout(splitLayout);
         createEditorLayout(splitLayout);
+
+        editorLayoutDiv.setVisible(false); // Ocultar el editor inicialmente
         add(splitLayout);
 
         // Configurar placeholders para filtros
-
         nameFilter.setPlaceholder("Filtrar por Nombre");
         emailFilter.setPlaceholder("Filtrar por Correo Electrónico");
- 
+
         // Añadir listeners para refrescar el grid
         nameFilter.addValueChangeListener(e -> grid.getDataProvider().refreshAll());
         emailFilter.addValueChangeListener(e -> grid.getDataProvider().refreshAll());
@@ -99,9 +105,10 @@ public class UsersView extends Div implements BeforeEnterObserver {
         // when a row is selected or deselected, populate form
         grid.asSingleSelect().addValueChangeListener(event -> {
             if (event.getValue() != null) {
+                editorLayoutDiv.setVisible(true);
                 UI.getCurrent().navigate(String.format(APPUSER_EDIT_ROUTE_TEMPLATE, event.getValue().getId()));
             } else {
-                clearForm();
+                clearForm(); // clearForm ahora también oculta el editor
                 UI.getCurrent().navigate(UsersView.class);
             }
         });
@@ -146,19 +153,25 @@ public class UsersView extends Div implements BeforeEnterObserver {
             Optional<AppUser> appUserFromBackend = appUserService.get(appUserId.get());
             if (appUserFromBackend.isPresent()) {
                 populateForm(appUserFromBackend.get());
+                editorLayoutDiv.setVisible(true);
             } else {
                 Notification.show(String.format("El usuario solicitado no fue encontrado, ID = %s", appUserId.get()), 3000,
                         Notification.Position.BOTTOM_START);
                 // when a row is selected but the data is no longer available,
                 // refresh grid
                 refreshGrid();
+                if (editorLayoutDiv != null) {
+                    editorLayoutDiv.setVisible(false);
+                }
                 event.forwardTo(UsersView.class);
             }
+        } else {
+            clearForm(); // Asegurar que el editor esté oculto si no hay ID
         }
     }
 
     private void createEditorLayout(SplitLayout splitLayout) {
-        Div editorLayoutDiv = new Div();
+        editorLayoutDiv = new Div(); // Instanciar el miembro de la clase
         editorLayoutDiv.setClassName("editor-layout");
 
         Div editorDiv = new Div();
@@ -204,6 +217,9 @@ public class UsersView extends Div implements BeforeEnterObserver {
 
     private void clearForm() {
         populateForm(null);
+        if (editorLayoutDiv != null) { // Buena práctica verificar nulidad
+            editorLayoutDiv.setVisible(false);
+        }
     }
 
     private void populateForm(AppUser value) {
