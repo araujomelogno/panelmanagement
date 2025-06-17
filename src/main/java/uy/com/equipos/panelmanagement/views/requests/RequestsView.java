@@ -83,9 +83,7 @@ public class RequestsView extends Div implements BeforeEnterObserver {
         // when a row is selected or deselected, populate form
         grid.asSingleSelect().addValueChangeListener(event -> {
             if (event.getValue() != null) {
-                if (this.editorLayoutDiv != null) {
-                    this.editorLayoutDiv.setVisible(true);
-                }
+                // this.editorLayoutDiv.setVisible(true); // Removido: beforeEnter lo manejará
                 UI.getCurrent().navigate(String.format(REQUEST_EDIT_ROUTE_TEMPLATE, event.getValue().getId()));
             } else {
                 clearForm(); // clearForm ahora también oculta el editor
