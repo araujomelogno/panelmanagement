@@ -65,10 +65,10 @@ public class RequestsView extends Div implements BeforeEnterObserver {
 
         createGridLayout(splitLayout);
         createEditorLayout(splitLayout);
-        if (this.editorLayoutDiv != null) { // Asegurarse de que no sea nulo antes de usarlo
-            this.editorLayoutDiv.setVisible(false); // Ocultar el editor inicialmente
+        add(splitLayout); // Añadir el splitLayout primero
+        if (this.editorLayoutDiv != null) { // Luego intentar ocultar el editorLayoutDiv
+            this.editorLayoutDiv.setVisible(false);
         }
-        add(splitLayout);
 
         // Configure Grid
         grid.addColumn("firstName").setAutoWidth(true);
