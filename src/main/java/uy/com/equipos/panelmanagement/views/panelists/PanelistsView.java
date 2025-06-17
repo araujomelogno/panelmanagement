@@ -61,8 +61,8 @@ public class PanelistsView extends Div implements BeforeEnterObserver {
     private DatePicker lastContacted;
     private DatePicker lastInterviewed;
 
-    private final Button cancel = new Button("Cancel");
-    private final Button save = new Button("Save");
+    private final Button cancel = new Button("Cancelar");
+    private final Button save = new Button("Guardar");
 
     private final BeanValidationBinder<Panelist> binder;
 
@@ -75,14 +75,16 @@ public class PanelistsView extends Div implements BeforeEnterObserver {
         addClassNames("panelists-view");
 
         // Configurar columnas del Grid PRIMERO
-        grid.addColumn(Panelist::getFirstName).setHeader("First Name").setKey("firstName").setAutoWidth(true);
-        grid.addColumn(Panelist::getLastName).setHeader("Last Name").setKey("lastName").setAutoWidth(true);
-        grid.addColumn(Panelist::getEmail).setHeader("Email").setKey("email").setAutoWidth(true);
-        grid.addColumn(Panelist::getPhone).setHeader("Phone").setKey("phone").setAutoWidth(true);
-        grid.addColumn(Panelist::getDateOfBirth).setHeader("Date Of Birth").setKey("dateOfBirth").setAutoWidth(true);
-        grid.addColumn(Panelist::getOccupation).setHeader("Occupation").setKey("occupation").setAutoWidth(true);
-        grid.addColumn(Panelist::getLastContacted).setHeader("Last Contacted").setKey("lastContacted").setAutoWidth(true);
-        grid.addColumn(Panelist::getLastInterviewed).setHeader("Last Interviewed").setKey("lastInterviewed").setAutoWidth(true);
+
+        grid.addColumn(Panelist::getFirstName).setHeader("Nombre").setKey("firstName").setAutoWidth(true);
+        grid.addColumn(Panelist::getLastName).setHeader("Apellido").setKey("lastName").setAutoWidth(true);
+        grid.addColumn(Panelist::getEmail).setHeader("Correo Electrónico").setKey("email").setAutoWidth(true);
+        grid.addColumn(Panelist::getPhone).setHeader("Teléfono").setKey("phone").setAutoWidth(true);
+        grid.addColumn(Panelist::getDateOfBirth).setHeader("Fecha de Nacimiento").setKey("dateOfBirth").setAutoWidth(true);
+        grid.addColumn(Panelist::getOccupation).setHeader("Ocupación").setKey("occupation").setAutoWidth(true);
+        grid.addColumn(Panelist::getLastContacted).setHeader("Último Contacto").setKey("lastContacted").setAutoWidth(true);
+        grid.addColumn(Panelist::getLastInterviewed).setHeader("Última Entrevista").setKey("lastInterviewed").setAutoWidth(true);
+
         grid.addThemeVariants(GridVariant.LUMO_NO_BORDER);
 
         // Create UI - SplitLayout
@@ -93,14 +95,16 @@ public class PanelistsView extends Div implements BeforeEnterObserver {
         add(splitLayout);
 
         // Configurar placeholders para filtros
-        firstNameFilter.setPlaceholder("Filtrar por nombre");
-        lastNameFilter.setPlaceholder("Filtrar por apellido");
-        emailFilter.setPlaceholder("Filtrar por email");
-        phoneFilter.setPlaceholder("Filtrar por teléfono");
-        dateOfBirthFilter.setPlaceholder("Filtrar por fecha nac.");
-        occupationFilter.setPlaceholder("Filtrar por ocupación");
-        lastContactedFilter.setPlaceholder("Filtrar por últ. contacto");
-        lastInterviewedFilter.setPlaceholder("Filtrar por últ. entrevista");
+
+        firstNameFilter.setPlaceholder("Filtrar por Nombre");
+        lastNameFilter.setPlaceholder("Filtrar por Apellido");
+        emailFilter.setPlaceholder("Filtrar por Correo Electrónico");
+        phoneFilter.setPlaceholder("Filtrar por Teléfono");
+        dateOfBirthFilter.setPlaceholder("Filtrar por Fecha de Nacimiento");
+        occupationFilter.setPlaceholder("Filtrar por Ocupación");
+        lastContactedFilter.setPlaceholder("Filtrar por Último Contacto");
+        lastInterviewedFilter.setPlaceholder("Filtrar por Última Entrevista");
+
 
         // Añadir listeners para refrescar el grid
         firstNameFilter.addValueChangeListener(e -> grid.getDataProvider().refreshAll());
@@ -166,15 +170,15 @@ public class PanelistsView extends Div implements BeforeEnterObserver {
                 panelistService.save(this.panelist);
                 clearForm();
                 refreshGrid();
-                Notification.show("Data updated");
+                Notification.show("Datos actualizados");
                 UI.getCurrent().navigate(PanelistsView.class);
             } catch (ObjectOptimisticLockingFailureException exception) {
                 Notification n = Notification.show(
-                        "Error updating the data. Somebody else has updated the record while you were making changes.");
+                        "Error al actualizar los datos. Otro usuario modificó el registro mientras usted realizaba cambios.");
                 n.setPosition(Position.MIDDLE);
                 n.addThemeVariants(NotificationVariant.LUMO_ERROR);
             } catch (ValidationException validationException) {
-                Notification.show("Failed to update the data. Check again that all values are valid");
+                Notification.show("Fallo al actualizar los datos. Verifique nuevamente que todos los valores sean válidos");
             }
         });
     }
@@ -187,7 +191,7 @@ public class PanelistsView extends Div implements BeforeEnterObserver {
             if (panelistFromBackend.isPresent()) {
                 populateForm(panelistFromBackend.get());
             } else {
-                Notification.show(String.format("The requested panelist was not found, ID = %s", panelistId.get()),
+                Notification.show(String.format("El panelista solicitado no fue encontrado, ID = %s", panelistId.get()),
                         3000, Notification.Position.BOTTOM_START);
                 // when a row is selected but the data is no longer available,
                 // refresh grid
@@ -206,14 +210,14 @@ public class PanelistsView extends Div implements BeforeEnterObserver {
         editorLayoutDiv.add(editorDiv);
 
         FormLayout formLayout = new FormLayout();
-        firstName = new TextField("First Name");
-        lastName = new TextField("Last Name");
-        email = new TextField("Email");
-        phone = new TextField("Phone");
-        dateOfBirth = new DatePicker("Date Of Birth");
-        occupation = new TextField("Occupation");
-        lastContacted = new DatePicker("Last Contacted");
-        lastInterviewed = new DatePicker("Last Interviewed");
+        firstName = new TextField("Nombre");
+        lastName = new TextField("Apellido");
+        email = new TextField("Correo Electrónico");
+        phone = new TextField("Teléfono");
+        dateOfBirth = new DatePicker("Fecha de Nacimiento");
+        occupation = new TextField("Ocupación");
+        lastContacted = new DatePicker("Último Contacto");
+        lastInterviewed = new DatePicker("Última Entrevista");
         formLayout.add(firstName, lastName, email, phone, dateOfBirth, occupation, lastContacted, lastInterviewed);
 
         editorDiv.add(formLayout);

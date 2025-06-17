@@ -59,8 +59,8 @@ public class PanelsView extends Div implements BeforeEnterObserver {
     private DatePicker created;
     private Checkbox active;
 
-    private final Button cancel = new Button("Cancel");
-    private final Button save = new Button("Save");
+    private final Button cancel = new Button("Cancelar");
+    private final Button save = new Button("Guardar");
 
     private final BeanValidationBinder<Panel> binder;
 
@@ -73,15 +73,18 @@ public class PanelsView extends Div implements BeforeEnterObserver {
         addClassNames("panels-view");
 
         // Configurar columnas del Grid PRIMERO
-        grid.addColumn(Panel::getName).setHeader("Name").setKey("name").setAutoWidth(true);
-        grid.addColumn(Panel::getCreated).setHeader("Created").setKey("created").setAutoWidth(true);
+        grid.addColumn(Panel::getName).setHeader("Nombre").setKey("name").setAutoWidth(true);
+        grid.addColumn(Panel::getCreated).setHeader("Creado").setKey("created").setAutoWidth(true);
+
         LitRenderer<Panel> activeRenderer = LitRenderer.<Panel>of(
                 "<vaadin-icon icon='vaadin:${item.icon}' style='width: var(--lumo-icon-size-s); height: var(--lumo-icon-size-s); color: ${item.color};'></vaadin-icon>")
                 .withProperty("icon", panelItem -> panelItem.isActive() ? "check" : "minus")
                 .withProperty("color", panelItem -> panelItem.isActive()
                         ? "var(--lumo-primary-text-color)"
                         : "var(--lumo-disabled-text-color)");
-        grid.addColumn(activeRenderer).setHeader("Active").setKey("active").setAutoWidth(true);
+
+        grid.addColumn(activeRenderer).setHeader("Activo").setKey("active").setAutoWidth(true);
+
         grid.addThemeVariants(GridVariant.LUMO_NO_BORDER);
 
         // Create UI - SplitLayout
@@ -92,10 +95,11 @@ public class PanelsView extends Div implements BeforeEnterObserver {
         add(splitLayout);
 
         // Configurar placeholders para filtros (ya deberían estar inicializados como miembros de clase)
-        nameFilter.setPlaceholder("Filtrar por nombre");
-        createdFilter.setPlaceholder("Filtrar por fecha");
-        activeFilter.setPlaceholder("Filtrar por activo");
-        activeFilter.setItems("Todos", "Activo", "Inactivo");
+        nameFilter.setPlaceholder("Filtrar por Nombre");
+        createdFilter.setPlaceholder("Filtrar por Fecha de Creación");
+        activeFilter.setPlaceholder("Filtrar por Estado");
+        activeFilter.setItems("Todos", "Activo", "Inactivo"); // Estos ya están en español o son universales
+
         activeFilter.setValue("Todos");
 
         // Añadir listeners para refrescar el grid cuando cambian los filtros
@@ -149,15 +153,15 @@ public class PanelsView extends Div implements BeforeEnterObserver {
                 panelService.save(this.panel);
                 clearForm();
                 refreshGrid();
-                Notification.show("Data updated");
+                Notification.show("Datos actualizados");
                 UI.getCurrent().navigate(PanelsView.class);
             } catch (ObjectOptimisticLockingFailureException exception) {
                 Notification n = Notification.show(
-                        "Error updating the data. Somebody else has updated the record while you were making changes.");
+                        "Error al actualizar los datos. Otro usuario modificó el registro mientras usted realizaba cambios.");
                 n.setPosition(Position.MIDDLE);
                 n.addThemeVariants(NotificationVariant.LUMO_ERROR);
             } catch (ValidationException validationException) {
-                Notification.show("Failed to update the data. Check again that all values are valid");
+                Notification.show("Fallo al actualizar los datos. Verifique nuevamente que todos los valores sean válidos");
             }
         });
     }
@@ -170,7 +174,7 @@ public class PanelsView extends Div implements BeforeEnterObserver {
             if (panelFromBackend.isPresent()) {
                 populateForm(panelFromBackend.get());
             } else {
-                Notification.show(String.format("The requested panel was not found, ID = %s", panelId.get()), 3000,
+                Notification.show(String.format("El panel solicitado no fue encontrado, ID = %s", panelId.get()), 3000,
                         Notification.Position.BOTTOM_START);
                 // when a row is selected but the data is no longer available,
                 // refresh grid
@@ -189,9 +193,9 @@ public class PanelsView extends Div implements BeforeEnterObserver {
         editorLayoutDiv.add(editorDiv);
 
         FormLayout formLayout = new FormLayout();
-        name = new TextField("Name");
-        created = new DatePicker("Created");
-        active = new Checkbox("Active");
+        name = new TextField("Nombre");
+        created = new DatePicker("Fecha de Creación");
+        active = new Checkbox("Activo");
         formLayout.add(name, created, active);
 
         editorDiv.add(formLayout);

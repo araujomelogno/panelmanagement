@@ -48,8 +48,8 @@ public class UsersView extends Div implements BeforeEnterObserver {
     private TextField password;
     private TextField email;
 
-    private final Button cancel = new Button("Cancel");
-    private final Button save = new Button("Save");
+    private final Button cancel = new Button("Cancelar");
+    private final Button save = new Button("Guardar");
 
     private final BeanValidationBinder<AppUser> binder;
 
@@ -62,9 +62,11 @@ public class UsersView extends Div implements BeforeEnterObserver {
         addClassNames("users-view");
 
         // Configurar columnas del Grid PRIMERO
-        grid.addColumn(AppUser::getName).setHeader("Name").setKey("name").setAutoWidth(true);
-        grid.addColumn(AppUser::getPassword).setHeader("Password").setAutoWidth(true);
-        grid.addColumn(AppUser::getEmail).setHeader("Email").setKey("email").setAutoWidth(true);
+
+        grid.addColumn(AppUser::getName).setHeader("Nombre").setKey("name").setAutoWidth(true);
+        grid.addColumn(AppUser::getPassword).setHeader("Contraseña").setAutoWidth(true);
+        grid.addColumn(AppUser::getEmail).setHeader("Correo Electrónico").setKey("email").setAutoWidth(true);
+
         grid.addThemeVariants(GridVariant.LUMO_NO_BORDER);
 
         // Create UI - SplitLayout
@@ -75,9 +77,10 @@ public class UsersView extends Div implements BeforeEnterObserver {
         add(splitLayout);
 
         // Configurar placeholders para filtros
-        nameFilter.setPlaceholder("Filtrar por nombre");
-        emailFilter.setPlaceholder("Filtrar por email");
 
+        nameFilter.setPlaceholder("Filtrar por Nombre");
+        emailFilter.setPlaceholder("Filtrar por Correo Electrónico");
+ 
         // Añadir listeners para refrescar el grid
         nameFilter.addValueChangeListener(e -> grid.getDataProvider().refreshAll());
         emailFilter.addValueChangeListener(e -> grid.getDataProvider().refreshAll());
@@ -123,15 +126,15 @@ public class UsersView extends Div implements BeforeEnterObserver {
                 appUserService.save(this.appUser);
                 clearForm();
                 refreshGrid();
-                Notification.show("Data updated");
+                Notification.show("Datos actualizados");
                 UI.getCurrent().navigate(UsersView.class);
             } catch (ObjectOptimisticLockingFailureException exception) {
                 Notification n = Notification.show(
-                        "Error updating the data. Somebody else has updated the record while you were making changes.");
+                        "Error al actualizar los datos. Otro usuario modificó el registro mientras usted realizaba cambios.");
                 n.setPosition(Position.MIDDLE);
                 n.addThemeVariants(NotificationVariant.LUMO_ERROR);
             } catch (ValidationException validationException) {
-                Notification.show("Failed to update the data. Check again that all values are valid");
+                Notification.show("Fallo al actualizar los datos. Verifique nuevamente que todos los valores sean válidos");
             }
         });
     }
@@ -144,7 +147,7 @@ public class UsersView extends Div implements BeforeEnterObserver {
             if (appUserFromBackend.isPresent()) {
                 populateForm(appUserFromBackend.get());
             } else {
-                Notification.show(String.format("The requested appUser was not found, ID = %s", appUserId.get()), 3000,
+                Notification.show(String.format("El usuario solicitado no fue encontrado, ID = %s", appUserId.get()), 3000,
                         Notification.Position.BOTTOM_START);
                 // when a row is selected but the data is no longer available,
                 // refresh grid
@@ -163,9 +166,9 @@ public class UsersView extends Div implements BeforeEnterObserver {
         editorLayoutDiv.add(editorDiv);
 
         FormLayout formLayout = new FormLayout();
-        name = new TextField("Name");
-        password = new TextField("Password");
-        email = new TextField("Email");
+        name = new TextField("Nombre");
+        password = new TextField("Contraseña");
+        email = new TextField("Correo Electrónico");
         formLayout.add(name, password, email);
 
         editorDiv.add(formLayout);
