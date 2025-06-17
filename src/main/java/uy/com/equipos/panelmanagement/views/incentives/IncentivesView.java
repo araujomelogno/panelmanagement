@@ -61,12 +61,16 @@ public class IncentivesView extends Div implements BeforeEnterObserver {
         this.incentiveService = incentiveService;
         addClassNames("incentives-view");
 
-        // Create UI
-        SplitLayout splitLayout = new SplitLayout();
+        // Configurar columnas del Grid PRIMERO
+        grid.addColumn("name").setKey("name").setAutoWidth(true);
+        grid.addColumn("quantityAvailable").setKey("quantityAvailable").setAutoWidth(true);
+        grid.addThemeVariants(GridVariant.LUMO_NO_BORDER);
 
+        // Create UI - SplitLayout
+        SplitLayout splitLayout = new SplitLayout();
+        // createGridLayout ahora puede acceder a las keys de las columnas de forma segura
         createGridLayout(splitLayout);
         createEditorLayout(splitLayout);
-
         add(splitLayout);
 
         // Configurar placeholders para filtros
@@ -77,20 +81,17 @@ public class IncentivesView extends Div implements BeforeEnterObserver {
         nameFilter.addValueChangeListener(e -> grid.getDataProvider().refreshAll());
         quantityAvailableFilter.addValueChangeListener(e -> grid.getDataProvider().refreshAll());
 
-        // Configure Grid
-        grid.addColumn("name").setKey("name").setAutoWidth(true);
-        grid.addColumn("quantityAvailable").setKey("quantityAvailable").setAutoWidth(true);
+        // Configurar el DataProvider del Grid
         grid.setItems(query -> {
-            String name = nameFilter.getValue();
-            String quantityAvailableStr = quantityAvailableFilter.getValue();
+            String nameVal = nameFilter.getValue();
+            String quantityAvailableStrVal = quantityAvailableFilter.getValue();
             // La conversión a Integer se manejará en el servicio o al crear la Specification
             return incentiveService.list(
                 VaadinSpringDataHelpers.toSpringPageRequest(query),
-                name,
-                quantityAvailableStr
+                nameVal,
+                quantityAvailableStrVal
             ).stream();
         });
-        grid.addThemeVariants(GridVariant.LUMO_NO_BORDER);
 
         // when a row is selected or deselected, populate form
         grid.asSingleSelect().addValueChangeListener(event -> {

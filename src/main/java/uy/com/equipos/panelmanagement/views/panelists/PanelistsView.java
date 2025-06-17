@@ -74,12 +74,22 @@ public class PanelistsView extends Div implements BeforeEnterObserver {
         this.panelistService = panelistService;
         addClassNames("panelists-view");
 
-        // Create UI
-        SplitLayout splitLayout = new SplitLayout();
+        // Configurar columnas del Grid PRIMERO
+        grid.addColumn("firstName").setKey("firstName").setAutoWidth(true);
+        grid.addColumn("lastName").setKey("lastName").setAutoWidth(true);
+        grid.addColumn("email").setKey("email").setAutoWidth(true);
+        grid.addColumn("phone").setKey("phone").setAutoWidth(true);
+        grid.addColumn("dateOfBirth").setKey("dateOfBirth").setAutoWidth(true);
+        grid.addColumn("occupation").setKey("occupation").setAutoWidth(true);
+        grid.addColumn("lastContacted").setKey("lastContacted").setAutoWidth(true);
+        grid.addColumn("lastInterviewed").setKey("lastInterviewed").setAutoWidth(true);
+        grid.addThemeVariants(GridVariant.LUMO_NO_BORDER);
 
+        // Create UI - SplitLayout
+        SplitLayout splitLayout = new SplitLayout();
+        // createGridLayout ahora puede acceder a las keys de las columnas de forma segura
         createGridLayout(splitLayout);
         createEditorLayout(splitLayout);
-
         add(splitLayout);
 
         // Configurar placeholders para filtros
@@ -102,39 +112,29 @@ public class PanelistsView extends Div implements BeforeEnterObserver {
         lastContactedFilter.addValueChangeListener(e -> grid.getDataProvider().refreshAll());
         lastInterviewedFilter.addValueChangeListener(e -> grid.getDataProvider().refreshAll());
 
-        // Configure Grid
-        grid.addColumn("firstName").setKey("firstName").setAutoWidth(true);
-        grid.addColumn("lastName").setKey("lastName").setAutoWidth(true);
-        grid.addColumn("email").setKey("email").setAutoWidth(true);
-        grid.addColumn("phone").setKey("phone").setAutoWidth(true);
-        grid.addColumn("dateOfBirth").setKey("dateOfBirth").setAutoWidth(true);
-        grid.addColumn("occupation").setKey("occupation").setAutoWidth(true);
-        grid.addColumn("lastContacted").setKey("lastContacted").setAutoWidth(true);
-        grid.addColumn("lastInterviewed").setKey("lastInterviewed").setAutoWidth(true);
-
+        // Configurar el DataProvider del Grid
         grid.setItems(query -> {
-            String firstName = firstNameFilter.getValue();
-            String lastName = lastNameFilter.getValue();
-            String email = emailFilter.getValue();
-            String phone = phoneFilter.getValue();
-            LocalDate dateOfBirth = dateOfBirthFilter.getValue();
-            String occupation = occupationFilter.getValue();
-            LocalDate lastContacted = lastContactedFilter.getValue();
-            LocalDate lastInterviewed = lastInterviewedFilter.getValue();
+            String firstNameVal = firstNameFilter.getValue();
+            String lastNameVal = lastNameFilter.getValue();
+            String emailVal = emailFilter.getValue();
+            String phoneVal = phoneFilter.getValue();
+            LocalDate dateOfBirthVal = dateOfBirthFilter.getValue();
+            String occupationVal = occupationFilter.getValue();
+            LocalDate lastContactedVal = lastContactedFilter.getValue();
+            LocalDate lastInterviewedVal = lastInterviewedFilter.getValue();
 
             return panelistService.list(
                 VaadinSpringDataHelpers.toSpringPageRequest(query),
-                firstName,
-                lastName,
-                email,
-                phone,
-                dateOfBirth,
-                occupation,
-                lastContacted,
-                lastInterviewed
+                firstNameVal,
+                lastNameVal,
+                emailVal,
+                phoneVal,
+                dateOfBirthVal,
+                occupationVal,
+                lastContactedVal,
+                lastInterviewedVal
             ).stream();
         });
-        grid.addThemeVariants(GridVariant.LUMO_NO_BORDER);
 
         // when a row is selected or deselected, populate form
         grid.asSingleSelect().addValueChangeListener(event -> {
@@ -150,7 +150,6 @@ public class PanelistsView extends Div implements BeforeEnterObserver {
         binder = new BeanValidationBinder<>(Panelist.class);
 
         // Bind fields. This is where you'd define e.g. validation rules
-
         binder.bindInstanceFields(this);
 
         cancel.addClickListener(e -> {
