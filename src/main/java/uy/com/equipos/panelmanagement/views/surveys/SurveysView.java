@@ -29,7 +29,7 @@ import org.vaadin.lineawesome.LineAwesomeIconUrl;
 import uy.com.equipos.panelmanagement.data.Survey;
 import uy.com.equipos.panelmanagement.services.SurveyService;
 
-@PageTitle("Surveys")
+@PageTitle("Encuestas")
 @Route("surveys/:surveyID?/:action?(edit)")
 @Menu(order = 3, icon = LineAwesomeIconUrl.QUESTION_CIRCLE_SOLID)
 @PermitAll

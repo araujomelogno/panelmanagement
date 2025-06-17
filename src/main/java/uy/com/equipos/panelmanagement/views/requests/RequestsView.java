@@ -28,7 +28,7 @@ import org.vaadin.lineawesome.LineAwesomeIconUrl;
 import uy.com.equipos.panelmanagement.data.Request;
 import uy.com.equipos.panelmanagement.services.RequestService;
 
-@PageTitle("Requests")
+@PageTitle("Solicitudes de panelistas")
 @Route("requests/:requestID?/:action?(edit)")
 @Menu(order = 5, icon = LineAwesomeIconUrl.BELL)
 @PermitAll

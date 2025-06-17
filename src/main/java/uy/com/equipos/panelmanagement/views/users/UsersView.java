@@ -28,7 +28,7 @@ import org.vaadin.lineawesome.LineAwesomeIconUrl;
 import uy.com.equipos.panelmanagement.data.AppUser;
 import uy.com.equipos.panelmanagement.services.AppUserService;
 
-@PageTitle("Users")
+@PageTitle("Usuarios")
 @Route("users/:appUserID?/:action?(edit)")
 @Menu(order = 6, icon = LineAwesomeIconUrl.COLUMNS_SOLID)
 @RolesAllowed("ADMIN")

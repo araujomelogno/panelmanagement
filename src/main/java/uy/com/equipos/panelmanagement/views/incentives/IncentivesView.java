@@ -29,7 +29,7 @@ import org.vaadin.lineawesome.LineAwesomeIconUrl;
 import uy.com.equipos.panelmanagement.data.Incentive;
 import uy.com.equipos.panelmanagement.services.IncentiveService;
 
-@PageTitle("Incentives")
+@PageTitle("Incentivos")
 @Route("incentives/:incentiveID?/:action?(edit)")
 @Menu(order = 4, icon = LineAwesomeIconUrl.COLUMNS_SOLID)
 @AnonymousAllowed

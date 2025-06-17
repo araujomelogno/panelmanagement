@@ -28,7 +28,7 @@ import org.vaadin.lineawesome.LineAwesomeIconUrl;
 import uy.com.equipos.panelmanagement.data.PanelistProperty;
 import uy.com.equipos.panelmanagement.services.PanelistPropertyService;
 
-@PageTitle("Propierties")
+@PageTitle("Propiedades de panelistas")
 @Route("master-detail/:panelistPropertyID?/:action?(edit)")
 @Menu(order = 2, icon = LineAwesomeIconUrl.EDIT)
 @PermitAll

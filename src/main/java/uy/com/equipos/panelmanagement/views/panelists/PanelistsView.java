@@ -29,7 +29,7 @@ import org.vaadin.lineawesome.LineAwesomeIconUrl;
 import uy.com.equipos.panelmanagement.data.Panelist;
 import uy.com.equipos.panelmanagement.services.PanelistService;
 
-@PageTitle("Panelists")
+@PageTitle("Panelistas")
 @Route("panelists/:panelistID?/:action?(edit)")
 @Menu(order = 1, icon = LineAwesomeIconUrl.USER_SOLID)
 @PermitAll

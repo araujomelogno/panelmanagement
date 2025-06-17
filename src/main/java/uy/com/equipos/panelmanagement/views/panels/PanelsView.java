@@ -34,7 +34,7 @@ import org.vaadin.lineawesome.LineAwesomeIconUrl;
 import uy.com.equipos.panelmanagement.data.Panel;
 import uy.com.equipos.panelmanagement.services.PanelService;
 
-@PageTitle("Panels")
+@PageTitle("Paneles")
 @Route("/:panelID?/:action?(edit)")
 @Menu(order = 0, icon = LineAwesomeIconUrl.COLUMNS_SOLID)
 @RouteAlias("")
