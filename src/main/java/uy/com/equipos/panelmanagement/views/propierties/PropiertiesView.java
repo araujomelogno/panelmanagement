@@ -61,8 +61,8 @@ public class PropiertiesView extends Div implements BeforeEnterObserver {
         addClassNames("propierties-view");
 
         // Configurar columnas del Grid PRIMERO
-        grid.addColumn("name").setKey("name").setAutoWidth(true);
-        grid.addColumn("type").setKey("type").setAutoWidth(true);
+        grid.addColumn(PanelistProperty::getName).setHeader("Name").setKey("name").setAutoWidth(true);
+        grid.addColumn(PanelistProperty::getType).setHeader("Type").setKey("type").setAutoWidth(true);
         grid.addThemeVariants(GridVariant.LUMO_NO_BORDER);
 
         // Create UI - SplitLayout

@@ -62,9 +62,9 @@ public class UsersView extends Div implements BeforeEnterObserver {
         addClassNames("users-view");
 
         // Configurar columnas del Grid PRIMERO
-        grid.addColumn("name").setKey("name").setAutoWidth(true);
-        grid.addColumn("password").setAutoWidth(true); // Sin filtro para password, no necesita key para esto
-        grid.addColumn("email").setKey("email").setAutoWidth(true);
+        grid.addColumn(AppUser::getName).setHeader("Name").setKey("name").setAutoWidth(true);
+        grid.addColumn(AppUser::getPassword).setHeader("Password").setAutoWidth(true);
+        grid.addColumn(AppUser::getEmail).setHeader("Email").setKey("email").setAutoWidth(true);
         grid.addThemeVariants(GridVariant.LUMO_NO_BORDER);
 
         // Create UI - SplitLayout

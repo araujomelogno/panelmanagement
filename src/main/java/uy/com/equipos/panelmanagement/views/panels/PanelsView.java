@@ -73,12 +73,12 @@ public class PanelsView extends Div implements BeforeEnterObserver {
         addClassNames("panels-view");
 
         // Configurar columnas del Grid PRIMERO
-        grid.addColumn("name").setKey("name").setAutoWidth(true);
-        grid.addColumn("created").setKey("created").setAutoWidth(true);
+        grid.addColumn(Panel::getName).setHeader("Name").setKey("name").setAutoWidth(true);
+        grid.addColumn(Panel::getCreated).setHeader("Created").setKey("created").setAutoWidth(true);
         LitRenderer<Panel> activeRenderer = LitRenderer.<Panel>of(
                 "<vaadin-icon icon='vaadin:${item.icon}' style='width: var(--lumo-icon-size-s); height: var(--lumo-icon-size-s); color: ${item.color};'></vaadin-icon>")
-                .withProperty("icon", panelItem -> panelItem.isActive() ? "check" : "minus") // Renamed lambda param
-                .withProperty("color", panelItem -> panelItem.isActive() // Renamed lambda param
+                .withProperty("icon", panelItem -> panelItem.isActive() ? "check" : "minus")
+                .withProperty("color", panelItem -> panelItem.isActive()
                         ? "var(--lumo-primary-text-color)"
                         : "var(--lumo-disabled-text-color)");
         grid.addColumn(activeRenderer).setHeader("Active").setKey("active").setAutoWidth(true);

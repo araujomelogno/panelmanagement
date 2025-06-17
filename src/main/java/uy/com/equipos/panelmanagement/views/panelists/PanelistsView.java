@@ -75,14 +75,14 @@ public class PanelistsView extends Div implements BeforeEnterObserver {
         addClassNames("panelists-view");
 
         // Configurar columnas del Grid PRIMERO
-        grid.addColumn("firstName").setKey("firstName").setAutoWidth(true);
-        grid.addColumn("lastName").setKey("lastName").setAutoWidth(true);
-        grid.addColumn("email").setKey("email").setAutoWidth(true);
-        grid.addColumn("phone").setKey("phone").setAutoWidth(true);
-        grid.addColumn("dateOfBirth").setKey("dateOfBirth").setAutoWidth(true);
-        grid.addColumn("occupation").setKey("occupation").setAutoWidth(true);
-        grid.addColumn("lastContacted").setKey("lastContacted").setAutoWidth(true);
-        grid.addColumn("lastInterviewed").setKey("lastInterviewed").setAutoWidth(true);
+        grid.addColumn(Panelist::getFirstName).setHeader("First Name").setKey("firstName").setAutoWidth(true);
+        grid.addColumn(Panelist::getLastName).setHeader("Last Name").setKey("lastName").setAutoWidth(true);
+        grid.addColumn(Panelist::getEmail).setHeader("Email").setKey("email").setAutoWidth(true);
+        grid.addColumn(Panelist::getPhone).setHeader("Phone").setKey("phone").setAutoWidth(true);
+        grid.addColumn(Panelist::getDateOfBirth).setHeader("Date Of Birth").setKey("dateOfBirth").setAutoWidth(true);
+        grid.addColumn(Panelist::getOccupation).setHeader("Occupation").setKey("occupation").setAutoWidth(true);
+        grid.addColumn(Panelist::getLastContacted).setHeader("Last Contacted").setKey("lastContacted").setAutoWidth(true);
+        grid.addColumn(Panelist::getLastInterviewed).setHeader("Last Interviewed").setKey("lastInterviewed").setAutoWidth(true);
         grid.addThemeVariants(GridVariant.LUMO_NO_BORDER);
 
         // Create UI - SplitLayout
