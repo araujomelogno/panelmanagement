@@ -72,15 +72,26 @@ public class PanelsView extends Div implements BeforeEnterObserver {
         this.panelService = panelService;
         addClassNames("panels-view");
 
-        // Create UI
+        // Configurar columnas del Grid PRIMERO
+        grid.addColumn("name").setKey("name").setAutoWidth(true);
+        grid.addColumn("created").setKey("created").setAutoWidth(true);
+        LitRenderer<Panel> activeRenderer = LitRenderer.<Panel>of(
+                "<vaadin-icon icon='vaadin:${item.icon}' style='width: var(--lumo-icon-size-s); height: var(--lumo-icon-size-s); color: ${item.color};'></vaadin-icon>")
+                .withProperty("icon", panelItem -> panelItem.isActive() ? "check" : "minus") // Renamed lambda param
+                .withProperty("color", panelItem -> panelItem.isActive() // Renamed lambda param
+                        ? "var(--lumo-primary-text-color)"
+                        : "var(--lumo-disabled-text-color)");
+        grid.addColumn(activeRenderer).setHeader("Active").setKey("active").setAutoWidth(true);
+        grid.addThemeVariants(GridVariant.LUMO_NO_BORDER);
+
+        // Create UI - SplitLayout
         SplitLayout splitLayout = new SplitLayout();
-
-        createGridLayout(splitLayout); // Esto ya añade el grid al layout
+        // createGridLayout ahora puede acceder a las keys de las columnas de forma segura
+        createGridLayout(splitLayout);
         createEditorLayout(splitLayout);
-
         add(splitLayout);
 
-        // Configurar placeholders para filtros
+        // Configurar placeholders para filtros (ya deberían estar inicializados como miembros de clase)
         nameFilter.setPlaceholder("Filtrar por nombre");
         createdFilter.setPlaceholder("Filtrar por fecha");
         activeFilter.setPlaceholder("Filtrar por activo");
@@ -88,25 +99,16 @@ public class PanelsView extends Div implements BeforeEnterObserver {
         activeFilter.setValue("Todos");
 
         // Añadir listeners para refrescar el grid cuando cambian los filtros
+        // Estos listeners acceden a 'grid', que ya está inicializado.
         nameFilter.addValueChangeListener(e -> grid.getDataProvider().refreshAll());
         createdFilter.addValueChangeListener(e -> grid.getDataProvider().refreshAll());
         activeFilter.addValueChangeListener(e -> grid.getDataProvider().refreshAll());
 
-        // Configure Grid
-        grid.addColumn("name").setKey("name").setAutoWidth(true);
-        grid.addColumn("created").setKey("created").setAutoWidth(true);
-        LitRenderer<Panel> activeRenderer = LitRenderer.<Panel>of(
-                "<vaadin-icon icon='vaadin:${item.icon}' style='width: var(--lumo-icon-size-s); height: var(--lumo-icon-size-s); color: ${item.color};'></vaadin-icon>")
-                .withProperty("icon", active -> active.isActive() ? "check" : "minus").withProperty("color",
-                        active -> active.isActive()
-                                ? "var(--lumo-primary-text-color)"
-                                : "var(--lumo-disabled-text-color)");
-
-        grid.addColumn(activeRenderer).setHeader("Active").setKey("active").setAutoWidth(true);
-
+        // Configurar el DataProvider del Grid
+        // Esto necesita que los filtros (nameFilter, etc.) estén disponibles.
         grid.setItems(query -> {
-            String name = nameFilter.getValue();
-            LocalDate created = createdFilter.getValue();
+            String nameVal = nameFilter.getValue();
+            LocalDate createdVal = createdFilter.getValue();
             String activeString = activeFilter.getValue();
             Boolean activeBoolean = null;
             if ("Activo".equals(activeString)) {
@@ -114,10 +116,8 @@ public class PanelsView extends Div implements BeforeEnterObserver {
             } else if ("Inactivo".equals(activeString)) {
                 activeBoolean = false;
             }
-            // Asumiendo que panelService.list ahora toma estos parámetros
-            return panelService.list(VaadinSpringDataHelpers.toSpringPageRequest(query), name, created, activeBoolean).stream();
+            return panelService.list(VaadinSpringDataHelpers.toSpringPageRequest(query), nameVal, createdVal, activeBoolean).stream();
         });
-        grid.addThemeVariants(GridVariant.LUMO_NO_BORDER);
 
         // when a row is selected or deselected, populate form
         grid.asSingleSelect().addValueChangeListener(event -> {
@@ -133,7 +133,6 @@ public class PanelsView extends Div implements BeforeEnterObserver {
         binder = new BeanValidationBinder<>(Panel.class);
 
         // Bind fields. This is where you'd define e.g. validation rules
-
         binder.bindInstanceFields(this);
 
         cancel.addClickListener(e -> {
@@ -236,4 +235,5 @@ public class PanelsView extends Div implements BeforeEnterObserver {
         binder.readBean(this.panel);
 
     }
+    // Cambio trivial para republicar en nueva rama
 }

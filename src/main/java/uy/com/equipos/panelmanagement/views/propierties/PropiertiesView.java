@@ -60,12 +60,16 @@ public class PropiertiesView extends Div implements BeforeEnterObserver {
         this.panelistPropertyService = panelistPropertyService;
         addClassNames("propierties-view");
 
-        // Create UI
-        SplitLayout splitLayout = new SplitLayout();
+        // Configurar columnas del Grid PRIMERO
+        grid.addColumn("name").setKey("name").setAutoWidth(true);
+        grid.addColumn("type").setKey("type").setAutoWidth(true);
+        grid.addThemeVariants(GridVariant.LUMO_NO_BORDER);
 
+        // Create UI - SplitLayout
+        SplitLayout splitLayout = new SplitLayout();
+        // createGridLayout ahora puede acceder a las keys de las columnas de forma segura
         createGridLayout(splitLayout);
         createEditorLayout(splitLayout);
-
         add(splitLayout);
 
         // Configurar placeholders para filtros
@@ -76,20 +80,17 @@ public class PropiertiesView extends Div implements BeforeEnterObserver {
         nameFilter.addValueChangeListener(e -> grid.getDataProvider().refreshAll());
         typeFilter.addValueChangeListener(e -> grid.getDataProvider().refreshAll());
 
-        // Configure Grid
-        grid.addColumn("name").setKey("name").setAutoWidth(true);
-        grid.addColumn("type").setKey("type").setAutoWidth(true);
+        // Configurar el DataProvider del Grid
         grid.setItems(query -> {
-            String name = nameFilter.getValue();
-            String type = typeFilter.getValue();
+            String nameVal = nameFilter.getValue();
+            String typeVal = typeFilter.getValue();
 
             return panelistPropertyService.list(
                 VaadinSpringDataHelpers.toSpringPageRequest(query),
-                name,
-                type
+                nameVal,
+                typeVal
             ).stream();
         });
-        grid.addThemeVariants(GridVariant.LUMO_NO_BORDER);
 
         // when a row is selected or deselected, populate form
         grid.asSingleSelect().addValueChangeListener(event -> {
@@ -105,7 +106,6 @@ public class PropiertiesView extends Div implements BeforeEnterObserver {
         binder = new BeanValidationBinder<>(PanelistProperty.class);
 
         // Bind fields. This is where you'd define e.g. validation rules
-
         binder.bindInstanceFields(this);
 
         cancel.addClickListener(e -> {
