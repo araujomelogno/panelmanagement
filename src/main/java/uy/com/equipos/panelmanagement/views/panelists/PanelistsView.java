@@ -7,6 +7,7 @@ import com.vaadin.flow.component.datepicker.DatePicker;
 import com.vaadin.flow.component.formlayout.FormLayout;
 import com.vaadin.flow.component.grid.Grid;
 import com.vaadin.flow.component.grid.GridVariant;
+import com.vaadin.flow.component.grid.HeaderRow;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.notification.Notification;
 import com.vaadin.flow.component.notification.Notification.Position;
@@ -23,6 +24,7 @@ import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
 import com.vaadin.flow.spring.data.VaadinSpringDataHelpers;
 import jakarta.annotation.security.PermitAll;
+import java.time.LocalDate;
 import java.util.Optional;
 import org.springframework.orm.ObjectOptimisticLockingFailureException;
 import org.vaadin.lineawesome.LineAwesomeIconUrl;
@@ -39,6 +41,16 @@ public class PanelistsView extends Div implements BeforeEnterObserver {
     private final String PANELIST_EDIT_ROUTE_TEMPLATE = "panelists/%s/edit";
 
     private final Grid<Panelist> grid = new Grid<>(Panelist.class, false);
+
+    // Campos de filtro
+    private TextField firstNameFilter = new TextField();
+    private TextField lastNameFilter = new TextField();
+    private TextField emailFilter = new TextField();
+    private TextField phoneFilter = new TextField();
+    private DatePicker dateOfBirthFilter = new DatePicker();
+    private TextField occupationFilter = new TextField();
+    private DatePicker lastContactedFilter = new DatePicker();
+    private DatePicker lastInterviewedFilter = new DatePicker();
 
     private TextField firstName;
     private TextField lastName;
@@ -70,16 +82,58 @@ public class PanelistsView extends Div implements BeforeEnterObserver {
 
         add(splitLayout);
 
+        // Configurar placeholders para filtros
+        firstNameFilter.setPlaceholder("Filtrar por nombre");
+        lastNameFilter.setPlaceholder("Filtrar por apellido");
+        emailFilter.setPlaceholder("Filtrar por email");
+        phoneFilter.setPlaceholder("Filtrar por teléfono");
+        dateOfBirthFilter.setPlaceholder("Filtrar por fecha nac.");
+        occupationFilter.setPlaceholder("Filtrar por ocupación");
+        lastContactedFilter.setPlaceholder("Filtrar por últ. contacto");
+        lastInterviewedFilter.setPlaceholder("Filtrar por últ. entrevista");
+
+        // Añadir listeners para refrescar el grid
+        firstNameFilter.addValueChangeListener(e -> grid.getDataProvider().refreshAll());
+        lastNameFilter.addValueChangeListener(e -> grid.getDataProvider().refreshAll());
+        emailFilter.addValueChangeListener(e -> grid.getDataProvider().refreshAll());
+        phoneFilter.addValueChangeListener(e -> grid.getDataProvider().refreshAll());
+        dateOfBirthFilter.addValueChangeListener(e -> grid.getDataProvider().refreshAll());
+        occupationFilter.addValueChangeListener(e -> grid.getDataProvider().refreshAll());
+        lastContactedFilter.addValueChangeListener(e -> grid.getDataProvider().refreshAll());
+        lastInterviewedFilter.addValueChangeListener(e -> grid.getDataProvider().refreshAll());
+
         // Configure Grid
-        grid.addColumn("firstName").setAutoWidth(true);
-        grid.addColumn("lastName").setAutoWidth(true);
-        grid.addColumn("email").setAutoWidth(true);
-        grid.addColumn("phone").setAutoWidth(true);
-        grid.addColumn("dateOfBirth").setAutoWidth(true);
-        grid.addColumn("occupation").setAutoWidth(true);
-        grid.addColumn("lastContacted").setAutoWidth(true);
-        grid.addColumn("lastInterviewed").setAutoWidth(true);
-        grid.setItems(query -> panelistService.list(VaadinSpringDataHelpers.toSpringPageRequest(query)).stream());
+        grid.addColumn("firstName").setKey("firstName").setAutoWidth(true);
+        grid.addColumn("lastName").setKey("lastName").setAutoWidth(true);
+        grid.addColumn("email").setKey("email").setAutoWidth(true);
+        grid.addColumn("phone").setKey("phone").setAutoWidth(true);
+        grid.addColumn("dateOfBirth").setKey("dateOfBirth").setAutoWidth(true);
+        grid.addColumn("occupation").setKey("occupation").setAutoWidth(true);
+        grid.addColumn("lastContacted").setKey("lastContacted").setAutoWidth(true);
+        grid.addColumn("lastInterviewed").setKey("lastInterviewed").setAutoWidth(true);
+
+        grid.setItems(query -> {
+            String firstName = firstNameFilter.getValue();
+            String lastName = lastNameFilter.getValue();
+            String email = emailFilter.getValue();
+            String phone = phoneFilter.getValue();
+            LocalDate dateOfBirth = dateOfBirthFilter.getValue();
+            String occupation = occupationFilter.getValue();
+            LocalDate lastContacted = lastContactedFilter.getValue();
+            LocalDate lastInterviewed = lastInterviewedFilter.getValue();
+
+            return panelistService.list(
+                VaadinSpringDataHelpers.toSpringPageRequest(query),
+                firstName,
+                lastName,
+                email,
+                phone,
+                dateOfBirth,
+                occupation,
+                lastContacted,
+                lastInterviewed
+            ).stream();
+        });
         grid.addThemeVariants(GridVariant.LUMO_NO_BORDER);
 
         // when a row is selected or deselected, populate form
@@ -183,6 +237,16 @@ public class PanelistsView extends Div implements BeforeEnterObserver {
         wrapper.setClassName("grid-wrapper");
         splitLayout.addToPrimary(wrapper);
         wrapper.add(grid);
+
+        HeaderRow headerRow = grid.appendHeaderRow();
+        headerRow.getCell(grid.getColumnByKey("firstName")).setComponent(firstNameFilter);
+        headerRow.getCell(grid.getColumnByKey("lastName")).setComponent(lastNameFilter);
+        headerRow.getCell(grid.getColumnByKey("email")).setComponent(emailFilter);
+        headerRow.getCell(grid.getColumnByKey("phone")).setComponent(phoneFilter);
+        headerRow.getCell(grid.getColumnByKey("dateOfBirth")).setComponent(dateOfBirthFilter);
+        headerRow.getCell(grid.getColumnByKey("occupation")).setComponent(occupationFilter);
+        headerRow.getCell(grid.getColumnByKey("lastContacted")).setComponent(lastContactedFilter);
+        headerRow.getCell(grid.getColumnByKey("lastInterviewed")).setComponent(lastInterviewedFilter);
     }
 
     private void refreshGrid() {

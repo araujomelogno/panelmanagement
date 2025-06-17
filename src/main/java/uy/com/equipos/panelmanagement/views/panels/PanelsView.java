@@ -4,11 +4,13 @@ import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.checkbox.Checkbox;
+import com.vaadin.flow.component.combobox.ComboBox;
 import com.vaadin.flow.component.datepicker.DatePicker;
 import com.vaadin.flow.component.dependency.Uses;
 import com.vaadin.flow.component.formlayout.FormLayout;
 import com.vaadin.flow.component.grid.Grid;
 import com.vaadin.flow.component.grid.GridVariant;
+import com.vaadin.flow.component.grid.HeaderRow;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.icon.Icon;
 import com.vaadin.flow.component.notification.Notification;
@@ -28,6 +30,7 @@ import com.vaadin.flow.router.Route;
 import com.vaadin.flow.router.RouteAlias;
 import com.vaadin.flow.spring.data.VaadinSpringDataHelpers;
 import jakarta.annotation.security.PermitAll;
+import java.time.LocalDate;
 import java.util.Optional;
 import org.springframework.orm.ObjectOptimisticLockingFailureException;
 import org.vaadin.lineawesome.LineAwesomeIconUrl;
@@ -46,6 +49,11 @@ public class PanelsView extends Div implements BeforeEnterObserver {
     private final String PANEL_EDIT_ROUTE_TEMPLATE = "/%s/edit";
 
     private final Grid<Panel> grid = new Grid<>(Panel.class, false);
+
+    // Filtros de columna
+    private TextField nameFilter = new TextField();
+    private DatePicker createdFilter = new DatePicker();
+    private ComboBox<String> activeFilter = new ComboBox<>();
 
     private TextField name;
     private DatePicker created;
@@ -67,14 +75,26 @@ public class PanelsView extends Div implements BeforeEnterObserver {
         // Create UI
         SplitLayout splitLayout = new SplitLayout();
 
-        createGridLayout(splitLayout);
+        createGridLayout(splitLayout); // Esto ya añade el grid al layout
         createEditorLayout(splitLayout);
 
         add(splitLayout);
 
+        // Configurar placeholders para filtros
+        nameFilter.setPlaceholder("Filtrar por nombre");
+        createdFilter.setPlaceholder("Filtrar por fecha");
+        activeFilter.setPlaceholder("Filtrar por activo");
+        activeFilter.setItems("Todos", "Activo", "Inactivo");
+        activeFilter.setValue("Todos");
+
+        // Añadir listeners para refrescar el grid cuando cambian los filtros
+        nameFilter.addValueChangeListener(e -> grid.getDataProvider().refreshAll());
+        createdFilter.addValueChangeListener(e -> grid.getDataProvider().refreshAll());
+        activeFilter.addValueChangeListener(e -> grid.getDataProvider().refreshAll());
+
         // Configure Grid
-        grid.addColumn("name").setAutoWidth(true);
-        grid.addColumn("created").setAutoWidth(true);
+        grid.addColumn("name").setKey("name").setAutoWidth(true);
+        grid.addColumn("created").setKey("created").setAutoWidth(true);
         LitRenderer<Panel> activeRenderer = LitRenderer.<Panel>of(
                 "<vaadin-icon icon='vaadin:${item.icon}' style='width: var(--lumo-icon-size-s); height: var(--lumo-icon-size-s); color: ${item.color};'></vaadin-icon>")
                 .withProperty("icon", active -> active.isActive() ? "check" : "minus").withProperty("color",
@@ -82,9 +102,21 @@ public class PanelsView extends Div implements BeforeEnterObserver {
                                 ? "var(--lumo-primary-text-color)"
                                 : "var(--lumo-disabled-text-color)");
 
-        grid.addColumn(activeRenderer).setHeader("Active").setAutoWidth(true);
+        grid.addColumn(activeRenderer).setHeader("Active").setKey("active").setAutoWidth(true);
 
-        grid.setItems(query -> panelService.list(VaadinSpringDataHelpers.toSpringPageRequest(query)).stream());
+        grid.setItems(query -> {
+            String name = nameFilter.getValue();
+            LocalDate created = createdFilter.getValue();
+            String activeString = activeFilter.getValue();
+            Boolean activeBoolean = null;
+            if ("Activo".equals(activeString)) {
+                activeBoolean = true;
+            } else if ("Inactivo".equals(activeString)) {
+                activeBoolean = false;
+            }
+            // Asumiendo que panelService.list ahora toma estos parámetros
+            return panelService.list(VaadinSpringDataHelpers.toSpringPageRequest(query), name, created, activeBoolean).stream();
+        });
         grid.addThemeVariants(GridVariant.LUMO_NO_BORDER);
 
         // when a row is selected or deselected, populate form
@@ -183,6 +215,11 @@ public class PanelsView extends Div implements BeforeEnterObserver {
         wrapper.setClassName("grid-wrapper");
         splitLayout.addToPrimary(wrapper);
         wrapper.add(grid);
+
+        HeaderRow headerRow = grid.appendHeaderRow();
+        headerRow.getCell(grid.getColumnByKey("name")).setComponent(nameFilter);
+        headerRow.getCell(grid.getColumnByKey("created")).setComponent(createdFilter);
+        headerRow.getCell(grid.getColumnByKey("active")).setComponent(activeFilter);
     }
 
     private void refreshGrid() {

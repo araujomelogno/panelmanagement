@@ -7,6 +7,7 @@ import com.vaadin.flow.component.datepicker.DatePicker;
 import com.vaadin.flow.component.formlayout.FormLayout;
 import com.vaadin.flow.component.grid.Grid;
 import com.vaadin.flow.component.grid.GridVariant;
+import com.vaadin.flow.component.grid.HeaderRow;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.notification.Notification;
 import com.vaadin.flow.component.notification.Notification.Position;
@@ -23,6 +24,7 @@ import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
 import com.vaadin.flow.spring.data.VaadinSpringDataHelpers;
 import jakarta.annotation.security.PermitAll;
+import java.time.LocalDate;
 import java.util.Optional;
 import org.springframework.orm.ObjectOptimisticLockingFailureException;
 import org.vaadin.lineawesome.LineAwesomeIconUrl;
@@ -39,6 +41,11 @@ public class SurveysView extends Div implements BeforeEnterObserver {
     private final String SURVEY_EDIT_ROUTE_TEMPLATE = "surveys/%s/edit";
 
     private final Grid<Survey> grid = new Grid<>(Survey.class, false);
+
+    // Campos de filtro
+    private TextField nameFilter = new TextField();
+    private DatePicker initDateFilter = new DatePicker();
+    private TextField linkFilter = new TextField();
 
     private TextField name;
     private DatePicker initDate;
@@ -65,11 +72,32 @@ public class SurveysView extends Div implements BeforeEnterObserver {
 
         add(splitLayout);
 
+        // Configurar placeholders para filtros
+        nameFilter.setPlaceholder("Filtrar por nombre");
+        initDateFilter.setPlaceholder("Filtrar por fecha");
+        linkFilter.setPlaceholder("Filtrar por link");
+
+        // Añadir listeners para refrescar el grid
+        nameFilter.addValueChangeListener(e -> grid.getDataProvider().refreshAll());
+        initDateFilter.addValueChangeListener(e -> grid.getDataProvider().refreshAll());
+        linkFilter.addValueChangeListener(e -> grid.getDataProvider().refreshAll());
+
         // Configure Grid
-        grid.addColumn("name").setAutoWidth(true);
-        grid.addColumn("initDate").setAutoWidth(true);
-        grid.addColumn("link").setAutoWidth(true);
-        grid.setItems(query -> surveyService.list(VaadinSpringDataHelpers.toSpringPageRequest(query)).stream());
+        grid.addColumn("name").setKey("name").setAutoWidth(true);
+        grid.addColumn("initDate").setKey("initDate").setAutoWidth(true);
+        grid.addColumn("link").setKey("link").setAutoWidth(true);
+        grid.setItems(query -> {
+            String name = nameFilter.getValue();
+            LocalDate initDate = initDateFilter.getValue();
+            String link = linkFilter.getValue();
+
+            return surveyService.list(
+                VaadinSpringDataHelpers.toSpringPageRequest(query),
+                name,
+                initDate,
+                link
+            ).stream();
+        });
         grid.addThemeVariants(GridVariant.LUMO_NO_BORDER);
 
         // when a row is selected or deselected, populate form
@@ -168,6 +196,11 @@ public class SurveysView extends Div implements BeforeEnterObserver {
         wrapper.setClassName("grid-wrapper");
         splitLayout.addToPrimary(wrapper);
         wrapper.add(grid);
+
+        HeaderRow headerRow = grid.appendHeaderRow();
+        headerRow.getCell(grid.getColumnByKey("name")).setComponent(nameFilter);
+        headerRow.getCell(grid.getColumnByKey("initDate")).setComponent(initDateFilter);
+        headerRow.getCell(grid.getColumnByKey("link")).setComponent(linkFilter);
     }
 
     private void refreshGrid() {
