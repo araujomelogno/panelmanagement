@@ -45,10 +45,6 @@ public class UsersView extends Div implements BeforeEnterObserver {
     private TextField nameFilter = new TextField();
     private TextField emailFilter = new TextField();
 
-    // Campos de filtro
-    private TextField nameFilter = new TextField();
-    private TextField emailFilter = new TextField();
-
     private TextField name;
     private TextField password;
     private TextField email;
@@ -67,19 +63,16 @@ public class UsersView extends Div implements BeforeEnterObserver {
         addClassNames("users-view");
 
         // Configurar columnas del Grid PRIMERO
-
         grid.addColumn(AppUser::getName).setHeader("Nombre").setKey("name").setAutoWidth(true);
         grid.addColumn(AppUser::getPassword).setHeader("Contraseña").setAutoWidth(true);
         grid.addColumn(AppUser::getEmail).setHeader("Correo Electrónico").setKey("email").setAutoWidth(true);
         grid.addThemeVariants(GridVariant.LUMO_NO_BORDER);
-
 
         // Create UI - SplitLayout
         SplitLayout splitLayout = new SplitLayout();
         // createGridLayout ahora puede acceder a las keys de las columnas de forma segura
         createGridLayout(splitLayout);
         createEditorLayout(splitLayout);
-
         editorLayoutDiv.setVisible(false); // Ocultar el editor inicialmente
         add(splitLayout);
 

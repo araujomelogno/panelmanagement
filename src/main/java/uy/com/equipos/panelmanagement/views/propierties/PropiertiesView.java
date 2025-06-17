@@ -45,10 +45,6 @@ public class PropiertiesView extends Div implements BeforeEnterObserver {
     private TextField nameFilter = new TextField();
     private TextField typeFilter = new TextField();
 
-    // Campos de filtro
-    private TextField nameFilter = new TextField();
-    private TextField typeFilter = new TextField();
-
     private TextField name;
     private TextField type;
 
@@ -75,7 +71,6 @@ public class PropiertiesView extends Div implements BeforeEnterObserver {
         // createGridLayout ahora puede acceder a las keys de las columnas de forma segura
         createGridLayout(splitLayout);
         createEditorLayout(splitLayout);
-
         editorLayoutDiv.setVisible(false); // Ocultar el editor inicialmente
         add(splitLayout);
 

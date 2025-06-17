@@ -48,11 +48,6 @@ public class SurveysView extends Div implements BeforeEnterObserver {
     private DatePicker initDateFilter = new DatePicker();
     private TextField linkFilter = new TextField();
 
-    // Campos de filtro
-    private TextField nameFilter = new TextField();
-    private DatePicker initDateFilter = new DatePicker();
-    private TextField linkFilter = new TextField();
-
     private TextField name;
     private DatePicker initDate;
     private TextField link;
@@ -71,7 +66,6 @@ public class SurveysView extends Div implements BeforeEnterObserver {
         addClassNames("surveys-view");
 
         // Configurar columnas del Grid PRIMERO
-
         grid.addColumn(Survey::getName).setHeader("Nombre").setKey("name").setAutoWidth(true);
         grid.addColumn(Survey::getInitDate).setHeader("Fecha de Inicio").setKey("initDate").setAutoWidth(true);
         grid.addColumn(Survey::getLink).setHeader("Enlace").setKey("link").setAutoWidth(true);
@@ -82,7 +76,6 @@ public class SurveysView extends Div implements BeforeEnterObserver {
         // createGridLayout ahora puede acceder a las keys de las columnas de forma segura
         createGridLayout(splitLayout);
         createEditorLayout(splitLayout);
-
         editorLayoutDiv.setVisible(false); // Ocultar el editor inicialmente
         add(splitLayout);
 
