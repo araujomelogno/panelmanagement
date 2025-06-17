@@ -62,9 +62,8 @@ public class IncentivesView extends Div implements BeforeEnterObserver {
         addClassNames("incentives-view");
 
         // Configurar columnas del Grid PRIMERO
-        grid.addColumn("name").setKey("name").setAutoWidth(true);
-        grid.addColumn("quantityAvailable").setKey("quantityAvailable").setAutoWidth(true);
-
+        grid.addColumn(Incentive::getName).setHeader("Name").setKey("name").setAutoWidth(true);
+        grid.addColumn(Incentive::getQuantityAvailable).setHeader("Quantity Available").setKey("quantityAvailable").setAutoWidth(true);
         grid.addThemeVariants(GridVariant.LUMO_NO_BORDER);
 
         // Create UI - SplitLayout
