@@ -6,6 +6,7 @@ import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.formlayout.FormLayout;
 import com.vaadin.flow.component.grid.Grid;
 import com.vaadin.flow.component.grid.GridVariant;
+import com.vaadin.flow.component.grid.HeaderRow;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.notification.Notification;
 import com.vaadin.flow.component.notification.Notification.Position;
@@ -40,6 +41,10 @@ public class IncentivesView extends Div implements BeforeEnterObserver {
 
     private final Grid<Incentive> grid = new Grid<>(Incentive.class, false);
 
+    // Campos de filtro
+    private TextField nameFilter = new TextField();
+    private TextField quantityAvailableFilter = new TextField();
+
     private TextField name;
     private TextField quantityAvailable;
 
@@ -64,10 +69,27 @@ public class IncentivesView extends Div implements BeforeEnterObserver {
 
         add(splitLayout);
 
+        // Configurar placeholders para filtros
+        nameFilter.setPlaceholder("Filtrar por nombre");
+        quantityAvailableFilter.setPlaceholder("Filtrar por cantidad");
+
+        // Añadir listeners para refrescar el grid
+        nameFilter.addValueChangeListener(e -> grid.getDataProvider().refreshAll());
+        quantityAvailableFilter.addValueChangeListener(e -> grid.getDataProvider().refreshAll());
+
         // Configure Grid
-        grid.addColumn("name").setAutoWidth(true);
-        grid.addColumn("quantityAvailable").setAutoWidth(true);
-        grid.setItems(query -> incentiveService.list(VaadinSpringDataHelpers.toSpringPageRequest(query)).stream());
+        grid.addColumn("name").setKey("name").setAutoWidth(true);
+        grid.addColumn("quantityAvailable").setKey("quantityAvailable").setAutoWidth(true);
+        grid.setItems(query -> {
+            String name = nameFilter.getValue();
+            String quantityAvailableStr = quantityAvailableFilter.getValue();
+            // La conversión a Integer se manejará en el servicio o al crear la Specification
+            return incentiveService.list(
+                VaadinSpringDataHelpers.toSpringPageRequest(query),
+                name,
+                quantityAvailableStr
+            ).stream();
+        });
         grid.addThemeVariants(GridVariant.LUMO_NO_BORDER);
 
         // when a row is selected or deselected, populate form
@@ -167,6 +189,10 @@ public class IncentivesView extends Div implements BeforeEnterObserver {
         wrapper.setClassName("grid-wrapper");
         splitLayout.addToPrimary(wrapper);
         wrapper.add(grid);
+
+        HeaderRow headerRow = grid.appendHeaderRow();
+        headerRow.getCell(grid.getColumnByKey("name")).setComponent(nameFilter);
+        headerRow.getCell(grid.getColumnByKey("quantityAvailable")).setComponent(quantityAvailableFilter);
     }
 
     private void refreshGrid() {
