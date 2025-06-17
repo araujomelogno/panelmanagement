@@ -6,6 +6,7 @@ import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.formlayout.FormLayout;
 import com.vaadin.flow.component.grid.Grid;
 import com.vaadin.flow.component.grid.GridVariant;
+import com.vaadin.flow.component.grid.HeaderRow;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.notification.Notification;
 import com.vaadin.flow.component.notification.Notification.Position;
@@ -39,6 +40,10 @@ public class UsersView extends Div implements BeforeEnterObserver {
 
     private final Grid<AppUser> grid = new Grid<>(AppUser.class, false);
 
+    // Campos de filtro
+    private TextField nameFilter = new TextField();
+    private TextField emailFilter = new TextField();
+
     private TextField name;
     private TextField password;
     private TextField email;
@@ -64,11 +69,27 @@ public class UsersView extends Div implements BeforeEnterObserver {
 
         add(splitLayout);
 
+        // Configurar placeholders para filtros
+        nameFilter.setPlaceholder("Filtrar por nombre");
+        emailFilter.setPlaceholder("Filtrar por email");
+
+        // Añadir listeners para refrescar el grid
+        nameFilter.addValueChangeListener(e -> grid.getDataProvider().refreshAll());
+        emailFilter.addValueChangeListener(e -> grid.getDataProvider().refreshAll());
+
         // Configure Grid
-        grid.addColumn("name").setAutoWidth(true);
-        grid.addColumn("password").setAutoWidth(true);
-        grid.addColumn("email").setAutoWidth(true);
-        grid.setItems(query -> appUserService.list(VaadinSpringDataHelpers.toSpringPageRequest(query)).stream());
+        grid.addColumn("name").setKey("name").setAutoWidth(true);
+        grid.addColumn("password").setAutoWidth(true); // Sin filtro para password
+        grid.addColumn("email").setKey("email").setAutoWidth(true);
+        grid.setItems(query -> {
+            String name = nameFilter.getValue();
+            String email = emailFilter.getValue();
+            return appUserService.list(
+                VaadinSpringDataHelpers.toSpringPageRequest(query),
+                name,
+                email
+            ).stream();
+        });
         grid.addThemeVariants(GridVariant.LUMO_NO_BORDER);
 
         // when a row is selected or deselected, populate form
@@ -167,6 +188,10 @@ public class UsersView extends Div implements BeforeEnterObserver {
         wrapper.setClassName("grid-wrapper");
         splitLayout.addToPrimary(wrapper);
         wrapper.add(grid);
+
+        HeaderRow headerRow = grid.appendHeaderRow();
+        headerRow.getCell(grid.getColumnByKey("name")).setComponent(nameFilter);
+        headerRow.getCell(grid.getColumnByKey("email")).setComponent(emailFilter);
     }
 
     private void refreshGrid() {
