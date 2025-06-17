@@ -65,9 +65,11 @@ public class SurveysView extends Div implements BeforeEnterObserver {
         addClassNames("surveys-view");
 
         // Configurar columnas del Grid PRIMERO
+
         grid.addColumn(Survey::getName).setHeader("Nombre").setKey("name").setAutoWidth(true);
         grid.addColumn(Survey::getInitDate).setHeader("Fecha de Inicio").setKey("initDate").setAutoWidth(true);
         grid.addColumn(Survey::getLink).setHeader("Enlace").setKey("link").setAutoWidth(true);
+
         grid.addThemeVariants(GridVariant.LUMO_NO_BORDER);
 
         // Create UI - SplitLayout
@@ -78,6 +80,7 @@ public class SurveysView extends Div implements BeforeEnterObserver {
         add(splitLayout);
 
         // Configurar placeholders para filtros
+
         nameFilter.setPlaceholder("Filtrar por Nombre");
         initDateFilter.setPlaceholder("Filtrar por Fecha de Inicio");
         linkFilter.setPlaceholder("Filtrar por Enlace");

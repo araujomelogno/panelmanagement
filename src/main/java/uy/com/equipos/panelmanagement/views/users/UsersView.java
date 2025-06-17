@@ -62,9 +62,11 @@ public class UsersView extends Div implements BeforeEnterObserver {
         addClassNames("users-view");
 
         // Configurar columnas del Grid PRIMERO
+
         grid.addColumn(AppUser::getName).setHeader("Nombre").setKey("name").setAutoWidth(true);
         grid.addColumn(AppUser::getPassword).setHeader("Contraseña").setAutoWidth(true);
         grid.addColumn(AppUser::getEmail).setHeader("Correo Electrónico").setKey("email").setAutoWidth(true);
+
         grid.addThemeVariants(GridVariant.LUMO_NO_BORDER);
 
         // Create UI - SplitLayout
@@ -75,9 +77,10 @@ public class UsersView extends Div implements BeforeEnterObserver {
         add(splitLayout);
 
         // Configurar placeholders para filtros
+
         nameFilter.setPlaceholder("Filtrar por Nombre");
         emailFilter.setPlaceholder("Filtrar por Correo Electrónico");
-
+ 
         // Añadir listeners para refrescar el grid
         nameFilter.addValueChangeListener(e -> grid.getDataProvider().refreshAll());
         emailFilter.addValueChangeListener(e -> grid.getDataProvider().refreshAll());

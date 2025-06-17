@@ -60,10 +60,10 @@ public class IncentivesView extends Div implements BeforeEnterObserver {
     public IncentivesView(IncentiveService incentiveService) {
         this.incentiveService = incentiveService;
         addClassNames("incentives-view");
-
-        // Configurar columnas del Grid PRIMERO
+ 
         grid.addColumn(Incentive::getName).setHeader("Nombre").setKey("name").setAutoWidth(true);
         grid.addColumn(Incentive::getQuantityAvailable).setHeader("Cantidad Disponible").setKey("quantityAvailable").setAutoWidth(true);
+
         grid.addThemeVariants(GridVariant.LUMO_NO_BORDER);
 
         // Create UI - SplitLayout
@@ -74,8 +74,10 @@ public class IncentivesView extends Div implements BeforeEnterObserver {
         add(splitLayout);
 
         // Configurar placeholders para filtros
-        nameFilter.setPlaceholder("Filtrar por Nombre");
-        quantityAvailableFilter.setPlaceholder("Filtrar por Cantidad");
+
+        nameFilter.setPlaceholder("Filtrar por nombre");
+        quantityAvailableFilter.setPlaceholder("Filtrar por cantidad");
+
 
         // Añadir listeners para refrescar el grid
         nameFilter.addValueChangeListener(e -> grid.getDataProvider().refreshAll());

@@ -63,6 +63,7 @@ public class PropiertiesView extends Div implements BeforeEnterObserver {
         // Configurar columnas del Grid PRIMERO
         grid.addColumn(PanelistProperty::getName).setHeader("Nombre").setKey("name").setAutoWidth(true);
         grid.addColumn(PanelistProperty::getType).setHeader("Tipo").setKey("type").setAutoWidth(true);
+
         grid.addThemeVariants(GridVariant.LUMO_NO_BORDER);
 
         // Create UI - SplitLayout
@@ -73,8 +74,10 @@ public class PropiertiesView extends Div implements BeforeEnterObserver {
         add(splitLayout);
 
         // Configurar placeholders para filtros
+
         nameFilter.setPlaceholder("Filtrar por Nombre");
         typeFilter.setPlaceholder("Filtrar por Tipo");
+
 
         // Añadir listeners para refrescar el grid
         nameFilter.addValueChangeListener(e -> grid.getDataProvider().refreshAll());

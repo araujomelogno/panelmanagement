@@ -75,6 +75,7 @@ public class PanelistsView extends Div implements BeforeEnterObserver {
         addClassNames("panelists-view");
 
         // Configurar columnas del Grid PRIMERO
+
         grid.addColumn(Panelist::getFirstName).setHeader("Nombre").setKey("firstName").setAutoWidth(true);
         grid.addColumn(Panelist::getLastName).setHeader("Apellido").setKey("lastName").setAutoWidth(true);
         grid.addColumn(Panelist::getEmail).setHeader("Correo Electrónico").setKey("email").setAutoWidth(true);
@@ -83,6 +84,7 @@ public class PanelistsView extends Div implements BeforeEnterObserver {
         grid.addColumn(Panelist::getOccupation).setHeader("Ocupación").setKey("occupation").setAutoWidth(true);
         grid.addColumn(Panelist::getLastContacted).setHeader("Último Contacto").setKey("lastContacted").setAutoWidth(true);
         grid.addColumn(Panelist::getLastInterviewed).setHeader("Última Entrevista").setKey("lastInterviewed").setAutoWidth(true);
+
         grid.addThemeVariants(GridVariant.LUMO_NO_BORDER);
 
         // Create UI - SplitLayout
@@ -93,6 +95,7 @@ public class PanelistsView extends Div implements BeforeEnterObserver {
         add(splitLayout);
 
         // Configurar placeholders para filtros
+
         firstNameFilter.setPlaceholder("Filtrar por Nombre");
         lastNameFilter.setPlaceholder("Filtrar por Apellido");
         emailFilter.setPlaceholder("Filtrar por Correo Electrónico");
@@ -101,6 +104,7 @@ public class PanelistsView extends Div implements BeforeEnterObserver {
         occupationFilter.setPlaceholder("Filtrar por Ocupación");
         lastContactedFilter.setPlaceholder("Filtrar por Último Contacto");
         lastInterviewedFilter.setPlaceholder("Filtrar por Última Entrevista");
+
 
         // Añadir listeners para refrescar el grid
         firstNameFilter.addValueChangeListener(e -> grid.getDataProvider().refreshAll());
