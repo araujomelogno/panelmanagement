@@ -6,6 +6,7 @@ import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.formlayout.FormLayout;
 import com.vaadin.flow.component.grid.Grid;
 import com.vaadin.flow.component.grid.GridVariant;
+import com.vaadin.flow.component.grid.HeaderRow;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.notification.Notification;
 import com.vaadin.flow.component.notification.Notification.Position;
@@ -39,6 +40,10 @@ public class PropiertiesView extends Div implements BeforeEnterObserver {
 
     private final Grid<PanelistProperty> grid = new Grid<>(PanelistProperty.class, false);
 
+    // Campos de filtro
+    private TextField nameFilter = new TextField();
+    private TextField typeFilter = new TextField();
+
     private TextField name;
     private TextField type;
 
@@ -55,20 +60,37 @@ public class PropiertiesView extends Div implements BeforeEnterObserver {
         this.panelistPropertyService = panelistPropertyService;
         addClassNames("propierties-view");
 
-        // Create UI
-        SplitLayout splitLayout = new SplitLayout();
+        // Configurar columnas del Grid PRIMERO
+        grid.addColumn("name").setAutoWidth(true); // .setKey("name") removido
+        grid.addColumn("type").setAutoWidth(true); // .setKey("type") removido
+        grid.addThemeVariants(GridVariant.LUMO_NO_BORDER);
 
+        // Create UI - SplitLayout
+        SplitLayout splitLayout = new SplitLayout();
+        // createGridLayout ahora puede acceder a las keys de las columnas de forma segura
         createGridLayout(splitLayout);
         createEditorLayout(splitLayout);
-
         add(splitLayout);
 
-        // Configure Grid
-        grid.addColumn("name").setAutoWidth(true);
-        grid.addColumn("type").setAutoWidth(true);
-        grid.setItems(
-                query -> panelistPropertyService.list(VaadinSpringDataHelpers.toSpringPageRequest(query)).stream());
-        grid.addThemeVariants(GridVariant.LUMO_NO_BORDER);
+        // Configurar placeholders para filtros
+        nameFilter.setPlaceholder("Filtrar por nombre");
+        typeFilter.setPlaceholder("Filtrar por tipo");
+
+        // Añadir listeners para refrescar el grid
+        nameFilter.addValueChangeListener(e -> grid.getDataProvider().refreshAll());
+        typeFilter.addValueChangeListener(e -> grid.getDataProvider().refreshAll());
+
+        // Configurar el DataProvider del Grid
+        grid.setItems(query -> {
+            String nameVal = nameFilter.getValue();
+            String typeVal = typeFilter.getValue();
+
+            return panelistPropertyService.list(
+                VaadinSpringDataHelpers.toSpringPageRequest(query),
+                nameVal,
+                typeVal
+            ).stream();
+        });
 
         // when a row is selected or deselected, populate form
         grid.asSingleSelect().addValueChangeListener(event -> {
@@ -84,7 +106,6 @@ public class PropiertiesView extends Div implements BeforeEnterObserver {
         binder = new BeanValidationBinder<>(PanelistProperty.class);
 
         // Bind fields. This is where you'd define e.g. validation rules
-
         binder.bindInstanceFields(this);
 
         cancel.addClickListener(e -> {
@@ -166,6 +187,10 @@ public class PropiertiesView extends Div implements BeforeEnterObserver {
         wrapper.setClassName("grid-wrapper");
         splitLayout.addToPrimary(wrapper);
         wrapper.add(grid);
+
+        HeaderRow headerRow = grid.appendHeaderRow();
+        headerRow.getCell(grid.getColumnByKey("name")).setComponent(nameFilter);
+        headerRow.getCell(grid.getColumnByKey("type")).setComponent(typeFilter);
     }
 
     private void refreshGrid() {

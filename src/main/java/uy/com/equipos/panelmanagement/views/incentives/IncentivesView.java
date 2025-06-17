@@ -6,6 +6,7 @@ import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.formlayout.FormLayout;
 import com.vaadin.flow.component.grid.Grid;
 import com.vaadin.flow.component.grid.GridVariant;
+import com.vaadin.flow.component.grid.HeaderRow;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.notification.Notification;
 import com.vaadin.flow.component.notification.Notification.Position;
@@ -40,6 +41,10 @@ public class IncentivesView extends Div implements BeforeEnterObserver {
 
     private final Grid<Incentive> grid = new Grid<>(Incentive.class, false);
 
+    // Campos de filtro
+    private TextField nameFilter = new TextField();
+    private TextField quantityAvailableFilter = new TextField();
+
     private TextField name;
     private TextField quantityAvailable;
 
@@ -56,19 +61,37 @@ public class IncentivesView extends Div implements BeforeEnterObserver {
         this.incentiveService = incentiveService;
         addClassNames("incentives-view");
 
-        // Create UI
-        SplitLayout splitLayout = new SplitLayout();
+        // Configurar columnas del Grid PRIMERO
+        grid.addColumn("name").setAutoWidth(true); // .setKey("name") removido
+        grid.addColumn("quantityAvailable").setAutoWidth(true); // .setKey("quantityAvailable") removido
+        grid.addThemeVariants(GridVariant.LUMO_NO_BORDER);
 
+        // Create UI - SplitLayout
+        SplitLayout splitLayout = new SplitLayout();
+        // createGridLayout ahora puede acceder a las keys de las columnas de forma segura
         createGridLayout(splitLayout);
         createEditorLayout(splitLayout);
-
         add(splitLayout);
 
-        // Configure Grid
-        grid.addColumn("name").setAutoWidth(true);
-        grid.addColumn("quantityAvailable").setAutoWidth(true);
-        grid.setItems(query -> incentiveService.list(VaadinSpringDataHelpers.toSpringPageRequest(query)).stream());
-        grid.addThemeVariants(GridVariant.LUMO_NO_BORDER);
+        // Configurar placeholders para filtros
+        nameFilter.setPlaceholder("Filtrar por nombre");
+        quantityAvailableFilter.setPlaceholder("Filtrar por cantidad");
+
+        // Añadir listeners para refrescar el grid
+        nameFilter.addValueChangeListener(e -> grid.getDataProvider().refreshAll());
+        quantityAvailableFilter.addValueChangeListener(e -> grid.getDataProvider().refreshAll());
+
+        // Configurar el DataProvider del Grid
+        grid.setItems(query -> {
+            String nameVal = nameFilter.getValue();
+            String quantityAvailableStrVal = quantityAvailableFilter.getValue();
+            // La conversión a Integer se manejará en el servicio o al crear la Specification
+            return incentiveService.list(
+                VaadinSpringDataHelpers.toSpringPageRequest(query),
+                nameVal,
+                quantityAvailableStrVal
+            ).stream();
+        });
 
         // when a row is selected or deselected, populate form
         grid.asSingleSelect().addValueChangeListener(event -> {
@@ -167,6 +190,10 @@ public class IncentivesView extends Div implements BeforeEnterObserver {
         wrapper.setClassName("grid-wrapper");
         splitLayout.addToPrimary(wrapper);
         wrapper.add(grid);
+
+        HeaderRow headerRow = grid.appendHeaderRow();
+        headerRow.getCell(grid.getColumnByKey("name")).setComponent(nameFilter);
+        headerRow.getCell(grid.getColumnByKey("quantityAvailable")).setComponent(quantityAvailableFilter);
     }
 
     private void refreshGrid() {
