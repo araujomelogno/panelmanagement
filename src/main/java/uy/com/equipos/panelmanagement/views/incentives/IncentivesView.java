@@ -45,10 +45,7 @@ public class IncentivesView extends Div implements BeforeEnterObserver {
     // Campos de filtro
     private TextField nameFilter = new TextField();
     private TextField quantityAvailableFilter = new TextField();
-
-    // Campos de filtro
-    private TextField nameFilter = new TextField();
-    private TextField quantityAvailableFilter = new TextField();
+ 
 
     private TextField name;
     private TextField quantityAvailable;
@@ -66,10 +63,7 @@ public class IncentivesView extends Div implements BeforeEnterObserver {
         this.incentiveService = incentiveService;
         addClassNames("incentives-view");
  
-        grid.addColumn(Incentive::getName).setHeader("Nombre").setKey("name").setAutoWidth(true);
-        grid.addColumn(Incentive::getQuantityAvailable).setHeader("Cantidad Disponible").setKey("quantityAvailable").setAutoWidth(true);
-
-
+       
         // Configurar columnas del Grid PRIMERO
         grid.addColumn(Incentive::getName).setHeader("Nombre").setKey("name").setAutoWidth(true);
         grid.addColumn(Incentive::getQuantityAvailable).setHeader("Cantidad Disponible").setKey("quantityAvailable").setAutoWidth(true);

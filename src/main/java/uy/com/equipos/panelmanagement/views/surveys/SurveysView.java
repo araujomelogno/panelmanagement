@@ -47,12 +47,7 @@ public class SurveysView extends Div implements BeforeEnterObserver {
     private TextField nameFilter = new TextField();
     private DatePicker initDateFilter = new DatePicker();
     private TextField linkFilter = new TextField();
-
-    // Campos de filtro
-    private TextField nameFilter = new TextField();
-    private DatePicker initDateFilter = new DatePicker();
-    private TextField linkFilter = new TextField();
-
+ 
     private TextField name;
     private DatePicker initDate;
     private TextField link;

@@ -51,10 +51,6 @@ public class PanelsView extends Div implements BeforeEnterObserver {
     private final Grid<Panel> grid = new Grid<>(Panel.class, false);
     private Div editorLayoutDiv; // Declarado como miembro de la clase
 
-    // Filtros de columna
-    private TextField nameFilter = new TextField();
-    private DatePicker createdFilter = new DatePicker();
-    private ComboBox<String> activeFilter = new ComboBox<>();
 
     // Filtros de columna
     private TextField nameFilter = new TextField();
@@ -127,9 +123,7 @@ public class PanelsView extends Div implements BeforeEnterObserver {
             return panelService.list(VaadinSpringDataHelpers.toSpringPageRequest(query), nameVal, createdVal, activeBoolean).stream();
         });
 
-
-        // Create UI - SplitLayout
-        SplitLayout splitLayout = new SplitLayout();
+ 
         // createGridLayout ahora puede acceder a las keys de las columnas de forma segura
         createGridLayout(splitLayout);
         createEditorLayout(splitLayout);
