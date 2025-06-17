@@ -6,6 +6,7 @@ import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.formlayout.FormLayout;
 import com.vaadin.flow.component.grid.Grid;
 import com.vaadin.flow.component.grid.GridVariant;
+import com.vaadin.flow.component.grid.HeaderRow;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.notification.Notification;
 import com.vaadin.flow.component.notification.Notification.Position;
@@ -39,12 +40,17 @@ public class IncentivesView extends Div implements BeforeEnterObserver {
     private final String INCENTIVE_EDIT_ROUTE_TEMPLATE = "incentives/%s/edit";
 
     private final Grid<Incentive> grid = new Grid<>(Incentive.class, false);
+    private Div editorLayoutDiv; // Declarado como miembro de la clase
+
+    // Campos de filtro
+    private TextField nameFilter = new TextField();
+    private TextField quantityAvailableFilter = new TextField();
 
     private TextField name;
     private TextField quantityAvailable;
 
-    private final Button cancel = new Button("Cancel");
-    private final Button save = new Button("Save");
+    private final Button cancel = new Button("Cancelar");
+    private final Button save = new Button("Guardar");
 
     private final BeanValidationBinder<Incentive> binder;
 
@@ -56,26 +62,46 @@ public class IncentivesView extends Div implements BeforeEnterObserver {
         this.incentiveService = incentiveService;
         addClassNames("incentives-view");
 
-        // Create UI
-        SplitLayout splitLayout = new SplitLayout();
+        // Configurar columnas del Grid PRIMERO
+        grid.addColumn(Incentive::getName).setHeader("Nombre").setKey("name").setAutoWidth(true);
+        grid.addColumn(Incentive::getQuantityAvailable).setHeader("Cantidad Disponible").setKey("quantityAvailable").setAutoWidth(true);
+        grid.addThemeVariants(GridVariant.LUMO_NO_BORDER);
 
+        // Create UI - SplitLayout
+        SplitLayout splitLayout = new SplitLayout();
+        // createGridLayout ahora puede acceder a las keys de las columnas de forma segura
         createGridLayout(splitLayout);
         createEditorLayout(splitLayout);
-
+        editorLayoutDiv.setVisible(false); // Ocultar el editor inicialmente
         add(splitLayout);
 
-        // Configure Grid
-        grid.addColumn("name").setAutoWidth(true);
-        grid.addColumn("quantityAvailable").setAutoWidth(true);
-        grid.setItems(query -> incentiveService.list(VaadinSpringDataHelpers.toSpringPageRequest(query)).stream());
-        grid.addThemeVariants(GridVariant.LUMO_NO_BORDER);
+        // Configurar placeholders para filtros
+        nameFilter.setPlaceholder("Filtrar por Nombre");
+        quantityAvailableFilter.setPlaceholder("Filtrar por Cantidad");
+
+        // Añadir listeners para refrescar el grid
+        nameFilter.addValueChangeListener(e -> grid.getDataProvider().refreshAll());
+        quantityAvailableFilter.addValueChangeListener(e -> grid.getDataProvider().refreshAll());
+
+        // Configurar el DataProvider del Grid
+        grid.setItems(query -> {
+            String nameVal = nameFilter.getValue();
+            String quantityAvailableStrVal = quantityAvailableFilter.getValue();
+            // La conversión a Integer se manejará en el servicio o al crear la Specification
+            return incentiveService.list(
+                VaadinSpringDataHelpers.toSpringPageRequest(query),
+                nameVal,
+                quantityAvailableStrVal
+            ).stream();
+        });
 
         // when a row is selected or deselected, populate form
         grid.asSingleSelect().addValueChangeListener(event -> {
             if (event.getValue() != null) {
+                editorLayoutDiv.setVisible(true);
                 UI.getCurrent().navigate(String.format(INCENTIVE_EDIT_ROUTE_TEMPLATE, event.getValue().getId()));
             } else {
-                clearForm();
+                clearForm(); // clearForm ahora también oculta el editor
                 UI.getCurrent().navigate(IncentivesView.class);
             }
         });
@@ -84,7 +110,7 @@ public class IncentivesView extends Div implements BeforeEnterObserver {
         binder = new BeanValidationBinder<>(Incentive.class);
 
         // Bind fields. This is where you'd define e.g. validation rules
-        binder.forField(quantityAvailable).withConverter(new StringToIntegerConverter("Only numbers are allowed"))
+        binder.forField(quantityAvailable).withConverter(new StringToIntegerConverter("Solo se permiten números"))
                 .bind("quantityAvailable");
 
         binder.bindInstanceFields(this);
@@ -103,15 +129,15 @@ public class IncentivesView extends Div implements BeforeEnterObserver {
                 incentiveService.save(this.incentive);
                 clearForm();
                 refreshGrid();
-                Notification.show("Data updated");
+                Notification.show("Datos actualizados");
                 UI.getCurrent().navigate(IncentivesView.class);
             } catch (ObjectOptimisticLockingFailureException exception) {
                 Notification n = Notification.show(
-                        "Error updating the data. Somebody else has updated the record while you were making changes.");
+                        "Error al actualizar los datos. Otro usuario modificó el registro mientras usted realizaba cambios.");
                 n.setPosition(Position.MIDDLE);
                 n.addThemeVariants(NotificationVariant.LUMO_ERROR);
             } catch (ValidationException validationException) {
-                Notification.show("Failed to update the data. Check again that all values are valid");
+                Notification.show("Fallo al actualizar los datos. Verifique nuevamente que todos los valores sean válidos");
             }
         });
     }
@@ -123,19 +149,25 @@ public class IncentivesView extends Div implements BeforeEnterObserver {
             Optional<Incentive> incentiveFromBackend = incentiveService.get(incentiveId.get());
             if (incentiveFromBackend.isPresent()) {
                 populateForm(incentiveFromBackend.get());
+                editorLayoutDiv.setVisible(true);
             } else {
-                Notification.show(String.format("The requested incentive was not found, ID = %s", incentiveId.get()),
+                Notification.show(String.format("El incentivo solicitado no fue encontrado, ID = %s", incentiveId.get()),
                         3000, Notification.Position.BOTTOM_START);
                 // when a row is selected but the data is no longer available,
                 // refresh grid
                 refreshGrid();
+                if (editorLayoutDiv != null) {
+                    editorLayoutDiv.setVisible(false);
+                }
                 event.forwardTo(IncentivesView.class);
             }
+        } else {
+            clearForm(); // Asegurar que el editor esté oculto si no hay ID
         }
     }
 
     private void createEditorLayout(SplitLayout splitLayout) {
-        Div editorLayoutDiv = new Div();
+        editorLayoutDiv = new Div(); // Instanciar el miembro de la clase
         editorLayoutDiv.setClassName("editor-layout");
 
         Div editorDiv = new Div();
@@ -143,8 +175,8 @@ public class IncentivesView extends Div implements BeforeEnterObserver {
         editorLayoutDiv.add(editorDiv);
 
         FormLayout formLayout = new FormLayout();
-        name = new TextField("Name");
-        quantityAvailable = new TextField("Quantity Available");
+        name = new TextField("Nombre");
+        quantityAvailable = new TextField("Cantidad Disponible");
         formLayout.add(name, quantityAvailable);
 
         editorDiv.add(formLayout);
@@ -167,6 +199,10 @@ public class IncentivesView extends Div implements BeforeEnterObserver {
         wrapper.setClassName("grid-wrapper");
         splitLayout.addToPrimary(wrapper);
         wrapper.add(grid);
+
+        HeaderRow headerRow = grid.appendHeaderRow();
+        headerRow.getCell(grid.getColumnByKey("name")).setComponent(nameFilter);
+        headerRow.getCell(grid.getColumnByKey("quantityAvailable")).setComponent(quantityAvailableFilter);
     }
 
     private void refreshGrid() {
@@ -176,6 +212,9 @@ public class IncentivesView extends Div implements BeforeEnterObserver {
 
     private void clearForm() {
         populateForm(null);
+        if (editorLayoutDiv != null) { // Buena práctica verificar nulidad
+            editorLayoutDiv.setVisible(false);
+        }
     }
 
     private void populateForm(Incentive value) {
