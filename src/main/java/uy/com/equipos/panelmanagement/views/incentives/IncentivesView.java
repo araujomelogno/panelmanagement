@@ -46,6 +46,10 @@ public class IncentivesView extends Div implements BeforeEnterObserver {
     private TextField nameFilter = new TextField();
     private TextField quantityAvailableFilter = new TextField();
 
+    // Campos de filtro
+    private TextField nameFilter = new TextField();
+    private TextField quantityAvailableFilter = new TextField();
+
     private TextField name;
     private TextField quantityAvailable;
 
@@ -61,10 +65,15 @@ public class IncentivesView extends Div implements BeforeEnterObserver {
     public IncentivesView(IncentiveService incentiveService) {
         this.incentiveService = incentiveService;
         addClassNames("incentives-view");
+ 
+        grid.addColumn(Incentive::getName).setHeader("Nombre").setKey("name").setAutoWidth(true);
+        grid.addColumn(Incentive::getQuantityAvailable).setHeader("Cantidad Disponible").setKey("quantityAvailable").setAutoWidth(true);
+
 
         // Configurar columnas del Grid PRIMERO
         grid.addColumn(Incentive::getName).setHeader("Nombre").setKey("name").setAutoWidth(true);
         grid.addColumn(Incentive::getQuantityAvailable).setHeader("Cantidad Disponible").setKey("quantityAvailable").setAutoWidth(true);
+
         grid.addThemeVariants(GridVariant.LUMO_NO_BORDER);
 
         // Create UI - SplitLayout
@@ -72,12 +81,14 @@ public class IncentivesView extends Div implements BeforeEnterObserver {
         // createGridLayout ahora puede acceder a las keys de las columnas de forma segura
         createGridLayout(splitLayout);
         createEditorLayout(splitLayout);
+
         editorLayoutDiv.setVisible(false); // Ocultar el editor inicialmente
         add(splitLayout);
 
         // Configurar placeholders para filtros
         nameFilter.setPlaceholder("Filtrar por Nombre");
         quantityAvailableFilter.setPlaceholder("Filtrar por Cantidad");
+
 
         // Añadir listeners para refrescar el grid
         nameFilter.addValueChangeListener(e -> grid.getDataProvider().refreshAll());

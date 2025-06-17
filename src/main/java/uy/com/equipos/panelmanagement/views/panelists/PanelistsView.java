@@ -53,6 +53,16 @@ public class PanelistsView extends Div implements BeforeEnterObserver {
     private DatePicker lastContactedFilter = new DatePicker();
     private DatePicker lastInterviewedFilter = new DatePicker();
 
+    // Campos de filtro
+    private TextField firstNameFilter = new TextField();
+    private TextField lastNameFilter = new TextField();
+    private TextField emailFilter = new TextField();
+    private TextField phoneFilter = new TextField();
+    private DatePicker dateOfBirthFilter = new DatePicker();
+    private TextField occupationFilter = new TextField();
+    private DatePicker lastContactedFilter = new DatePicker();
+    private DatePicker lastInterviewedFilter = new DatePicker();
+
     private TextField firstName;
     private TextField lastName;
     private TextField email;
@@ -76,6 +86,7 @@ public class PanelistsView extends Div implements BeforeEnterObserver {
         addClassNames("panelists-view");
 
         // Configurar columnas del Grid PRIMERO
+
         grid.addColumn(Panelist::getFirstName).setHeader("Nombre").setKey("firstName").setAutoWidth(true);
         grid.addColumn(Panelist::getLastName).setHeader("Apellido").setKey("lastName").setAutoWidth(true);
         grid.addColumn(Panelist::getEmail).setHeader("Correo Electrónico").setKey("email").setAutoWidth(true);
@@ -91,10 +102,11 @@ public class PanelistsView extends Div implements BeforeEnterObserver {
         // createGridLayout ahora puede acceder a las keys de las columnas de forma segura
         createGridLayout(splitLayout);
         createEditorLayout(splitLayout);
+
         editorLayoutDiv.setVisible(false); // Ocultar el editor inicialmente
         add(splitLayout);
 
-        // Configurar placeholders para filtros
+
         firstNameFilter.setPlaceholder("Filtrar por Nombre");
         lastNameFilter.setPlaceholder("Filtrar por Apellido");
         emailFilter.setPlaceholder("Filtrar por Correo Electrónico");

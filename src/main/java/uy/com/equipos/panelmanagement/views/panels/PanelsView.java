@@ -56,6 +56,11 @@ public class PanelsView extends Div implements BeforeEnterObserver {
     private DatePicker createdFilter = new DatePicker();
     private ComboBox<String> activeFilter = new ComboBox<>();
 
+    // Filtros de columna
+    private TextField nameFilter = new TextField();
+    private DatePicker createdFilter = new DatePicker();
+    private ComboBox<String> activeFilter = new ComboBox<>();
+
     private TextField name;
     private DatePicker created;
     private Checkbox active;
@@ -82,6 +87,7 @@ public class PanelsView extends Div implements BeforeEnterObserver {
                 .withProperty("color", panelItem -> panelItem.isActive()
                         ? "var(--lumo-primary-text-color)"
                         : "var(--lumo-disabled-text-color)");
+
         grid.addColumn(activeRenderer).setHeader("Activo").setKey("active").setAutoWidth(true);
         grid.addThemeVariants(GridVariant.LUMO_NO_BORDER);
 
@@ -98,6 +104,43 @@ public class PanelsView extends Div implements BeforeEnterObserver {
         createdFilter.setPlaceholder("Filtrar por Fecha de Creación");
         activeFilter.setPlaceholder("Filtrar por Estado");
         activeFilter.setItems("Todos", "Activo", "Inactivo"); // Estos ya están en español o son universales
+        activeFilter.setValue("Todos");
+
+        // Añadir listeners para refrescar el grid cuando cambian los filtros
+        // Estos listeners acceden a 'grid', que ya está inicializado.
+        nameFilter.addValueChangeListener(e -> grid.getDataProvider().refreshAll());
+        createdFilter.addValueChangeListener(e -> grid.getDataProvider().refreshAll());
+        activeFilter.addValueChangeListener(e -> grid.getDataProvider().refreshAll());
+
+        // Configurar el DataProvider del Grid
+        // Esto necesita que los filtros (nameFilter, etc.) estén disponibles.
+        grid.setItems(query -> {
+            String nameVal = nameFilter.getValue();
+            LocalDate createdVal = createdFilter.getValue();
+            String activeString = activeFilter.getValue();
+            Boolean activeBoolean = null;
+            if ("Activo".equals(activeString)) {
+                activeBoolean = true;
+            } else if ("Inactivo".equals(activeString)) {
+                activeBoolean = false;
+            }
+            return panelService.list(VaadinSpringDataHelpers.toSpringPageRequest(query), nameVal, createdVal, activeBoolean).stream();
+        });
+
+
+        // Create UI - SplitLayout
+        SplitLayout splitLayout = new SplitLayout();
+        // createGridLayout ahora puede acceder a las keys de las columnas de forma segura
+        createGridLayout(splitLayout);
+        createEditorLayout(splitLayout);
+        add(splitLayout);
+
+        // Configurar placeholders para filtros (ya deberían estar inicializados como miembros de clase)
+        nameFilter.setPlaceholder("Filtrar por Nombre");
+        createdFilter.setPlaceholder("Filtrar por Fecha de Creación");
+        activeFilter.setPlaceholder("Filtrar por Estado");
+        activeFilter.setItems("Todos", "Activo", "Inactivo"); // Estos ya están en español o son universales
+
         activeFilter.setValue("Todos");
 
         // Añadir listeners para refrescar el grid cuando cambian los filtros
