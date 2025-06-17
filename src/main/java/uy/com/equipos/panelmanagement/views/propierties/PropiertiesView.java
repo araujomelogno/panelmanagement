@@ -59,10 +59,10 @@ public class PropiertiesView extends Div implements BeforeEnterObserver {
     public PropiertiesView(PanelistPropertyService panelistPropertyService) {
         this.panelistPropertyService = panelistPropertyService;
         addClassNames("propierties-view");
+ 
+        grid.addColumn("name").setKey("name").setAutoWidth(true);
+        grid.addColumn("type").setKey("type").setAutoWidth(true);
 
-        // Configurar columnas del Grid PRIMERO
-        grid.addColumn("name").setAutoWidth(true); // .setKey("name") removido
-        grid.addColumn("type").setAutoWidth(true); // .setKey("type") removido
         grid.addThemeVariants(GridVariant.LUMO_NO_BORDER);
 
         // Create UI - SplitLayout

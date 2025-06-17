@@ -73,17 +73,67 @@ public class PanelistsView extends Div implements BeforeEnterObserver {
     public PanelistsView(PanelistService panelistService) {
         this.panelistService = panelistService;
         addClassNames("panelists-view");
-
-        // Configurar columnas del Grid PRIMERO
-        grid.addColumn("firstName").setAutoWidth(true);
-        grid.addColumn("lastName").setAutoWidth(true);
-        grid.addColumn("email").setAutoWidth(true);
-        grid.addColumn("phone").setAutoWidth(true);
-        grid.addColumn("dateOfBirth").setAutoWidth(true);
-        grid.addColumn("occupation").setAutoWidth(true);
-        grid.addColumn("lastContacted").setAutoWidth(true);
-        grid.addColumn("lastInterviewed").setAutoWidth(true);
+ 
+        grid.addColumn("firstName").setKey("firstName").setAutoWidth(true);
+        grid.addColumn("lastName").setKey("lastName").setAutoWidth(true);
+        grid.addColumn("email").setKey("email").setAutoWidth(true);
+        grid.addColumn("phone").setKey("phone").setAutoWidth(true);
+        grid.addColumn("dateOfBirth").setKey("dateOfBirth").setAutoWidth(true);
+        grid.addColumn("occupation").setKey("occupation").setAutoWidth(true);
+        grid.addColumn("lastContacted").setKey("lastContacted").setAutoWidth(true);
+        grid.addColumn("lastInterviewed").setKey("lastInterviewed").setAutoWidth(true);
         grid.addThemeVariants(GridVariant.LUMO_NO_BORDER);
+
+        // Create UI - SplitLayout
+        SplitLayout splitLayout = new SplitLayout();
+        // createGridLayout ahora puede acceder a las keys de las columnas de forma segura
+        createGridLayout(splitLayout);
+        createEditorLayout(splitLayout);
+        add(splitLayout);
+
+        // Configurar placeholders para filtros
+        firstNameFilter.setPlaceholder("Filtrar por nombre");
+        lastNameFilter.setPlaceholder("Filtrar por apellido");
+        emailFilter.setPlaceholder("Filtrar por email");
+        phoneFilter.setPlaceholder("Filtrar por teléfono");
+        dateOfBirthFilter.setPlaceholder("Filtrar por fecha nac.");
+        occupationFilter.setPlaceholder("Filtrar por ocupación");
+        lastContactedFilter.setPlaceholder("Filtrar por últ. contacto");
+        lastInterviewedFilter.setPlaceholder("Filtrar por últ. entrevista");
+
+        // Añadir listeners para refrescar el grid
+        firstNameFilter.addValueChangeListener(e -> grid.getDataProvider().refreshAll());
+        lastNameFilter.addValueChangeListener(e -> grid.getDataProvider().refreshAll());
+        emailFilter.addValueChangeListener(e -> grid.getDataProvider().refreshAll());
+        phoneFilter.addValueChangeListener(e -> grid.getDataProvider().refreshAll());
+        dateOfBirthFilter.addValueChangeListener(e -> grid.getDataProvider().refreshAll());
+        occupationFilter.addValueChangeListener(e -> grid.getDataProvider().refreshAll());
+        lastContactedFilter.addValueChangeListener(e -> grid.getDataProvider().refreshAll());
+        lastInterviewedFilter.addValueChangeListener(e -> grid.getDataProvider().refreshAll());
+
+        // Configurar el DataProvider del Grid
+        grid.setItems(query -> {
+            String firstNameVal = firstNameFilter.getValue();
+            String lastNameVal = lastNameFilter.getValue();
+            String emailVal = emailFilter.getValue();
+            String phoneVal = phoneFilter.getValue();
+            LocalDate dateOfBirthVal = dateOfBirthFilter.getValue();
+            String occupationVal = occupationFilter.getValue();
+            LocalDate lastContactedVal = lastContactedFilter.getValue();
+            LocalDate lastInterviewedVal = lastInterviewedFilter.getValue();
+
+            return panelistService.list(
+                VaadinSpringDataHelpers.toSpringPageRequest(query),
+                firstNameVal,
+                lastNameVal,
+                emailVal,
+                phoneVal,
+                dateOfBirthVal,
+                occupationVal,
+                lastContactedVal,
+                lastInterviewedVal
+            ).stream();
+        }); 
 
         // Create UI - SplitLayout
         SplitLayout splitLayout = new SplitLayout();

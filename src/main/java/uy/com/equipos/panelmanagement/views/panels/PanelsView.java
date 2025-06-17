@@ -73,6 +73,7 @@ public class PanelsView extends Div implements BeforeEnterObserver {
         addClassNames("panels-view");
 
         // Configurar columnas del Grid PRIMERO
+
         grid.addColumn("name").setAutoWidth(true); // .setKey("name") removido
         grid.addColumn("created").setAutoWidth(true); // .setKey("created") removido
         LitRenderer<Panel> activeRenderer = LitRenderer.<Panel>of(
@@ -82,6 +83,7 @@ public class PanelsView extends Div implements BeforeEnterObserver {
                         ? "var(--lumo-primary-text-color)"
                         : "var(--lumo-disabled-text-color)");
         grid.addColumn(activeRenderer).setHeader("Active").setKey("active").setAutoWidth(true); // .setKey("active") se mantiene
+
         grid.addThemeVariants(GridVariant.LUMO_NO_BORDER);
 
         // Create UI - SplitLayout

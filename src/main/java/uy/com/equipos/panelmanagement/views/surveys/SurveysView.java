@@ -63,11 +63,11 @@ public class SurveysView extends Div implements BeforeEnterObserver {
     public SurveysView(SurveyService surveyService) {
         this.surveyService = surveyService;
         addClassNames("surveys-view");
+ 
+        grid.addColumn("name").setKey("name").setAutoWidth(true);
+        grid.addColumn("initDate").setKey("initDate").setAutoWidth(true);
+        grid.addColumn("link").setKey("link").setAutoWidth(true);
 
-        // Configurar columnas del Grid PRIMERO
-        grid.addColumn("name").setAutoWidth(true); // .setKey("name") removido
-        grid.addColumn("initDate").setAutoWidth(true); // .setKey("initDate") removido
-        grid.addColumn("link").setAutoWidth(true); // .setKey("link") removido
         grid.addThemeVariants(GridVariant.LUMO_NO_BORDER);
 
         // Create UI - SplitLayout
