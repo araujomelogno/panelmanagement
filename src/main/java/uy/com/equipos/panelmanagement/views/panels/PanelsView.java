@@ -235,4 +235,5 @@ public class PanelsView extends Div implements BeforeEnterObserver {
         binder.readBean(this.panel);
 
     }
+    // Cambio trivial para republicar en nueva rama
 }
