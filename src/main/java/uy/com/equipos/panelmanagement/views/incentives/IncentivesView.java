@@ -141,7 +141,9 @@ public class IncentivesView extends Div implements BeforeEnterObserver {
 		binder = new BeanValidationBinder<>(Incentive.class);
 
 		// Bind fields. This is where you'd define e.g. validation rules
-		binder.forField(quantityAvailable).withConverter(new StringToIntegerConverter("Solo se permiten números"))
+		binder.forField(quantityAvailable)
+				.withConverter(new StringToIntegerConverter("Solo se permiten números"))
+				.withNullRepresentation("")
 				.bind("quantityAvailable");
 
 		binder.bindInstanceFields(this);
