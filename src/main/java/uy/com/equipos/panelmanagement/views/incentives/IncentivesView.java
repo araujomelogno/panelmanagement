@@ -254,6 +254,11 @@ public class IncentivesView extends Div implements BeforeEnterObserver {
 
 	private void populateForm(Incentive value) {
 		this.incentive = value;
+		if (this.incentive != null && this.incentive.getId() == null) {
+			// Para un nuevo incentivo, inicializar quantityAvailable a 0
+			// para evitar el error de binding con el TextField.
+			this.incentive.setQuantityAvailable(0);
+		}
 		binder.readBean(this.incentive);
 
 		if (deleteButton != null) { // Check if button is initialized
