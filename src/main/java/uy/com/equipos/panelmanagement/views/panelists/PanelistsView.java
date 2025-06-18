@@ -1,12 +1,12 @@
 package uy.com.equipos.panelmanagement.views.panelists;
 
 import com.vaadin.flow.component.UI;
-import com.vaadin.flow.component.listbox.MultiSelectListBox;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.datepicker.DatePicker;
+import com.vaadin.flow.component.dialog.Dialog;
 import com.vaadin.flow.component.formlayout.FormLayout;
-import com.vaadin.flow.component.grid.Grid;
+import com.vaadin.flow.component.grid.Grid; // Already present, but good to confirm
 import com.vaadin.flow.component.grid.GridVariant;
 import com.vaadin.flow.component.grid.HeaderRow;
 import com.vaadin.flow.component.html.Div;
@@ -32,15 +32,20 @@ import com.vaadin.flow.router.Route;
 import com.vaadin.flow.spring.data.VaadinSpringDataHelpers;
 import jakarta.annotation.security.PermitAll;
 import java.time.LocalDate;
+import java.util.HashMap; // Added
 import java.util.HashSet;
+import java.util.List; // Added
+import java.util.Map; // Added
 import java.util.Optional;
 import java.util.Set;
-import java.util.stream.Collectors;
+import java.util.stream.Collectors; // Added/Uncommented
 import org.springframework.orm.ObjectOptimisticLockingFailureException;
 import org.vaadin.lineawesome.LineAwesomeIconUrl;
 import uy.com.equipos.panelmanagement.data.Panelist;
 import uy.com.equipos.panelmanagement.data.PanelistProperty;
+import uy.com.equipos.panelmanagement.data.PanelistPropertyValue; // Added
 import uy.com.equipos.panelmanagement.services.PanelistPropertyService;
+import uy.com.equipos.panelmanagement.services.PanelistPropertyValueService;
 import uy.com.equipos.panelmanagement.services.PanelistService;
 
 @PageTitle("Panelistas")
@@ -73,23 +78,28 @@ public class PanelistsView extends Div implements BeforeEnterObserver {
 	private TextField occupation;
 	private DatePicker lastContacted;
 	private DatePicker lastInterviewed;
-	private MultiSelectListBox<PanelistProperty> propertiesField;
+	// private MultiSelectListBox<PanelistProperty> propertiesField; // Removed
+	private Button gestionarPropiedadesButton; // Added
 
 	private final Button cancel = new Button("Cancelar");
 	private final Button save = new Button("Guardar");
 	private Button deleteButton; // Add this with other button declarations
 	private Button nuevoPanelistaButton;
+	// private Button gestionarPropiedadesButton; // Removed duplicate declaration
 
 	private final BeanValidationBinder<Panelist> binder;
 
 	private Panelist panelist;
 
 	private final PanelistService panelistService;
-	private final PanelistPropertyService panelistPropertyService;
+	private final PanelistPropertyService panelistPropertyService; // Re-added
+    private final PanelistPropertyValueService panelistPropertyValueService; // Added new
+    private Dialog gestionarPropiedadesDialog; // Add new
 
-	public PanelistsView(PanelistService panelistService, PanelistPropertyService panelistPropertyService) {
+	public PanelistsView(PanelistService panelistService, PanelistPropertyService panelistPropertyService, PanelistPropertyValueService panelistPropertyValueService) {
 		this.panelistService = panelistService;
-		this.panelistPropertyService = panelistPropertyService;
+		this.panelistPropertyService = panelistPropertyService; // Re-added
+        this.panelistPropertyValueService = panelistPropertyValueService; // Added new
 		addClassNames("panelists-view");
 
 		// Initialize deleteButton EARLIER
@@ -208,8 +218,8 @@ public class PanelistsView extends Div implements BeforeEnterObserver {
 				}
 				binder.writeBean(this.panelist);
 
-				Set<PanelistProperty> selectedProperties = propertiesField.getValue();
-				this.panelist.setProperties(new HashSet<>(selectedProperties));
+				// Set<PanelistProperty> selectedProperties = propertiesField.getValue(); // Removed
+				// this.panelist.setProperties(new HashSet<>(selectedProperties)); // Removed - will be handled by PanelistPropertyValue logic later
 
 				panelistService.save(this.panelist);
 				clearForm();
@@ -269,13 +279,25 @@ public class PanelistsView extends Div implements BeforeEnterObserver {
 		occupation = new TextField("Ocupación");
 		lastContacted = new DatePicker("Último Contacto");
 		lastInterviewed = new DatePicker("Última Entrevista");
-		// START: Add properties field
-		propertiesField = new MultiSelectListBox<>();
-		propertiesField.setItems(panelistPropertyService.findAll());
-		propertiesField.setItemLabelGenerator(PanelistProperty::getName);
-		// END: Add properties field
+		// START: Add properties field - Removed
+		// propertiesField = new MultiSelectListBox<>(); // Removed
+		// propertiesField.setItems(panelistPropertyService.findAll()); // Removed
+		// propertiesField.setItemLabelGenerator(PanelistProperty::getName); // Removed
+		// END: Add properties field -- Removed
+		gestionarPropiedadesButton = new Button("Gestionar Propiedades"); // Added
+		gestionarPropiedadesButton.addClickListener(e -> {
+			if (this.panelist != null) {
+				createGestionarPropiedadesDialog(); // Ensure dialog is created
+				// Here you would typically pass the current panelist's data to the dialog
+				// or refresh the dialog's content based on the current panelist.
+				// For now, just opening it.
+				gestionarPropiedadesDialog.open();
+			} else {
+				Notification.show("Por favor, seleccione un panelista primero.", 3000, Notification.Position.MIDDLE);
+			}
+		});
 		formLayout.add(firstName, lastName, email, phone, dateOfBirth, occupation, lastContacted, lastInterviewed);
-		formLayout.addFormItem(propertiesField, "Propiedades"); // Add to form
+		formLayout.add(gestionarPropiedadesButton); // Added button here
 
 		editorDiv.add(formLayout);
 		createButtonLayout(editorLayoutDiv);
@@ -321,29 +343,139 @@ public class PanelistsView extends Div implements BeforeEnterObserver {
 		if (deleteButton != null) {
 			deleteButton.setEnabled(value != null && value.getId() != null);
 		}
-		// START: Populate properties field
-		if (value != null && value.getProperties() != null) {
-			propertiesField.setValue(value.getProperties());
-		} else {
-			if (propertiesField != null) { // Check if initialized
-				propertiesField.clear();
-			}
-		}
-		// END: Populate properties field
+		// START: Populate properties field - Removed
+		// if (value != null && value.getProperties() != null) { // Removed
+		// propertiesField.setValue(value.getProperties()); // Removed
+		// } else { // Removed
+		// if (propertiesField != null) { // Check if initialized // Removed
+		// propertiesField.clear(); // Removed
+		// } // Removed
+		// } // Removed
+		// END: Populate properties field - Removed
 	}
 
+	private void createGestionarPropiedadesDialog() {
+        // if (gestionarPropiedadesDialog == null) { // Keep this if structure if you want to create dialog only once
+        // For development, it might be easier to recreate it each time to see changes,
+        // or add logic to clear and repopulate its content.
+        // Let's assume we recreate or clear content for now.
+
+        gestionarPropiedadesDialog = new Dialog(); // Recreate for simplicity during dev, or clear previous content
+        gestionarPropiedadesDialog.setHeaderTitle("Gestionar Propiedades del Panelista: " +
+            (this.panelist != null ? this.panelist.getFirstName() + " " + this.panelist.getLastName() : ""));
+        gestionarPropiedadesDialog.setWidth("600px"); // Set a reasonable width
+        gestionarPropiedadesDialog.setHeight("500px");
+
+        Grid<PanelistProperty> propertiesGrid = new Grid<>(PanelistProperty.class, false);
+        final List<PanelistProperty> allProperties = panelistPropertyService.findAll();
+
+        // Map to hold TextFields for each PanelistProperty ID
+        final Map<Long, TextField> propertyValueFields = new HashMap<>();
+
+        // Load existing values for the current panelist
+        final Map<PanelistProperty, String> existingValuesMap = new HashMap<>(); // Made final
+        if (this.panelist != null && this.panelist.getId() != null) { // Ensure panelist is not new
+            // Assuming Panelist.getPropertyValues() is EAGER loaded or initialized by PanelistService.get()
+            Set<PanelistPropertyValue> currentValues = this.panelist.getPropertyValues();
+            if (currentValues != null) {
+                // existingValuesMap.clear(); // Not strictly needed as it's fresh if dialog is recreated
+                existingValuesMap.putAll(currentValues.stream()
+                    .collect(Collectors.toMap(PanelistPropertyValue::getPanelistProperty, PanelistPropertyValue::getValue)));
+            }
+        }
+
+        propertiesGrid.addColumn(PanelistProperty::getName).setHeader("Propiedad").setFlexGrow(1);
+        propertiesGrid.addColumn(PanelistProperty::getType).setHeader("Tipo").setFlexGrow(1);
+
+        propertiesGrid.addComponentColumn(panelistProperty -> {
+            TextField valueField = new TextField();
+            valueField.setPlaceholder("Valor...");
+            String existingValue = existingValuesMap.get(panelistProperty);
+            if (existingValue != null) {
+                valueField.setValue(existingValue);
+            }
+            propertyValueFields.put(panelistProperty.getId(), valueField);
+            return valueField;
+        }).setHeader("Valor").setFlexGrow(2);
+
+        propertiesGrid.setItems(allProperties);
+        propertiesGrid.setWidthFull();
+
+        gestionarPropiedadesDialog.add(propertiesGrid);
+
+        Button saveDialogButton = new Button("Guardar", e -> {
+            // Initial Save Logic (more detailed logic to follow in next step)
+            if (this.panelist == null || this.panelist.getId() == null) {
+                Notification.show("No hay un panelista seleccionado o el panelista es nuevo.", 3000, Notification.Position.MIDDLE);
+                return;
+            }
+
+            // Retrieve existing property values for the panelist
+            // This assumes Panelist.getPropertyValues() returns a mutable set or we replace it.
+            Set<PanelistPropertyValue> updatedPropertyValues = new HashSet<>(this.panelist.getPropertyValues());
+            // Keep track of properties that have values to avoid creating duplicates if logic is re-run
+            Set<PanelistProperty> propertiesWithValue = updatedPropertyValues.stream()
+                                                                 .map(PanelistPropertyValue::getPanelistProperty)
+                                                                 .collect(Collectors.toSet());
+
+            for (PanelistProperty prop : allProperties) {
+                TextField valueField = propertyValueFields.get(prop.getId());
+                String newValue = valueField.getValue();
+
+                Optional<PanelistPropertyValue> existingPpvOptional = updatedPropertyValues.stream()
+                    .filter(ppv -> ppv.getPanelistProperty().equals(prop))
+                    .findFirst();
+
+                if (newValue != null && !newValue.trim().isEmpty()) {
+                    if (existingPpvOptional.isPresent()) {
+                        // Update existing value
+                        existingPpvOptional.get().setValue(newValue);
+                    } else {
+                        // Create new PanelistPropertyValue
+                        PanelistPropertyValue newPpv = new PanelistPropertyValue();
+                        newPpv.setPanelist(this.panelist);
+                        newPpv.setPanelistProperty(prop);
+                        newPpv.setValue(newValue);
+                        updatedPropertyValues.add(newPpv); // Add to the set
+                    }
+                } else {
+                    // If value is empty and it existed, remove it
+                    existingPpvOptional.ifPresent(updatedPropertyValues::remove);
+                }
+            }
+
+            this.panelist.setPropertyValues(updatedPropertyValues); // Update the panelist's collection
+
+            try {
+                panelistService.save(this.panelist); // This should cascade the changes to PanelistPropertyValue
+                Notification.show("Propiedades guardadas para " + this.panelist.getFirstName(), 3000, Notification.Position.BOTTOM_START);
+            } catch (Exception ex) {
+                Notification.show("Error al guardar propiedades: " + ex.getMessage(), 5000, Notification.Position.MIDDLE);
+                ex.printStackTrace(); // For debugging
+            }
+
+            gestionarPropiedadesDialog.close();
+            // Consider refreshing the main grid or other UI parts if necessary
+        });
+        saveDialogButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
+
+        Button cancelDialogButton = new Button("Cancelar", e -> gestionarPropiedadesDialog.close());
+        gestionarPropiedadesDialog.getFooter().add(cancelDialogButton, saveDialogButton);
+        // } // End of if (gestionarPropiedadesDialog == null)
+    }
+
 	private void clearForm() {
-		populateForm(null); // This will also clear propertiesField if value is null
+		populateForm(null);
 		if (editorLayoutDiv != null) { // Buena práctica verificar nulidad
 			editorLayoutDiv.setVisible(false);
 		}
 		if (deleteButton != null) {
 			deleteButton.setEnabled(false);
 		}
-		// Explicitly clear propertiesField, ensure it's initialized
-		if (propertiesField != null) {
-			propertiesField.clear();
-		}
+		// Explicitly clear propertiesField, ensure it's initialized - Removed
+		// if (propertiesField != null) { // Removed
+		// propertiesField.clear(); // Removed
+		// } // Removed
 	}
 
 	private void onDeleteClicked() {
