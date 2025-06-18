@@ -58,4 +58,8 @@ public class PanelistPropertyService {
         return (int) repository.count();
     }
 
+    public List<PanelistProperty> findAll() {
+        return repository.findAll();
+    }
+
 }
