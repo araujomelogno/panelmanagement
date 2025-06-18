@@ -45,25 +45,17 @@ public class UsersView extends Div implements BeforeEnterObserver {
     private final Grid<AppUser> grid = new Grid<>(AppUser.class, false);
     private Div editorLayoutDiv; // Declarado como miembro de la clase
 
-
     // Campos de filtro
     private TextField nameFilter = new TextField();
     private TextField emailFilter = new TextField();
 
-
-    // Campos de filtro
-    private TextField nameFilter = new TextField();
-    private TextField emailFilter = new TextField();
- 
     private TextField name;
     private TextField password;
     private TextField email;
 
     private final Button cancel = new Button("Cancelar");
     private final Button save = new Button("Guardar");
-
     private Button nuevoUsuarioButton;
-
 
     private final BeanValidationBinder<AppUser> binder;
 
@@ -75,12 +67,12 @@ public class UsersView extends Div implements BeforeEnterObserver {
         this.appUserService = appUserService;
         addClassNames("users-view");
 
- 
+        // Configurar columnas del Grid PRIMERO
         grid.addColumn(AppUser::getName).setHeader("Nombre").setKey("name").setAutoWidth(true);
         grid.addColumn(AppUser::getPassword).setHeader("Contraseña").setAutoWidth(true);
         grid.addColumn(AppUser::getEmail).setHeader("Correo Electrónico").setKey("email").setAutoWidth(true);
         grid.addThemeVariants(GridVariant.LUMO_NO_BORDER);
- 
+
         // Create UI - SplitLayout
         SplitLayout splitLayout = new SplitLayout();
         // createGridLayout ahora puede acceder a las keys de las columnas de forma segura
@@ -89,7 +81,7 @@ public class UsersView extends Div implements BeforeEnterObserver {
         // editorLayoutDiv.setVisible(false); // Se maneja después de add(mainLayout)
 
         // Crear barra de título
-        H2 pageTitleText = new H2("Usuarios");
+        H2 pageTitleText = new H2("Usuarios"); 
         nuevoUsuarioButton = new Button("Nuevo Usuario");
         HorizontalLayout titleBar = new HorizontalLayout(pageTitleText, nuevoUsuarioButton);
         titleBar.setWidthFull();
@@ -101,25 +93,22 @@ public class UsersView extends Div implements BeforeEnterObserver {
         mainLayout.setPadding(false);
         mainLayout.setSpacing(false);
 
-        add(mainLayout);
-        if (editorLayoutDiv != null) {
+        add(mainLayout); 
+        if (editorLayoutDiv != null) { 
             editorLayoutDiv.setVisible(false);
         }
- 
+
         // Listener para el botón "Nuevo Usuario"
         nuevoUsuarioButton.addClickListener(click -> {
-            grid.asSingleSelect().clear();
-            populateForm(new AppUser());
+            grid.asSingleSelect().clear();      
+            populateForm(new AppUser());        
             if (editorLayoutDiv != null) {
-                editorLayoutDiv.setVisible(true);
+                editorLayoutDiv.setVisible(true); 
             }
-            if (name != null) {
+            if (name != null) { 
                 name.focus();
             }
         });
-
-        editorLayoutDiv.setVisible(false); // Ocultar el editor inicialmente
-        add(splitLayout);
 
         // Configurar placeholders para filtros
         nameFilter.setPlaceholder("Filtrar por Nombre");
@@ -198,7 +187,7 @@ public class UsersView extends Div implements BeforeEnterObserver {
                 // when a row is selected but the data is no longer available,
                 // refresh grid
                 refreshGrid();
-                if (editorLayoutDiv != null) {
+                if (editorLayoutDiv != null) { 
                     editorLayoutDiv.setVisible(false);
                 }
                 event.forwardTo(UsersView.class);

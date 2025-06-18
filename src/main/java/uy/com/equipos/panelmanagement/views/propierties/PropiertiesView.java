@@ -45,22 +45,15 @@ public class PropiertiesView extends Div implements BeforeEnterObserver {
     private final Grid<PanelistProperty> grid = new Grid<>(PanelistProperty.class, false);
     private Div editorLayoutDiv; // Declarado como miembro de la clase
 
-
     // Campos de filtro
     private TextField nameFilter = new TextField();
     private TextField typeFilter = new TextField();
 
-
-    // Campos de filtro
-    private TextField nameFilter = new TextField();
-    private TextField typeFilter = new TextField();
- 
     private TextField name;
     private TextField type;
 
     private final Button cancel = new Button("Cancelar");
     private final Button save = new Button("Guardar");
-
     private Button nuevaPropiedadButton;
 
     private final BeanValidationBinder<PanelistProperty> binder;
@@ -86,7 +79,7 @@ public class PropiertiesView extends Div implements BeforeEnterObserver {
         // editorLayoutDiv.setVisible(false); // Se maneja después de add(mainLayout)
 
         // Crear barra de título
-        H2 pageTitleText = new H2("Propiedades de Panelistas");
+        H2 pageTitleText = new H2("Propiedades de Panelistas"); 
         nuevaPropiedadButton = new Button("Nueva Propiedad");
         HorizontalLayout titleBar = new HorizontalLayout(pageTitleText, nuevaPropiedadButton);
         titleBar.setWidthFull();
@@ -98,26 +91,22 @@ public class PropiertiesView extends Div implements BeforeEnterObserver {
         mainLayout.setPadding(false);
         mainLayout.setSpacing(false);
 
-        add(mainLayout);
-        if (editorLayoutDiv != null) {
+        add(mainLayout); 
+        if (editorLayoutDiv != null) { 
             editorLayoutDiv.setVisible(false);
         }
- 
+
         // Listener para el botón "Nueva Propiedad"
         nuevaPropiedadButton.addClickListener(click -> {
-            grid.asSingleSelect().clear();
-            populateForm(new PanelistProperty());
+            grid.asSingleSelect().clear();      
+            populateForm(new PanelistProperty());        
             if (editorLayoutDiv != null) {
-                editorLayoutDiv.setVisible(true);
+                editorLayoutDiv.setVisible(true); 
             }
-            if (name != null) {
+            if (name != null) { 
                 name.focus();
             }
         });
-
-        editorLayoutDiv.setVisible(false); // Ocultar el editor inicialmente
-        add(splitLayout);
-
 
         // Configurar placeholders para filtros
         nameFilter.setPlaceholder("Filtrar por Nombre");
@@ -126,7 +115,7 @@ public class PropiertiesView extends Div implements BeforeEnterObserver {
         // Añadir listeners para refrescar el grid
         nameFilter.addValueChangeListener(e -> grid.getDataProvider().refreshAll());
         typeFilter.addValueChangeListener(e -> grid.getDataProvider().refreshAll());
-
+        
         // Configurar el DataProvider del Grid
         grid.setItems(query -> {
             String nameVal = nameFilter.getValue();

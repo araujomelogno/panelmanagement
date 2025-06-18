@@ -50,15 +50,12 @@ public class IncentivesView extends Div implements BeforeEnterObserver {
     private TextField nameFilter = new TextField();
     private TextField quantityAvailableFilter = new TextField();
 
-
     private TextField name;
     private TextField quantityAvailable;
 
     private final Button cancel = new Button("Cancelar");
     private final Button save = new Button("Guardar");
-
     private Button nuevoIncentivoButton;
-
 
     private final BeanValidationBinder<Incentive> binder;
 
@@ -69,17 +66,10 @@ public class IncentivesView extends Div implements BeforeEnterObserver {
     public IncentivesView(IncentiveService incentiveService) {
         this.incentiveService = incentiveService;
         addClassNames("incentives-view");
- 
-       
-        // Configurar columnas del Grid PRIMERO
-        grid.addColumn(Incentive::getName).setHeader("Nombre").setKey("name").setAutoWidth(true);
-        grid.addColumn(Incentive::getQuantityAvailable).setHeader("Cantidad Disponible").setKey("quantityAvailable").setAutoWidth(true);
-
 
         // Configurar columnas del Grid PRIMERO
         grid.addColumn(Incentive::getName).setHeader("Nombre").setKey("name").setAutoWidth(true);
         grid.addColumn(Incentive::getQuantityAvailable).setHeader("Cantidad Disponible").setKey("quantityAvailable").setAutoWidth(true);
-
         grid.addThemeVariants(GridVariant.LUMO_NO_BORDER);
 
         // Create UI - SplitLayout
@@ -90,7 +80,7 @@ public class IncentivesView extends Div implements BeforeEnterObserver {
         // editorLayoutDiv.setVisible(false); // Se maneja después de add(mainLayout)
 
         // Crear barra de título
-        H2 pageTitleText = new H2("Incentivos");
+        H2 pageTitleText = new H2("Incentivos"); 
         nuevoIncentivoButton = new Button("Nuevo Incentivo");
         HorizontalLayout titleBar = new HorizontalLayout(pageTitleText, nuevoIncentivoButton);
         titleBar.setWidthFull();
@@ -102,27 +92,22 @@ public class IncentivesView extends Div implements BeforeEnterObserver {
         mainLayout.setPadding(false);
         mainLayout.setSpacing(false);
 
-        add(mainLayout);
-        if (editorLayoutDiv != null) {
+        add(mainLayout); 
+        if (editorLayoutDiv != null) { 
             editorLayoutDiv.setVisible(false);
         }
 
-
         // Listener para el botón "Nuevo Incentivo"
         nuevoIncentivoButton.addClickListener(click -> {
-            grid.asSingleSelect().clear();
-            populateForm(new Incentive());
+            grid.asSingleSelect().clear();      
+            populateForm(new Incentive());        
             if (editorLayoutDiv != null) {
-                editorLayoutDiv.setVisible(true);
+                editorLayoutDiv.setVisible(true); 
             }
-            if (name != null) {
+            if (name != null) { 
                 name.focus();
             }
         });
-
-        editorLayoutDiv.setVisible(false); // Ocultar el editor inicialmente
-        add(splitLayout);
-
 
         // Configurar placeholders para filtros
         nameFilter.setPlaceholder("Filtrar por Nombre");
@@ -140,7 +125,7 @@ public class IncentivesView extends Div implements BeforeEnterObserver {
             return incentiveService.list(
                 VaadinSpringDataHelpers.toSpringPageRequest(query),
                 nameVal,
-                quantityAvailableStrVal
+                quantityAvailableStrVal 
             ).stream();
         });
 
@@ -205,7 +190,7 @@ public class IncentivesView extends Div implements BeforeEnterObserver {
                 // when a row is selected but the data is no longer available,
                 // refresh grid
                 refreshGrid();
-                if (editorLayoutDiv != null) {
+                if (editorLayoutDiv != null) { 
                     editorLayoutDiv.setVisible(false);
                 }
                 event.forwardTo(IncentivesView.class);

@@ -68,9 +68,7 @@ public class PanelistsView extends Div implements BeforeEnterObserver {
 
     private final Button cancel = new Button("Cancelar");
     private final Button save = new Button("Guardar");
-
     private Button nuevoPanelistaButton;
-
 
     private final BeanValidationBinder<Panelist> binder;
 
@@ -82,7 +80,7 @@ public class PanelistsView extends Div implements BeforeEnterObserver {
         this.panelistService = panelistService;
         addClassNames("panelists-view");
 
-
+        // Configurar columnas del Grid PRIMERO
         grid.addColumn(Panelist::getFirstName).setHeader("Nombre").setKey("firstName").setAutoWidth(true);
         grid.addColumn(Panelist::getLastName).setHeader("Apellido").setKey("lastName").setAutoWidth(true);
         grid.addColumn(Panelist::getEmail).setHeader("Correo Electrónico").setKey("email").setAutoWidth(true);
@@ -114,28 +112,23 @@ public class PanelistsView extends Div implements BeforeEnterObserver {
         mainLayout.setSpacing(false);
 
         add(mainLayout);
-        if (editorLayoutDiv != null) {
+        if (editorLayoutDiv != null) { 
             editorLayoutDiv.setVisible(false);
         }
-
-
+        
         // Listener para el botón "Nuevo Panelista"
         nuevoPanelistaButton.addClickListener(click -> {
-            grid.asSingleSelect().clear();
-            populateForm(new Panelist());
+            grid.asSingleSelect().clear();      
+            populateForm(new Panelist());        
             if (editorLayoutDiv != null) {
-                editorLayoutDiv.setVisible(true);
+                editorLayoutDiv.setVisible(true); 
             }
-            if (firstName != null) {
+            if (firstName != null) { 
                 firstName.focus();
             }
         });
- 
-        editorLayoutDiv.setVisible(false); // Ocultar el editor inicialmente
-        add(splitLayout);
 
-
-
+        // Configurar placeholders para filtros
         firstNameFilter.setPlaceholder("Filtrar por Nombre");
         lastNameFilter.setPlaceholder("Filtrar por Apellido");
         emailFilter.setPlaceholder("Filtrar por Correo Electrónico");
@@ -154,7 +147,7 @@ public class PanelistsView extends Div implements BeforeEnterObserver {
         occupationFilter.addValueChangeListener(e -> grid.getDataProvider().refreshAll());
         lastContactedFilter.addValueChangeListener(e -> grid.getDataProvider().refreshAll());
         lastInterviewedFilter.addValueChangeListener(e -> grid.getDataProvider().refreshAll());
-
+        
         // Configurar el DataProvider del Grid
         grid.setItems(query -> {
             String firstNameVal = firstNameFilter.getValue();

@@ -51,8 +51,8 @@ public class RequestsView extends Div implements BeforeEnterObserver {
     private TextField email;
     private TextField phone;
 
-    private final Button cancel = new Button("Cancelar");
-    private final Button save = new Button("Guardar");
+    private final Button cancel = new Button("Cancelar"); 
+    private final Button save = new Button("Guardar"); 
     private Button nuevaSolicitudButton;
 
     private final BeanValidationBinder<Request> binder;
@@ -73,7 +73,7 @@ public class RequestsView extends Div implements BeforeEnterObserver {
         // editorLayoutDiv.setVisible(false); // Se maneja después de add(mainLayout)
 
         // Crear barra de título
-        H2 pageTitleText = new H2("Solicitudes de Panelistas");
+        H2 pageTitleText = new H2("Solicitudes de Panelistas"); 
         nuevaSolicitudButton = new Button("Nueva Solicitud");
         HorizontalLayout titleBar = new HorizontalLayout(pageTitleText, nuevaSolicitudButton);
         titleBar.setWidthFull();
@@ -84,24 +84,24 @@ public class RequestsView extends Div implements BeforeEnterObserver {
         mainLayout.setSizeFull();
         mainLayout.setPadding(false);
         mainLayout.setSpacing(false);
-
-        add(mainLayout);
-        if (this.editorLayoutDiv != null) {
+        
+        add(mainLayout); 
+        if (this.editorLayoutDiv != null) { 
             this.editorLayoutDiv.setVisible(false);
         }
 
         // Listener para el botón "Nueva Solicitud"
         nuevaSolicitudButton.addClickListener(click -> {
-            grid.asSingleSelect().clear();
-            populateForm(new Request());
+            grid.asSingleSelect().clear();      
+            populateForm(new Request());        
             if (editorLayoutDiv != null) {
-                editorLayoutDiv.setVisible(true);
+                editorLayoutDiv.setVisible(true); 
             }
-            if (firstName != null) {
+            if (firstName != null) { 
                 firstName.focus();
             }
         });
-
+        
         // Configure Grid
         grid.addColumn("firstName").setAutoWidth(true);
         grid.addColumn("lastName").setAutoWidth(true);

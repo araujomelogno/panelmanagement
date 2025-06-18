@@ -66,7 +66,6 @@ public class PanelsView extends Div implements BeforeEnterObserver {
 
     private final Button cancel = new Button("Cancelar");
     private final Button save = new Button("Guardar");
-
     private Button nuevoPanelButton;
 
     private final BeanValidationBinder<Panel> binder;
@@ -84,23 +83,22 @@ public class PanelsView extends Div implements BeforeEnterObserver {
         grid.addColumn(Panel::getCreated).setHeader("Creado").setKey("created").setAutoWidth(true);
         LitRenderer<Panel> activeRenderer = LitRenderer.<Panel>of(
                 "<vaadin-icon icon='vaadin:${item.icon}' style='width: var(--lumo-icon-size-s); height: var(--lumo-icon-size-s); color: ${item.color};'></vaadin-icon>")
-                .withProperty("icon", panelItem -> panelItem.isActive() ? "check" : "minus")
-                .withProperty("color", panelItem -> panelItem.isActive()
+                .withProperty("icon", panelItem -> panelItem.isActive() ? "check" : "minus") 
+                .withProperty("color", panelItem -> panelItem.isActive() 
                         ? "var(--lumo-primary-text-color)"
                         : "var(--lumo-disabled-text-color)");
-
-        grid.addColumn(activeRenderer).setHeader("Activo").setKey("active").setAutoWidth(true);
+        grid.addColumn(activeRenderer).setHeader("Activo").setKey("active").setAutoWidth(true); 
         grid.addThemeVariants(GridVariant.LUMO_NO_BORDER);
 
         // Create UI - SplitLayout
         SplitLayout splitLayout = new SplitLayout();
         // createGridLayout ahora puede acceder a las keys de las columnas de forma segura
-        createGridLayout(splitLayout);
+        createGridLayout(splitLayout); 
         createEditorLayout(splitLayout);
-
+        // editorLayoutDiv.setVisible(false); // Se maneja después de add(mainLayout)
 
         // Crear barra de título
-        H2 pageTitleText = new H2("Paneles");
+        H2 pageTitleText = new H2("Paneles"); 
         nuevoPanelButton = new Button("Nuevo Panel");
         HorizontalLayout titleBar = new HorizontalLayout(pageTitleText, nuevoPanelButton);
         titleBar.setWidthFull();
@@ -112,23 +110,20 @@ public class PanelsView extends Div implements BeforeEnterObserver {
         mainLayout.setPadding(false);
         mainLayout.setSpacing(false);
 
-        add(mainLayout);
-        if (editorLayoutDiv != null) {
+        add(mainLayout); 
+        if (editorLayoutDiv != null) { 
             editorLayoutDiv.setVisible(false);
         }
 
         // Listener para el botón "Nuevo Panel"
         nuevoPanelButton.addClickListener(click -> {
-            grid.asSingleSelect().clear();
-            populateForm(new Panel());
+            grid.asSingleSelect().clear();      
+            populateForm(new Panel());        
             if (editorLayoutDiv != null) {
-                editorLayoutDiv.setVisible(true);
+                editorLayoutDiv.setVisible(true); 
             }
-            name.focus();
+            name.focus();                     
         });
-
-        editorLayoutDiv.setVisible(false); // Ocultar el editor inicialmente
-        add(splitLayout);
 
         // Configurar placeholders para filtros (ya deberían estar inicializados como miembros de clase)
         nameFilter.setPlaceholder("Filtrar por Nombre");
@@ -142,48 +137,12 @@ public class PanelsView extends Div implements BeforeEnterObserver {
         nameFilter.addValueChangeListener(e -> grid.getDataProvider().refreshAll());
         createdFilter.addValueChangeListener(e -> grid.getDataProvider().refreshAll());
         activeFilter.addValueChangeListener(e -> grid.getDataProvider().refreshAll());
-
+        
         // Configurar el DataProvider del Grid
         // Esto necesita que los filtros (nameFilter, etc.) estén disponibles.
         grid.setItems(query -> {
-            String nameVal = nameFilter.getValue();
-            LocalDate createdVal = createdFilter.getValue();
-            String activeString = activeFilter.getValue();
-            Boolean activeBoolean = null;
-            if ("Activo".equals(activeString)) {
-                activeBoolean = true;
-            } else if ("Inactivo".equals(activeString)) {
-                activeBoolean = false;
-            }
-            return panelService.list(VaadinSpringDataHelpers.toSpringPageRequest(query), nameVal, createdVal, activeBoolean).stream();
-        });
-
- 
-        // createGridLayout ahora puede acceder a las keys de las columnas de forma segura
-        createGridLayout(splitLayout);
-        createEditorLayout(splitLayout);
-        add(splitLayout);
-
-
-        // Configurar placeholders para filtros (ya deberían estar inicializados como miembros de clase)
-        nameFilter.setPlaceholder("Filtrar por Nombre");
-        createdFilter.setPlaceholder("Filtrar por Fecha de Creación");
-        activeFilter.setPlaceholder("Filtrar por Estado");
-        activeFilter.setItems("Todos", "Activo", "Inactivo"); // Estos ya están en español o son universales
-
-        activeFilter.setValue("Todos");
-
-        // Añadir listeners para refrescar el grid cuando cambian los filtros
-        // Estos listeners acceden a 'grid', que ya está inicializado.
-        nameFilter.addValueChangeListener(e -> grid.getDataProvider().refreshAll());
-        createdFilter.addValueChangeListener(e -> grid.getDataProvider().refreshAll());
-        activeFilter.addValueChangeListener(e -> grid.getDataProvider().refreshAll());
-
-        // Configurar el DataProvider del Grid
-        // Esto necesita que los filtros (nameFilter, etc.) estén disponibles.
-        grid.setItems(query -> {
-            String nameVal = nameFilter.getValue();
-            LocalDate createdVal = createdFilter.getValue();
+            String nameVal = nameFilter.getValue(); 
+            LocalDate createdVal = createdFilter.getValue(); 
             String activeString = activeFilter.getValue();
             Boolean activeBoolean = null;
             if ("Activo".equals(activeString)) {
@@ -246,7 +205,7 @@ public class PanelsView extends Div implements BeforeEnterObserver {
             Optional<Panel> panelFromBackend = panelService.get(panelId.get());
             if (panelFromBackend.isPresent()) {
                 populateForm(panelFromBackend.get());
-                editorLayoutDiv.setVisible(true);
+                editorLayoutDiv.setVisible(true); 
             } else {
                 Notification.show(String.format("El panel solicitado no fue encontrado, ID = %s", panelId.get()), 3000,
                         Notification.Position.BOTTOM_START);

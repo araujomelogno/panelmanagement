@@ -47,24 +47,17 @@ public class SurveysView extends Div implements BeforeEnterObserver {
     private final Grid<Survey> grid = new Grid<>(Survey.class, false);
     private Div editorLayoutDiv; // Declarado como miembro de la clase
 
-
     // Campos de filtro
     private TextField nameFilter = new TextField();
     private DatePicker initDateFilter = new DatePicker();
     private TextField linkFilter = new TextField();
 
-    // Campos de filtro
-    private TextField nameFilter = new TextField();
-    private DatePicker initDateFilter = new DatePicker();
-    private TextField linkFilter = new TextField();
- 
     private TextField name;
     private DatePicker initDate;
     private TextField link;
 
     private final Button cancel = new Button("Cancelar");
     private final Button save = new Button("Guardar");
-
     private Button nuevaEncuestaButton;
 
     private final BeanValidationBinder<Survey> binder;
@@ -75,7 +68,9 @@ public class SurveysView extends Div implements BeforeEnterObserver {
 
     public SurveysView(SurveyService surveyService) {
         this.surveyService = surveyService;
-        addClassNames("surveys-view"); 
+        addClassNames("surveys-view");
+
+        // Configurar columnas del Grid PRIMERO
         grid.addColumn(Survey::getName).setHeader("Nombre").setKey("name").setAutoWidth(true);
         grid.addColumn(Survey::getInitDate).setHeader("Fecha de Inicio").setKey("initDate").setAutoWidth(true);
         grid.addColumn(Survey::getLink).setHeader("Enlace").setKey("link").setAutoWidth(true);
@@ -89,7 +84,7 @@ public class SurveysView extends Div implements BeforeEnterObserver {
         // editorLayoutDiv.setVisible(false); // Se maneja después de add(mainLayout)
 
         // Crear barra de título
-        H2 pageTitleText = new H2("Encuestas");
+        H2 pageTitleText = new H2("Encuestas"); 
         nuevaEncuestaButton = new Button("Nueva Encuesta");
         HorizontalLayout titleBar = new HorizontalLayout(pageTitleText, nuevaEncuestaButton);
         titleBar.setWidthFull();
@@ -101,27 +96,22 @@ public class SurveysView extends Div implements BeforeEnterObserver {
         mainLayout.setPadding(false);
         mainLayout.setSpacing(false);
 
-        add(mainLayout);
-        if (editorLayoutDiv != null) {
+        add(mainLayout); 
+        if (editorLayoutDiv != null) { 
             editorLayoutDiv.setVisible(false);
         }
-
-
+        
         // Listener para el botón "Nueva Encuesta"
         nuevaEncuestaButton.addClickListener(click -> {
-            grid.asSingleSelect().clear();
-            populateForm(new Survey());
+            grid.asSingleSelect().clear();      
+            populateForm(new Survey());        
             if (editorLayoutDiv != null) {
-                editorLayoutDiv.setVisible(true);
+                editorLayoutDiv.setVisible(true); 
             }
-            if (name != null) {
+            if (name != null) { 
                 name.focus();
             }
         });
-
-        editorLayoutDiv.setVisible(false); // Ocultar el editor inicialmente
-        add(splitLayout);
-
 
         // Configurar placeholders para filtros
         nameFilter.setPlaceholder("Filtrar por Nombre");
@@ -132,7 +122,7 @@ public class SurveysView extends Div implements BeforeEnterObserver {
         nameFilter.addValueChangeListener(e -> grid.getDataProvider().refreshAll());
         initDateFilter.addValueChangeListener(e -> grid.getDataProvider().refreshAll());
         linkFilter.addValueChangeListener(e -> grid.getDataProvider().refreshAll());
-
+        
         // Configurar el DataProvider del Grid
         grid.setItems(query -> {
             String nameVal = nameFilter.getValue();
@@ -205,7 +195,7 @@ public class SurveysView extends Div implements BeforeEnterObserver {
                 // when a row is selected but the data is no longer available,
                 // refresh grid
                 refreshGrid();
-                if (editorLayoutDiv != null) {
+                if (editorLayoutDiv != null) { 
                     editorLayoutDiv.setVisible(false);
                 }
                 event.forwardTo(SurveysView.class);
