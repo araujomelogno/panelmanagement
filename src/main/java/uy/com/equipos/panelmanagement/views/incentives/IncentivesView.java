@@ -46,6 +46,7 @@ public class IncentivesView extends Div implements BeforeEnterObserver {
     private TextField nameFilter = new TextField();
     private TextField quantityAvailableFilter = new TextField();
 
+
     private TextField name;
     private TextField quantityAvailable;
 

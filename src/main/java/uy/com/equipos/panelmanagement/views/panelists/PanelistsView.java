@@ -52,6 +52,7 @@ public class PanelistsView extends Div implements BeforeEnterObserver {
     private TextField occupationFilter = new TextField();
     private DatePicker lastContactedFilter = new DatePicker();
     private DatePicker lastInterviewedFilter = new DatePicker();
+ 
 
     private TextField firstName;
     private TextField lastName;

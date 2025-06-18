@@ -44,7 +44,7 @@ public class PropiertiesView extends Div implements BeforeEnterObserver {
     // Campos de filtro
     private TextField nameFilter = new TextField();
     private TextField typeFilter = new TextField();
-
+ 
     private TextField name;
     private TextField type;
 
