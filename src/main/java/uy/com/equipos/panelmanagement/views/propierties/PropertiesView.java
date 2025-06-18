@@ -69,6 +69,11 @@ public class PropertiesView extends Div implements BeforeEnterObserver {
 		this.panelistPropertyService = panelistPropertyService;
 		addClassNames("propierties-view");
 
+		// Initialize deleteButton EARLIER
+		deleteButton = new Button("Eliminar");
+		deleteButton.addThemeVariants(ButtonVariant.LUMO_ERROR, ButtonVariant.LUMO_PRIMARY);
+		deleteButton.addClickListener(e -> onDeleteClicked());
+
 		// Configurar columnas del Grid PRIMERO
 		grid.addColumn(PanelistProperty::getName).setHeader("Nombre").setKey("name").setAutoWidth(true);
 		grid.addColumn(PanelistProperty::getType).setHeader("Tipo").setKey("type").setAutoWidth(true);
@@ -140,10 +145,6 @@ public class PropertiesView extends Div implements BeforeEnterObserver {
 
 		// Bind fields. This is where you'd define e.g. validation rules
 		binder.bindInstanceFields(this);
-
-		deleteButton = new Button("Eliminar");
-		deleteButton.addThemeVariants(ButtonVariant.LUMO_ERROR, ButtonVariant.LUMO_PRIMARY);
-		deleteButton.addClickListener(e -> onDeleteClicked());
 
 		cancel.addClickListener(e -> {
 			clearForm();
@@ -242,18 +243,11 @@ public class PropertiesView extends Div implements BeforeEnterObserver {
 		grid.getDataProvider().refreshAll();
 	}
 
-	private void clearForm() {
-		populateForm(null);
-		if (editorLayoutDiv != null) { // Buena práctica verificar nulidad
-			editorLayoutDiv.setVisible(false);
-		}
-	}
-
 	private void populateForm(PanelistProperty value) {
 		this.panelistProperty = value;
 		binder.readBean(this.panelistProperty);
 
-		if (deleteButton != null) {
+		if (deleteButton != null) { 
 			 deleteButton.setEnabled(value != null && value.getId() != null);
 		}
 	}
@@ -277,7 +271,7 @@ public class PropertiesView extends Div implements BeforeEnterObserver {
 		com.vaadin.flow.component.confirmdialog.ConfirmDialog dialog = new com.vaadin.flow.component.confirmdialog.ConfirmDialog();
 		dialog.setHeader("Confirmar Eliminación");
 		dialog.setText("¿Está seguro de que desea eliminar la propiedad '" + this.panelistProperty.getName() + "'?");
-
+		
 		dialog.setConfirmText("Eliminar");
 		dialog.setConfirmButtonTheme("error primary");
 		dialog.setCancelText("Cancelar");

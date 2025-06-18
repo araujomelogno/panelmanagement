@@ -68,6 +68,11 @@ public class RequestsView extends Div implements BeforeEnterObserver {
 		this.requestService = requestService;
 		addClassNames("requests-view");
 
+		// Initialize deleteButton EARLIER
+		deleteButton = new Button("Eliminar");
+		deleteButton.addThemeVariants(ButtonVariant.LUMO_ERROR, ButtonVariant.LUMO_PRIMARY);
+		deleteButton.addClickListener(e -> onDeleteClicked());
+
 		// Create UI
 		SplitLayout splitLayout = new SplitLayout();
 
@@ -126,10 +131,6 @@ public class RequestsView extends Div implements BeforeEnterObserver {
 		// Bind fields. This is where you'd define e.g. validation rules
 
 		binder.bindInstanceFields(this);
-
-		deleteButton = new Button("Eliminar");
-		deleteButton.addThemeVariants(ButtonVariant.LUMO_ERROR, ButtonVariant.LUMO_PRIMARY);
-		deleteButton.addClickListener(e -> onDeleteClicked());
 
 		cancel.addClickListener(e -> {
 			clearForm();
@@ -229,18 +230,11 @@ public class RequestsView extends Div implements BeforeEnterObserver {
 		grid.getDataProvider().refreshAll();
 	}
 
-	private void clearForm() {
-		populateForm(null);
-		if (this.editorLayoutDiv != null) { // Buena práctica verificar nulidad
-			this.editorLayoutDiv.setVisible(false);
-		}
-	}
-
 	private void populateForm(Request value) {
 		this.request = value;
 		binder.readBean(this.request);
 
-		if (deleteButton != null) {
+		if (deleteButton != null) { 
 			 deleteButton.setEnabled(value != null && value.getId() != null);
 		}
 	}
@@ -264,7 +258,7 @@ public class RequestsView extends Div implements BeforeEnterObserver {
 		com.vaadin.flow.component.confirmdialog.ConfirmDialog dialog = new com.vaadin.flow.component.confirmdialog.ConfirmDialog();
 		dialog.setHeader("Confirmar Eliminación");
 		dialog.setText("¿Está seguro de que desea eliminar la solicitud de '" + this.request.getFirstName() + " " + this.request.getLastName() + "'?");
-
+		
 		dialog.setConfirmText("Eliminar");
 		dialog.setConfirmButtonTheme("error primary");
 		dialog.setCancelText("Cancelar");
