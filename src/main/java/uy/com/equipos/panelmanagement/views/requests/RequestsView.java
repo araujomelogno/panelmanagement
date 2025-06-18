@@ -68,6 +68,11 @@ public class RequestsView extends Div implements BeforeEnterObserver {
 		this.requestService = requestService;
 		addClassNames("requests-view");
 
+		// Initialize deleteButton EARLIER
+		deleteButton = new Button("Eliminar");
+		deleteButton.addThemeVariants(ButtonVariant.LUMO_ERROR, ButtonVariant.LUMO_PRIMARY);
+		deleteButton.addClickListener(e -> onDeleteClicked());
+
 		// Create UI
 		SplitLayout splitLayout = new SplitLayout();
 
@@ -126,10 +131,6 @@ public class RequestsView extends Div implements BeforeEnterObserver {
 		// Bind fields. This is where you'd define e.g. validation rules
 
 		binder.bindInstanceFields(this);
-
-		deleteButton = new Button("Eliminar");
-		deleteButton.addThemeVariants(ButtonVariant.LUMO_ERROR, ButtonVariant.LUMO_PRIMARY);
-		deleteButton.addClickListener(e -> onDeleteClicked());
 
 		cancel.addClickListener(e -> {
 			clearForm();
@@ -227,13 +228,6 @@ public class RequestsView extends Div implements BeforeEnterObserver {
 	private void refreshGrid() {
 		grid.select(null);
 		grid.getDataProvider().refreshAll();
-	}
-
-	private void clearForm() {
-		populateForm(null);
-		if (this.editorLayoutDiv != null) { // Buena práctica verificar nulidad
-			this.editorLayoutDiv.setVisible(false);
-		}
 	}
 
 	private void populateForm(Request value) {

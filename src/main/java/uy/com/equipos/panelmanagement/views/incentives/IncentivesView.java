@@ -70,6 +70,11 @@ public class IncentivesView extends Div implements BeforeEnterObserver {
 		this.incentiveService = incentiveService;
 		addClassNames("incentives-view");
 
+		// Initialize deleteButton EARLIER
+		deleteButton = new Button("Eliminar");
+		deleteButton.addThemeVariants(ButtonVariant.LUMO_ERROR, ButtonVariant.LUMO_PRIMARY);
+		deleteButton.addClickListener(e -> onDeleteClicked());
+
 		// Configurar columnas del Grid PRIMERO
 		grid.addColumn(Incentive::getName).setHeader("Nombre").setKey("name").setAutoWidth(true);
 		grid.addColumn(Incentive::getQuantityAvailable).setHeader("Cantidad Disponible").setKey("quantityAvailable")
@@ -149,10 +154,6 @@ public class IncentivesView extends Div implements BeforeEnterObserver {
 				.bind("quantityAvailable");
 
 		binder.bindInstanceFields(this);
-
-		deleteButton = new Button("Eliminar");
-		deleteButton.addThemeVariants(ButtonVariant.LUMO_ERROR, ButtonVariant.LUMO_PRIMARY);
-		deleteButton.addClickListener(e -> onDeleteClicked());
 
 		cancel.addClickListener(e -> {
 			clearForm();
@@ -249,13 +250,6 @@ public class IncentivesView extends Div implements BeforeEnterObserver {
 	private void refreshGrid() {
 		grid.select(null);
 		grid.getDataProvider().refreshAll();
-	}
-
-	private void clearForm() {
-		populateForm(null);
-		if (editorLayoutDiv != null) { // Buena práctica verificar nulidad
-			editorLayoutDiv.setVisible(false);
-		}
 	}
 
 	private void populateForm(Incentive value) {

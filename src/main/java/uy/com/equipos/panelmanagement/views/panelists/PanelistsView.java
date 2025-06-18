@@ -83,6 +83,11 @@ public class PanelistsView extends Div implements BeforeEnterObserver {
 		this.panelistService = panelistService;
 		addClassNames("panelists-view");
 
+		// Initialize deleteButton EARLIER
+		deleteButton = new Button("Eliminar");
+		deleteButton.addThemeVariants(ButtonVariant.LUMO_ERROR, ButtonVariant.LUMO_PRIMARY);
+		deleteButton.addClickListener(e -> onDeleteClicked());
+
 		// Configurar columnas del Grid PRIMERO
 		grid.addColumn(Panelist::getFirstName).setHeader("Nombre").setKey("firstName").setAutoWidth(true);
 		grid.addColumn(Panelist::getLastName).setHeader("Apellido").setKey("lastName").setAutoWidth(true);
@@ -181,10 +186,6 @@ public class PanelistsView extends Div implements BeforeEnterObserver {
 
 		// Bind fields. This is where you'd define e.g. validation rules
 		binder.bindInstanceFields(this);
-
-		deleteButton = new Button("Eliminar");
-		deleteButton.addThemeVariants(ButtonVariant.LUMO_ERROR, ButtonVariant.LUMO_PRIMARY);
-		deleteButton.addClickListener(e -> onDeleteClicked());
 
 		cancel.addClickListener(e -> {
 			clearForm();
@@ -292,13 +293,6 @@ public class PanelistsView extends Div implements BeforeEnterObserver {
 	private void refreshGrid() {
 		grid.select(null);
 		grid.getDataProvider().refreshAll();
-	}
-
-	private void clearForm() {
-		populateForm(null);
-		if (editorLayoutDiv != null) { // Buena práctica verificar nulidad
-			editorLayoutDiv.setVisible(false);
-		}
 	}
 
 	private void populateForm(Panelist value) {
