@@ -47,17 +47,24 @@ public class SurveysView extends Div implements BeforeEnterObserver {
     private final Grid<Survey> grid = new Grid<>(Survey.class, false);
     private Div editorLayoutDiv; // Declarado como miembro de la clase
 
+
     // Campos de filtro
     private TextField nameFilter = new TextField();
     private DatePicker initDateFilter = new DatePicker();
     private TextField linkFilter = new TextField();
 
+    // Campos de filtro
+    private TextField nameFilter = new TextField();
+    private DatePicker initDateFilter = new DatePicker();
+    private TextField linkFilter = new TextField();
+ 
     private TextField name;
     private DatePicker initDate;
     private TextField link;
 
     private final Button cancel = new Button("Cancelar");
     private final Button save = new Button("Guardar");
+
     private Button nuevaEncuestaButton;
 
     private final BeanValidationBinder<Survey> binder;
@@ -68,9 +75,7 @@ public class SurveysView extends Div implements BeforeEnterObserver {
 
     public SurveysView(SurveyService surveyService) {
         this.surveyService = surveyService;
-        addClassNames("surveys-view");
-
-        // Configurar columnas del Grid PRIMERO
+        addClassNames("surveys-view"); 
         grid.addColumn(Survey::getName).setHeader("Nombre").setKey("name").setAutoWidth(true);
         grid.addColumn(Survey::getInitDate).setHeader("Fecha de Inicio").setKey("initDate").setAutoWidth(true);
         grid.addColumn(Survey::getLink).setHeader("Enlace").setKey("link").setAutoWidth(true);
@@ -101,6 +106,7 @@ public class SurveysView extends Div implements BeforeEnterObserver {
             editorLayoutDiv.setVisible(false);
         }
 
+
         // Listener para el botón "Nueva Encuesta"
         nuevaEncuestaButton.addClickListener(click -> {
             grid.asSingleSelect().clear();
@@ -112,6 +118,10 @@ public class SurveysView extends Div implements BeforeEnterObserver {
                 name.focus();
             }
         });
+
+        editorLayoutDiv.setVisible(false); // Ocultar el editor inicialmente
+        add(splitLayout);
+
 
         // Configurar placeholders para filtros
         nameFilter.setPlaceholder("Filtrar por Nombre");

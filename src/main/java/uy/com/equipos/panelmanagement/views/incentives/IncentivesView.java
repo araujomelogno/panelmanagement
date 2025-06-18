@@ -50,12 +50,15 @@ public class IncentivesView extends Div implements BeforeEnterObserver {
     private TextField nameFilter = new TextField();
     private TextField quantityAvailableFilter = new TextField();
 
+
     private TextField name;
     private TextField quantityAvailable;
 
     private final Button cancel = new Button("Cancelar");
     private final Button save = new Button("Guardar");
+
     private Button nuevoIncentivoButton;
+
 
     private final BeanValidationBinder<Incentive> binder;
 
@@ -66,10 +69,17 @@ public class IncentivesView extends Div implements BeforeEnterObserver {
     public IncentivesView(IncentiveService incentiveService) {
         this.incentiveService = incentiveService;
         addClassNames("incentives-view");
+ 
+       
+        // Configurar columnas del Grid PRIMERO
+        grid.addColumn(Incentive::getName).setHeader("Nombre").setKey("name").setAutoWidth(true);
+        grid.addColumn(Incentive::getQuantityAvailable).setHeader("Cantidad Disponible").setKey("quantityAvailable").setAutoWidth(true);
+
 
         // Configurar columnas del Grid PRIMERO
         grid.addColumn(Incentive::getName).setHeader("Nombre").setKey("name").setAutoWidth(true);
         grid.addColumn(Incentive::getQuantityAvailable).setHeader("Cantidad Disponible").setKey("quantityAvailable").setAutoWidth(true);
+
         grid.addThemeVariants(GridVariant.LUMO_NO_BORDER);
 
         // Create UI - SplitLayout
@@ -97,6 +107,7 @@ public class IncentivesView extends Div implements BeforeEnterObserver {
             editorLayoutDiv.setVisible(false);
         }
 
+
         // Listener para el botón "Nuevo Incentivo"
         nuevoIncentivoButton.addClickListener(click -> {
             grid.asSingleSelect().clear();
@@ -108,6 +119,10 @@ public class IncentivesView extends Div implements BeforeEnterObserver {
                 name.focus();
             }
         });
+
+        editorLayoutDiv.setVisible(false); // Ocultar el editor inicialmente
+        add(splitLayout);
+
 
         // Configurar placeholders para filtros
         nameFilter.setPlaceholder("Filtrar por Nombre");

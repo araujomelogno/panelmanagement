@@ -45,15 +45,22 @@ public class PropiertiesView extends Div implements BeforeEnterObserver {
     private final Grid<PanelistProperty> grid = new Grid<>(PanelistProperty.class, false);
     private Div editorLayoutDiv; // Declarado como miembro de la clase
 
+
     // Campos de filtro
     private TextField nameFilter = new TextField();
     private TextField typeFilter = new TextField();
 
+
+    // Campos de filtro
+    private TextField nameFilter = new TextField();
+    private TextField typeFilter = new TextField();
+ 
     private TextField name;
     private TextField type;
 
     private final Button cancel = new Button("Cancelar");
     private final Button save = new Button("Guardar");
+
     private Button nuevaPropiedadButton;
 
     private final BeanValidationBinder<PanelistProperty> binder;
@@ -95,7 +102,7 @@ public class PropiertiesView extends Div implements BeforeEnterObserver {
         if (editorLayoutDiv != null) {
             editorLayoutDiv.setVisible(false);
         }
-
+ 
         // Listener para el botón "Nueva Propiedad"
         nuevaPropiedadButton.addClickListener(click -> {
             grid.asSingleSelect().clear();
@@ -107,6 +114,10 @@ public class PropiertiesView extends Div implements BeforeEnterObserver {
                 name.focus();
             }
         });
+
+        editorLayoutDiv.setVisible(false); // Ocultar el editor inicialmente
+        add(splitLayout);
+
 
         // Configurar placeholders para filtros
         nameFilter.setPlaceholder("Filtrar por Nombre");

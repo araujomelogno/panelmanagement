@@ -68,7 +68,9 @@ public class PanelistsView extends Div implements BeforeEnterObserver {
 
     private final Button cancel = new Button("Cancelar");
     private final Button save = new Button("Guardar");
+
     private Button nuevoPanelistaButton;
+
 
     private final BeanValidationBinder<Panelist> binder;
 
@@ -80,7 +82,7 @@ public class PanelistsView extends Div implements BeforeEnterObserver {
         this.panelistService = panelistService;
         addClassNames("panelists-view");
 
-        // Configurar columnas del Grid PRIMERO
+
         grid.addColumn(Panelist::getFirstName).setHeader("Nombre").setKey("firstName").setAutoWidth(true);
         grid.addColumn(Panelist::getLastName).setHeader("Apellido").setKey("lastName").setAutoWidth(true);
         grid.addColumn(Panelist::getEmail).setHeader("Correo Electrónico").setKey("email").setAutoWidth(true);
@@ -116,6 +118,7 @@ public class PanelistsView extends Div implements BeforeEnterObserver {
             editorLayoutDiv.setVisible(false);
         }
 
+
         // Listener para el botón "Nuevo Panelista"
         nuevoPanelistaButton.addClickListener(click -> {
             grid.asSingleSelect().clear();
@@ -127,8 +130,12 @@ public class PanelistsView extends Div implements BeforeEnterObserver {
                 firstName.focus();
             }
         });
+ 
+        editorLayoutDiv.setVisible(false); // Ocultar el editor inicialmente
+        add(splitLayout);
 
-        // Configurar placeholders para filtros
+
+
         firstNameFilter.setPlaceholder("Filtrar por Nombre");
         lastNameFilter.setPlaceholder("Filtrar por Apellido");
         emailFilter.setPlaceholder("Filtrar por Correo Electrónico");
