@@ -7,10 +7,14 @@ import com.vaadin.flow.component.formlayout.FormLayout;
 import com.vaadin.flow.component.grid.Grid;
 import com.vaadin.flow.component.grid.GridVariant;
 import com.vaadin.flow.component.html.Div;
+import com.vaadin.flow.component.html.H2;
 import com.vaadin.flow.component.notification.Notification;
 import com.vaadin.flow.component.notification.Notification.Position;
 import com.vaadin.flow.component.notification.NotificationVariant;
+import com.vaadin.flow.component.orderedlayout.FlexComponent.Alignment;
+import com.vaadin.flow.component.orderedlayout.FlexComponent.JustifyContentMode;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
+import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.splitlayout.SplitLayout;
 import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.data.binder.BeanValidationBinder;
@@ -38,6 +42,7 @@ public class RequestsView extends Div implements BeforeEnterObserver {
     private final String REQUEST_EDIT_ROUTE_TEMPLATE = "requests/%s/edit";
 
     private final Grid<Request> grid = new Grid<>(Request.class, false);
+    private Div editorLayoutDiv; // Declarado como miembro de la clase
 
     private TextField firstName;
     private TextField lastName;
@@ -46,8 +51,9 @@ public class RequestsView extends Div implements BeforeEnterObserver {
     private TextField email;
     private TextField phone;
 
-    private final Button cancel = new Button("Cancel");
-    private final Button save = new Button("Save");
+    private final Button cancel = new Button("Cancelar");
+    private final Button save = new Button("Guardar");
+    private Button nuevaSolicitudButton;
 
     private final BeanValidationBinder<Request> binder;
 
@@ -64,8 +70,37 @@ public class RequestsView extends Div implements BeforeEnterObserver {
 
         createGridLayout(splitLayout);
         createEditorLayout(splitLayout);
+        // editorLayoutDiv.setVisible(false); // Se maneja después de add(mainLayout)
 
-        add(splitLayout);
+        // Crear barra de título
+        H2 pageTitleText = new H2("Solicitudes de Panelistas");
+        nuevaSolicitudButton = new Button("Nueva Solicitud");
+        HorizontalLayout titleBar = new HorizontalLayout(pageTitleText, nuevaSolicitudButton);
+        titleBar.setWidthFull();
+        titleBar.setDefaultVerticalComponentAlignment(Alignment.BASELINE);
+        titleBar.setJustifyContentMode(JustifyContentMode.BETWEEN);
+
+        VerticalLayout mainLayout = new VerticalLayout(titleBar, splitLayout);
+        mainLayout.setSizeFull();
+        mainLayout.setPadding(false);
+        mainLayout.setSpacing(false);
+
+        add(mainLayout);
+        if (this.editorLayoutDiv != null) {
+            this.editorLayoutDiv.setVisible(false);
+        }
+
+        // Listener para el botón "Nueva Solicitud"
+        nuevaSolicitudButton.addClickListener(click -> {
+            grid.asSingleSelect().clear();
+            populateForm(new Request());
+            if (editorLayoutDiv != null) {
+                editorLayoutDiv.setVisible(true);
+            }
+            if (firstName != null) {
+                firstName.focus();
+            }
+        });
 
         // Configure Grid
         grid.addColumn("firstName").setAutoWidth(true);
@@ -80,9 +115,10 @@ public class RequestsView extends Div implements BeforeEnterObserver {
         // when a row is selected or deselected, populate form
         grid.asSingleSelect().addValueChangeListener(event -> {
             if (event.getValue() != null) {
+                // this.editorLayoutDiv.setVisible(true); // Removido: beforeEnter lo manejará
                 UI.getCurrent().navigate(String.format(REQUEST_EDIT_ROUTE_TEMPLATE, event.getValue().getId()));
             } else {
-                clearForm();
+                clearForm(); // clearForm ahora también oculta el editor
                 UI.getCurrent().navigate(RequestsView.class);
             }
         });
@@ -108,15 +144,15 @@ public class RequestsView extends Div implements BeforeEnterObserver {
                 requestService.save(this.request);
                 clearForm();
                 refreshGrid();
-                Notification.show("Data updated");
+                Notification.show("Datos actualizados");
                 UI.getCurrent().navigate(RequestsView.class);
             } catch (ObjectOptimisticLockingFailureException exception) {
                 Notification n = Notification.show(
-                        "Error updating the data. Somebody else has updated the record while you were making changes.");
+                        "Error al actualizar los datos. Otro usuario modificó el registro mientras usted realizaba cambios.");
                 n.setPosition(Position.MIDDLE);
                 n.addThemeVariants(NotificationVariant.LUMO_ERROR);
             } catch (ValidationException validationException) {
-                Notification.show("Failed to update the data. Check again that all values are valid");
+                Notification.show("Fallo al actualizar los datos. Verifique nuevamente que todos los valores sean válidos");
             }
         });
     }
@@ -128,38 +164,46 @@ public class RequestsView extends Div implements BeforeEnterObserver {
             Optional<Request> requestFromBackend = requestService.get(requestId.get());
             if (requestFromBackend.isPresent()) {
                 populateForm(requestFromBackend.get());
+                if (this.editorLayoutDiv != null) {
+                    this.editorLayoutDiv.setVisible(true);
+                }
             } else {
-                Notification.show(String.format("The requested request was not found, ID = %s", requestId.get()), 3000,
+                Notification.show(String.format("La solicitud no fue encontrada, ID = %s", requestId.get()), 3000,
                         Notification.Position.BOTTOM_START);
                 // when a row is selected but the data is no longer available,
                 // refresh grid
                 refreshGrid();
+                if (this.editorLayoutDiv != null) {
+                    this.editorLayoutDiv.setVisible(false);
+                }
                 event.forwardTo(RequestsView.class);
             }
+        } else {
+            clearForm(); // Asegurar que el editor esté oculto si no hay ID
         }
     }
 
     private void createEditorLayout(SplitLayout splitLayout) {
-        Div editorLayoutDiv = new Div();
-        editorLayoutDiv.setClassName("editor-layout");
+        this.editorLayoutDiv = new Div(); // Instanciar el miembro de la clase
+        this.editorLayoutDiv.setClassName("editor-layout");
 
         Div editorDiv = new Div();
         editorDiv.setClassName("editor");
-        editorLayoutDiv.add(editorDiv);
+        this.editorLayoutDiv.add(editorDiv);
 
         FormLayout formLayout = new FormLayout();
-        firstName = new TextField("First Name");
-        lastName = new TextField("Last Name");
-        birhtdate = new TextField("Birhtdate");
-        sex = new TextField("Sex");
-        email = new TextField("Email");
-        phone = new TextField("Phone");
+        firstName = new TextField("Nombre");
+        lastName = new TextField("Apellido");
+        birhtdate = new TextField("Fecha de Nacimiento");
+        sex = new TextField("Sexo");
+        email = new TextField("Correo Electrónico");
+        phone = new TextField("Teléfono");
         formLayout.add(firstName, lastName, birhtdate, sex, email, phone);
 
         editorDiv.add(formLayout);
-        createButtonLayout(editorLayoutDiv);
+        createButtonLayout(this.editorLayoutDiv);
 
-        splitLayout.addToSecondary(editorLayoutDiv);
+        splitLayout.addToSecondary(this.editorLayoutDiv);
     }
 
     private void createButtonLayout(Div editorLayoutDiv) {
@@ -185,6 +229,9 @@ public class RequestsView extends Div implements BeforeEnterObserver {
 
     private void clearForm() {
         populateForm(null);
+        if (this.editorLayoutDiv != null) { // Buena práctica verificar nulidad
+            this.editorLayoutDiv.setVisible(false);
+        }
     }
 
     private void populateForm(Request value) {
@@ -192,4 +239,5 @@ public class RequestsView extends Div implements BeforeEnterObserver {
         binder.readBean(this.request);
 
     }
+    // Confirmando estado final de RequestsView con lógica de visibilidad y traducciones.
 }

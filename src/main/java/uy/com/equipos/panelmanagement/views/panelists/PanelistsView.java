@@ -9,10 +9,14 @@ import com.vaadin.flow.component.grid.Grid;
 import com.vaadin.flow.component.grid.GridVariant;
 import com.vaadin.flow.component.grid.HeaderRow;
 import com.vaadin.flow.component.html.Div;
+import com.vaadin.flow.component.html.H2;
 import com.vaadin.flow.component.notification.Notification;
 import com.vaadin.flow.component.notification.Notification.Position;
 import com.vaadin.flow.component.notification.NotificationVariant;
+import com.vaadin.flow.component.orderedlayout.FlexComponent.Alignment;
+import com.vaadin.flow.component.orderedlayout.FlexComponent.JustifyContentMode;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
+import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.splitlayout.SplitLayout;
 import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.data.binder.BeanValidationBinder;
@@ -52,7 +56,6 @@ public class PanelistsView extends Div implements BeforeEnterObserver {
     private TextField occupationFilter = new TextField();
     private DatePicker lastContactedFilter = new DatePicker();
     private DatePicker lastInterviewedFilter = new DatePicker();
- 
 
     private TextField firstName;
     private TextField lastName;
@@ -66,6 +69,9 @@ public class PanelistsView extends Div implements BeforeEnterObserver {
     private final Button cancel = new Button("Cancelar");
     private final Button save = new Button("Guardar");
 
+    private Button nuevoPanelistaButton;
+
+
     private final BeanValidationBinder<Panelist> binder;
 
     private Panelist panelist;
@@ -76,7 +82,6 @@ public class PanelistsView extends Div implements BeforeEnterObserver {
         this.panelistService = panelistService;
         addClassNames("panelists-view");
 
-        // Configurar columnas del Grid PRIMERO
 
         grid.addColumn(Panelist::getFirstName).setHeader("Nombre").setKey("firstName").setAutoWidth(true);
         grid.addColumn(Panelist::getLastName).setHeader("Apellido").setKey("lastName").setAutoWidth(true);
@@ -93,9 +98,42 @@ public class PanelistsView extends Div implements BeforeEnterObserver {
         // createGridLayout ahora puede acceder a las keys de las columnas de forma segura
         createGridLayout(splitLayout);
         createEditorLayout(splitLayout);
+        // editorLayoutDiv.setVisible(false); // Se maneja después de add(mainLayout)
 
+        // Crear barra de título
+        H2 pageTitleText = new H2("Panelistas");
+        nuevoPanelistaButton = new Button("Nuevo Panelista");
+        HorizontalLayout titleBar = new HorizontalLayout(pageTitleText, nuevoPanelistaButton);
+        titleBar.setWidthFull();
+        titleBar.setDefaultVerticalComponentAlignment(Alignment.BASELINE);
+        titleBar.setJustifyContentMode(JustifyContentMode.BETWEEN);
+
+        VerticalLayout mainLayout = new VerticalLayout(titleBar, splitLayout);
+        mainLayout.setSizeFull();
+        mainLayout.setPadding(false);
+        mainLayout.setSpacing(false);
+
+        add(mainLayout);
+        if (editorLayoutDiv != null) {
+            editorLayoutDiv.setVisible(false);
+        }
+
+
+        // Listener para el botón "Nuevo Panelista"
+        nuevoPanelistaButton.addClickListener(click -> {
+            grid.asSingleSelect().clear();
+            populateForm(new Panelist());
+            if (editorLayoutDiv != null) {
+                editorLayoutDiv.setVisible(true);
+            }
+            if (firstName != null) {
+                firstName.focus();
+            }
+        });
+ 
         editorLayoutDiv.setVisible(false); // Ocultar el editor inicialmente
         add(splitLayout);
+
 
 
         firstNameFilter.setPlaceholder("Filtrar por Nombre");

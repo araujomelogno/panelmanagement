@@ -8,10 +8,14 @@ import com.vaadin.flow.component.grid.Grid;
 import com.vaadin.flow.component.grid.GridVariant;
 import com.vaadin.flow.component.grid.HeaderRow;
 import com.vaadin.flow.component.html.Div;
+import com.vaadin.flow.component.html.H2;
 import com.vaadin.flow.component.notification.Notification;
 import com.vaadin.flow.component.notification.Notification.Position;
 import com.vaadin.flow.component.notification.NotificationVariant;
+import com.vaadin.flow.component.orderedlayout.FlexComponent.Alignment;
+import com.vaadin.flow.component.orderedlayout.FlexComponent.JustifyContentMode;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
+import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.splitlayout.SplitLayout;
 import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.data.binder.BeanValidationBinder;
@@ -45,13 +49,16 @@ public class IncentivesView extends Div implements BeforeEnterObserver {
     // Campos de filtro
     private TextField nameFilter = new TextField();
     private TextField quantityAvailableFilter = new TextField();
- 
+
 
     private TextField name;
     private TextField quantityAvailable;
 
     private final Button cancel = new Button("Cancelar");
     private final Button save = new Button("Guardar");
+
+    private Button nuevoIncentivoButton;
+
 
     private final BeanValidationBinder<Incentive> binder;
 
@@ -68,6 +75,11 @@ public class IncentivesView extends Div implements BeforeEnterObserver {
         grid.addColumn(Incentive::getName).setHeader("Nombre").setKey("name").setAutoWidth(true);
         grid.addColumn(Incentive::getQuantityAvailable).setHeader("Cantidad Disponible").setKey("quantityAvailable").setAutoWidth(true);
 
+
+        // Configurar columnas del Grid PRIMERO
+        grid.addColumn(Incentive::getName).setHeader("Nombre").setKey("name").setAutoWidth(true);
+        grid.addColumn(Incentive::getQuantityAvailable).setHeader("Cantidad Disponible").setKey("quantityAvailable").setAutoWidth(true);
+
         grid.addThemeVariants(GridVariant.LUMO_NO_BORDER);
 
         // Create UI - SplitLayout
@@ -75,14 +87,46 @@ public class IncentivesView extends Div implements BeforeEnterObserver {
         // createGridLayout ahora puede acceder a las keys de las columnas de forma segura
         createGridLayout(splitLayout);
         createEditorLayout(splitLayout);
+        // editorLayoutDiv.setVisible(false); // Se maneja después de add(mainLayout)
+
+        // Crear barra de título
+        H2 pageTitleText = new H2("Incentivos");
+        nuevoIncentivoButton = new Button("Nuevo Incentivo");
+        HorizontalLayout titleBar = new HorizontalLayout(pageTitleText, nuevoIncentivoButton);
+        titleBar.setWidthFull();
+        titleBar.setDefaultVerticalComponentAlignment(Alignment.BASELINE);
+        titleBar.setJustifyContentMode(JustifyContentMode.BETWEEN);
+
+        VerticalLayout mainLayout = new VerticalLayout(titleBar, splitLayout);
+        mainLayout.setSizeFull();
+        mainLayout.setPadding(false);
+        mainLayout.setSpacing(false);
+
+        add(mainLayout);
+        if (editorLayoutDiv != null) {
+            editorLayoutDiv.setVisible(false);
+        }
+
+
+        // Listener para el botón "Nuevo Incentivo"
+        nuevoIncentivoButton.addClickListener(click -> {
+            grid.asSingleSelect().clear();
+            populateForm(new Incentive());
+            if (editorLayoutDiv != null) {
+                editorLayoutDiv.setVisible(true);
+            }
+            if (name != null) {
+                name.focus();
+            }
+        });
 
         editorLayoutDiv.setVisible(false); // Ocultar el editor inicialmente
         add(splitLayout);
 
+
         // Configurar placeholders para filtros
         nameFilter.setPlaceholder("Filtrar por Nombre");
         quantityAvailableFilter.setPlaceholder("Filtrar por Cantidad");
-
 
         // Añadir listeners para refrescar el grid
         nameFilter.addValueChangeListener(e -> grid.getDataProvider().refreshAll());

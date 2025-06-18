@@ -8,10 +8,14 @@ import com.vaadin.flow.component.grid.Grid;
 import com.vaadin.flow.component.grid.GridVariant;
 import com.vaadin.flow.component.grid.HeaderRow;
 import com.vaadin.flow.component.html.Div;
+import com.vaadin.flow.component.html.H2;
 import com.vaadin.flow.component.notification.Notification;
 import com.vaadin.flow.component.notification.Notification.Position;
 import com.vaadin.flow.component.notification.NotificationVariant;
+import com.vaadin.flow.component.orderedlayout.FlexComponent.Alignment;
+import com.vaadin.flow.component.orderedlayout.FlexComponent.JustifyContentMode;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
+import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.splitlayout.SplitLayout;
 import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.data.binder.BeanValidationBinder;
@@ -41,6 +45,12 @@ public class UsersView extends Div implements BeforeEnterObserver {
     private final Grid<AppUser> grid = new Grid<>(AppUser.class, false);
     private Div editorLayoutDiv; // Declarado como miembro de la clase
 
+
+    // Campos de filtro
+    private TextField nameFilter = new TextField();
+    private TextField emailFilter = new TextField();
+
+
     // Campos de filtro
     private TextField nameFilter = new TextField();
     private TextField emailFilter = new TextField();
@@ -52,6 +62,9 @@ public class UsersView extends Div implements BeforeEnterObserver {
     private final Button cancel = new Button("Cancelar");
     private final Button save = new Button("Guardar");
 
+    private Button nuevoUsuarioButton;
+
+
     private final BeanValidationBinder<AppUser> binder;
 
     private AppUser appUser;
@@ -62,19 +75,48 @@ public class UsersView extends Div implements BeforeEnterObserver {
         this.appUserService = appUserService;
         addClassNames("users-view");
 
-        // Configurar columnas del Grid PRIMERO
-
+ 
         grid.addColumn(AppUser::getName).setHeader("Nombre").setKey("name").setAutoWidth(true);
         grid.addColumn(AppUser::getPassword).setHeader("Contraseña").setAutoWidth(true);
         grid.addColumn(AppUser::getEmail).setHeader("Correo Electrónico").setKey("email").setAutoWidth(true);
         grid.addThemeVariants(GridVariant.LUMO_NO_BORDER);
-
-
+ 
         // Create UI - SplitLayout
         SplitLayout splitLayout = new SplitLayout();
         // createGridLayout ahora puede acceder a las keys de las columnas de forma segura
         createGridLayout(splitLayout);
         createEditorLayout(splitLayout);
+        // editorLayoutDiv.setVisible(false); // Se maneja después de add(mainLayout)
+
+        // Crear barra de título
+        H2 pageTitleText = new H2("Usuarios");
+        nuevoUsuarioButton = new Button("Nuevo Usuario");
+        HorizontalLayout titleBar = new HorizontalLayout(pageTitleText, nuevoUsuarioButton);
+        titleBar.setWidthFull();
+        titleBar.setDefaultVerticalComponentAlignment(Alignment.BASELINE);
+        titleBar.setJustifyContentMode(JustifyContentMode.BETWEEN);
+
+        VerticalLayout mainLayout = new VerticalLayout(titleBar, splitLayout);
+        mainLayout.setSizeFull();
+        mainLayout.setPadding(false);
+        mainLayout.setSpacing(false);
+
+        add(mainLayout);
+        if (editorLayoutDiv != null) {
+            editorLayoutDiv.setVisible(false);
+        }
+ 
+        // Listener para el botón "Nuevo Usuario"
+        nuevoUsuarioButton.addClickListener(click -> {
+            grid.asSingleSelect().clear();
+            populateForm(new AppUser());
+            if (editorLayoutDiv != null) {
+                editorLayoutDiv.setVisible(true);
+            }
+            if (name != null) {
+                name.focus();
+            }
+        });
 
         editorLayoutDiv.setVisible(false); // Ocultar el editor inicialmente
         add(splitLayout);

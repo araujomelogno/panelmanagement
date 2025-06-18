@@ -12,11 +12,15 @@ import com.vaadin.flow.component.grid.Grid;
 import com.vaadin.flow.component.grid.GridVariant;
 import com.vaadin.flow.component.grid.HeaderRow;
 import com.vaadin.flow.component.html.Div;
+import com.vaadin.flow.component.html.H2;
 import com.vaadin.flow.component.icon.Icon;
 import com.vaadin.flow.component.notification.Notification;
 import com.vaadin.flow.component.notification.Notification.Position;
 import com.vaadin.flow.component.notification.NotificationVariant;
+import com.vaadin.flow.component.orderedlayout.FlexComponent.Alignment;
+import com.vaadin.flow.component.orderedlayout.FlexComponent.JustifyContentMode;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
+import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.splitlayout.SplitLayout;
 import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.data.binder.BeanValidationBinder;
@@ -51,7 +55,6 @@ public class PanelsView extends Div implements BeforeEnterObserver {
     private final Grid<Panel> grid = new Grid<>(Panel.class, false);
     private Div editorLayoutDiv; // Declarado como miembro de la clase
 
-
     // Filtros de columna
     private TextField nameFilter = new TextField();
     private DatePicker createdFilter = new DatePicker();
@@ -63,6 +66,8 @@ public class PanelsView extends Div implements BeforeEnterObserver {
 
     private final Button cancel = new Button("Cancelar");
     private final Button save = new Button("Guardar");
+
+    private Button nuevoPanelButton;
 
     private final BeanValidationBinder<Panel> binder;
 
@@ -92,6 +97,36 @@ public class PanelsView extends Div implements BeforeEnterObserver {
         // createGridLayout ahora puede acceder a las keys de las columnas de forma segura
         createGridLayout(splitLayout);
         createEditorLayout(splitLayout);
+
+
+        // Crear barra de título
+        H2 pageTitleText = new H2("Paneles");
+        nuevoPanelButton = new Button("Nuevo Panel");
+        HorizontalLayout titleBar = new HorizontalLayout(pageTitleText, nuevoPanelButton);
+        titleBar.setWidthFull();
+        titleBar.setDefaultVerticalComponentAlignment(Alignment.BASELINE);
+        titleBar.setJustifyContentMode(JustifyContentMode.BETWEEN);
+
+        VerticalLayout mainLayout = new VerticalLayout(titleBar, splitLayout);
+        mainLayout.setSizeFull();
+        mainLayout.setPadding(false);
+        mainLayout.setSpacing(false);
+
+        add(mainLayout);
+        if (editorLayoutDiv != null) {
+            editorLayoutDiv.setVisible(false);
+        }
+
+        // Listener para el botón "Nuevo Panel"
+        nuevoPanelButton.addClickListener(click -> {
+            grid.asSingleSelect().clear();
+            populateForm(new Panel());
+            if (editorLayoutDiv != null) {
+                editorLayoutDiv.setVisible(true);
+            }
+            name.focus();
+        });
+
         editorLayoutDiv.setVisible(false); // Ocultar el editor inicialmente
         add(splitLayout);
 
@@ -128,6 +163,7 @@ public class PanelsView extends Div implements BeforeEnterObserver {
         createGridLayout(splitLayout);
         createEditorLayout(splitLayout);
         add(splitLayout);
+
 
         // Configurar placeholders para filtros (ya deberían estar inicializados como miembros de clase)
         nameFilter.setPlaceholder("Filtrar por Nombre");
