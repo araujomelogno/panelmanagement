@@ -6,6 +6,7 @@ import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.formlayout.FormLayout;
 import com.vaadin.flow.component.grid.Grid;
 import com.vaadin.flow.component.grid.GridVariant;
+import com.vaadin.flow.component.grid.HeaderRow;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.notification.Notification;
 import com.vaadin.flow.component.notification.Notification.Position;
@@ -38,12 +39,17 @@ public class PropiertiesView extends Div implements BeforeEnterObserver {
     private final String PANELISTPROPERTY_EDIT_ROUTE_TEMPLATE = "master-detail/%s/edit";
 
     private final Grid<PanelistProperty> grid = new Grid<>(PanelistProperty.class, false);
+    private Div editorLayoutDiv; // Declarado como miembro de la clase
+
+    // Campos de filtro
+    private TextField nameFilter = new TextField();
+    private TextField typeFilter = new TextField();
 
     private TextField name;
     private TextField type;
 
-    private final Button cancel = new Button("Cancel");
-    private final Button save = new Button("Save");
+    private final Button cancel = new Button("Cancelar");
+    private final Button save = new Button("Guardar");
 
     private final BeanValidationBinder<PanelistProperty> binder;
 
@@ -55,27 +61,46 @@ public class PropiertiesView extends Div implements BeforeEnterObserver {
         this.panelistPropertyService = panelistPropertyService;
         addClassNames("propierties-view");
 
-        // Create UI
-        SplitLayout splitLayout = new SplitLayout();
+        // Configurar columnas del Grid PRIMERO
+        grid.addColumn(PanelistProperty::getName).setHeader("Nombre").setKey("name").setAutoWidth(true);
+        grid.addColumn(PanelistProperty::getType).setHeader("Tipo").setKey("type").setAutoWidth(true);
+        grid.addThemeVariants(GridVariant.LUMO_NO_BORDER);
 
+        // Create UI - SplitLayout
+        SplitLayout splitLayout = new SplitLayout();
+        // createGridLayout ahora puede acceder a las keys de las columnas de forma segura
         createGridLayout(splitLayout);
         createEditorLayout(splitLayout);
-
+        editorLayoutDiv.setVisible(false); // Ocultar el editor inicialmente
         add(splitLayout);
 
-        // Configure Grid
-        grid.addColumn("name").setAutoWidth(true);
-        grid.addColumn("type").setAutoWidth(true);
-        grid.setItems(
-                query -> panelistPropertyService.list(VaadinSpringDataHelpers.toSpringPageRequest(query)).stream());
-        grid.addThemeVariants(GridVariant.LUMO_NO_BORDER);
+        // Configurar placeholders para filtros
+        nameFilter.setPlaceholder("Filtrar por Nombre");
+        typeFilter.setPlaceholder("Filtrar por Tipo");
+
+        // Añadir listeners para refrescar el grid
+        nameFilter.addValueChangeListener(e -> grid.getDataProvider().refreshAll());
+        typeFilter.addValueChangeListener(e -> grid.getDataProvider().refreshAll());
+
+        // Configurar el DataProvider del Grid
+        grid.setItems(query -> {
+            String nameVal = nameFilter.getValue();
+            String typeVal = typeFilter.getValue();
+
+            return panelistPropertyService.list(
+                VaadinSpringDataHelpers.toSpringPageRequest(query),
+                nameVal,
+                typeVal
+            ).stream();
+        });
 
         // when a row is selected or deselected, populate form
         grid.asSingleSelect().addValueChangeListener(event -> {
             if (event.getValue() != null) {
+                editorLayoutDiv.setVisible(true);
                 UI.getCurrent().navigate(String.format(PANELISTPROPERTY_EDIT_ROUTE_TEMPLATE, event.getValue().getId()));
             } else {
-                clearForm();
+                clearForm(); // clearForm ahora también oculta el editor
                 UI.getCurrent().navigate(PropiertiesView.class);
             }
         });
@@ -84,7 +109,6 @@ public class PropiertiesView extends Div implements BeforeEnterObserver {
         binder = new BeanValidationBinder<>(PanelistProperty.class);
 
         // Bind fields. This is where you'd define e.g. validation rules
-
         binder.bindInstanceFields(this);
 
         cancel.addClickListener(e -> {
@@ -101,15 +125,15 @@ public class PropiertiesView extends Div implements BeforeEnterObserver {
                 panelistPropertyService.save(this.panelistProperty);
                 clearForm();
                 refreshGrid();
-                Notification.show("Data updated");
+                Notification.show("Datos actualizados");
                 UI.getCurrent().navigate(PropiertiesView.class);
             } catch (ObjectOptimisticLockingFailureException exception) {
                 Notification n = Notification.show(
-                        "Error updating the data. Somebody else has updated the record while you were making changes.");
+                        "Error al actualizar los datos. Otro usuario modificó el registro mientras usted realizaba cambios.");
                 n.setPosition(Position.MIDDLE);
                 n.addThemeVariants(NotificationVariant.LUMO_ERROR);
             } catch (ValidationException validationException) {
-                Notification.show("Failed to update the data. Check again that all values are valid");
+                Notification.show("Fallo al actualizar los datos. Verifique nuevamente que todos los valores sean válidos");
             }
         });
     }
@@ -122,19 +146,25 @@ public class PropiertiesView extends Div implements BeforeEnterObserver {
                     .get(panelistPropertyId.get());
             if (panelistPropertyFromBackend.isPresent()) {
                 populateForm(panelistPropertyFromBackend.get());
+                editorLayoutDiv.setVisible(true);
             } else {
-                Notification.show(String.format("The requested panelistProperty was not found, ID = %s",
+                Notification.show(String.format("La propiedad de panelista solicitada no fue encontrada, ID = %s",
                         panelistPropertyId.get()), 3000, Notification.Position.BOTTOM_START);
                 // when a row is selected but the data is no longer available,
                 // refresh grid
                 refreshGrid();
+                if (editorLayoutDiv != null) {
+                    editorLayoutDiv.setVisible(false);
+                }
                 event.forwardTo(PropiertiesView.class);
             }
+        } else {
+            clearForm(); // Asegurar que el editor esté oculto si no hay ID
         }
     }
 
     private void createEditorLayout(SplitLayout splitLayout) {
-        Div editorLayoutDiv = new Div();
+        editorLayoutDiv = new Div(); // Instanciar el miembro de la clase
         editorLayoutDiv.setClassName("editor-layout");
 
         Div editorDiv = new Div();
@@ -142,8 +172,8 @@ public class PropiertiesView extends Div implements BeforeEnterObserver {
         editorLayoutDiv.add(editorDiv);
 
         FormLayout formLayout = new FormLayout();
-        name = new TextField("Name");
-        type = new TextField("Type");
+        name = new TextField("Nombre");
+        type = new TextField("Tipo");
         formLayout.add(name, type);
 
         editorDiv.add(formLayout);
@@ -166,6 +196,10 @@ public class PropiertiesView extends Div implements BeforeEnterObserver {
         wrapper.setClassName("grid-wrapper");
         splitLayout.addToPrimary(wrapper);
         wrapper.add(grid);
+
+        HeaderRow headerRow = grid.appendHeaderRow();
+        headerRow.getCell(grid.getColumnByKey("name")).setComponent(nameFilter);
+        headerRow.getCell(grid.getColumnByKey("type")).setComponent(typeFilter);
     }
 
     private void refreshGrid() {
@@ -175,6 +209,9 @@ public class PropiertiesView extends Div implements BeforeEnterObserver {
 
     private void clearForm() {
         populateForm(null);
+        if (editorLayoutDiv != null) { // Buena práctica verificar nulidad
+            editorLayoutDiv.setVisible(false);
+        }
     }
 
     private void populateForm(PanelistProperty value) {
