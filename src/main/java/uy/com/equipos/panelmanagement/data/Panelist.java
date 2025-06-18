@@ -1,8 +1,14 @@
 package uy.com.equipos.panelmanagement.data;
 
+import jakarta.persistence.CascadeType;
 import jakarta.persistence.Entity;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.JoinTable;
+import jakarta.persistence.ManyToMany;
 import jakarta.validation.constraints.Email;
 import java.time.LocalDate;
+import java.util.HashSet;
+import java.util.Set;
 
 @Entity
 public class Panelist extends AbstractEntity {
@@ -66,4 +72,19 @@ public class Panelist extends AbstractEntity {
         this.lastInterviewed = lastInterviewed;
     }
 
+    @ManyToMany(cascade = { CascadeType.PERSIST, CascadeType.MERGE })
+    @JoinTable(
+        name = "panelist_panelist_property",
+        joinColumns = @JoinColumn(name = "panelist_id"),
+        inverseJoinColumns = @JoinColumn(name = "panelist_property_id")
+    )
+    private Set<PanelistProperty> properties = new HashSet<>();
+
+    public Set<PanelistProperty> getProperties() {
+        return properties;
+    }
+
+    public void setProperties(Set<PanelistProperty> properties) {
+        this.properties = properties;
+    }
 }
