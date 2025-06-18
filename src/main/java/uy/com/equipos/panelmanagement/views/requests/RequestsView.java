@@ -7,10 +7,14 @@ import com.vaadin.flow.component.formlayout.FormLayout;
 import com.vaadin.flow.component.grid.Grid;
 import com.vaadin.flow.component.grid.GridVariant;
 import com.vaadin.flow.component.html.Div;
+import com.vaadin.flow.component.html.H2;
 import com.vaadin.flow.component.notification.Notification;
 import com.vaadin.flow.component.notification.Notification.Position;
 import com.vaadin.flow.component.notification.NotificationVariant;
+import com.vaadin.flow.component.orderedlayout.FlexComponent.Alignment;
+import com.vaadin.flow.component.orderedlayout.FlexComponent.JustifyContentMode;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
+import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.splitlayout.SplitLayout;
 import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.data.binder.BeanValidationBinder;
@@ -49,6 +53,7 @@ public class RequestsView extends Div implements BeforeEnterObserver {
 
     private final Button cancel = new Button("Cancelar");
     private final Button save = new Button("Guardar");
+    private Button nuevaSolicitudButton;
 
     private final BeanValidationBinder<Request> binder;
 
@@ -65,10 +70,37 @@ public class RequestsView extends Div implements BeforeEnterObserver {
 
         createGridLayout(splitLayout);
         createEditorLayout(splitLayout);
-        add(splitLayout); // Añadir el splitLayout primero
-        if (this.editorLayoutDiv != null) { // Luego intentar ocultar el editorLayoutDiv
+        // editorLayoutDiv.setVisible(false); // Se maneja después de add(mainLayout)
+
+        // Crear barra de título
+        H2 pageTitleText = new H2("Solicitudes de Panelistas");
+        nuevaSolicitudButton = new Button("Nueva Solicitud");
+        HorizontalLayout titleBar = new HorizontalLayout(pageTitleText, nuevaSolicitudButton);
+        titleBar.setWidthFull();
+        titleBar.setDefaultVerticalComponentAlignment(Alignment.BASELINE);
+        titleBar.setJustifyContentMode(JustifyContentMode.BETWEEN);
+
+        VerticalLayout mainLayout = new VerticalLayout(titleBar, splitLayout);
+        mainLayout.setSizeFull();
+        mainLayout.setPadding(false);
+        mainLayout.setSpacing(false);
+
+        add(mainLayout);
+        if (this.editorLayoutDiv != null) {
             this.editorLayoutDiv.setVisible(false);
         }
+
+        // Listener para el botón "Nueva Solicitud"
+        nuevaSolicitudButton.addClickListener(click -> {
+            grid.asSingleSelect().clear();
+            populateForm(new Request());
+            if (editorLayoutDiv != null) {
+                editorLayoutDiv.setVisible(true);
+            }
+            if (firstName != null) {
+                firstName.focus();
+            }
+        });
 
         // Configure Grid
         grid.addColumn("firstName").setAutoWidth(true);
