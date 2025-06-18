@@ -26,6 +26,8 @@ import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.data.binder.BeanValidationBinder;
 import com.vaadin.flow.data.binder.ValidationException;
 import com.vaadin.flow.data.renderer.LitRenderer;
+import com.vaadin.flow.component.confirmdialog.ConfirmDialog; // Added import
+import org.springframework.dao.DataIntegrityViolationException; // Added import
 import com.vaadin.flow.router.BeforeEnterEvent;
 import com.vaadin.flow.router.BeforeEnterObserver;
 import com.vaadin.flow.router.Menu;
@@ -66,6 +68,7 @@ public class PanelsView extends Div implements BeforeEnterObserver {
 
 	private final Button cancel = new Button("Cancelar");
 	private final Button save = new Button("Guardar");
+	private Button deleteButton; // Add this with other button declarations
 	private Button nuevoPanelButton;
 
 	private final BeanValidationBinder<Panel> binder;
@@ -169,6 +172,10 @@ public class PanelsView extends Div implements BeforeEnterObserver {
 		// Bind fields. This is where you'd define e.g. validation rules
 		binder.bindInstanceFields(this);
 
+		deleteButton = new Button("Eliminar");
+		deleteButton.addThemeVariants(ButtonVariant.LUMO_ERROR, ButtonVariant.LUMO_PRIMARY);
+		deleteButton.addClickListener(e -> onDeleteClicked());
+
 		cancel.addClickListener(e -> {
 			clearForm();
 			refreshGrid();
@@ -245,7 +252,7 @@ public class PanelsView extends Div implements BeforeEnterObserver {
 		buttonLayout.setClassName("button-layout");
 		cancel.addThemeVariants(ButtonVariant.LUMO_TERTIARY);
 		save.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
-		buttonLayout.add(save, cancel);
+		buttonLayout.add(save, deleteButton, cancel);
 		editorLayoutDiv.add(buttonLayout);
 	}
 
@@ -275,6 +282,49 @@ public class PanelsView extends Div implements BeforeEnterObserver {
 		this.panel = value;
 		binder.readBean(this.panel);
 
+		if (deleteButton != null) {
+			 deleteButton.setEnabled(value != null && value.getId() != null);
+		}
+	}
+
+	private void clearForm() {
+		populateForm(null);
+		editorLayoutDiv.setVisible(false); // Ocultar el editor al limpiar el formulario
+		if (deleteButton != null) {
+			deleteButton.setEnabled(false);
+		}
+	}
+
+	private void onDeleteClicked() {
+		if (this.panel == null || this.panel.getId() == null) {
+			Notification.show("No hay panel seleccionado para eliminar.", 3000, Notification.Position.MIDDLE);
+			return;
+		}
+
+		com.vaadin.flow.component.confirmdialog.ConfirmDialog dialog = new com.vaadin.flow.component.confirmdialog.ConfirmDialog();
+		dialog.setHeader("Confirmar Eliminación");
+		dialog.setText("¿Está seguro de que desea eliminar el panel '" + this.panel.getName() + "'?");
+
+		dialog.setConfirmText("Eliminar");
+		dialog.setConfirmButtonTheme("error primary");
+		dialog.setCancelText("Cancelar");
+
+		dialog.addConfirmListener(event -> {
+			try {
+				panelService.delete(this.panel.getId());
+				clearForm();
+				refreshGrid();
+				Notification.show("Panel eliminado correctamente.", 3000, Notification.Position.BOTTOM_START);
+				UI.getCurrent().navigate(PanelsView.class);
+			} catch (org.springframework.dao.DataIntegrityViolationException ex) {
+				Notification.show("No se puede eliminar el panel. Es posible que esté siendo referenciado por otras entidades.", 5000, Notification.Position.MIDDLE)
+					.addThemeVariants(NotificationVariant.LUMO_ERROR);
+			} catch (Exception ex) {
+				Notification.show("Ocurrió un error al intentar eliminar el panel: " + ex.getMessage(), 5000, Notification.Position.MIDDLE)
+					.addThemeVariants(NotificationVariant.LUMO_ERROR);
+			}
+		});
+		dialog.open();
 	}
 	// Cambio trivial para republicar en nueva rama
 }
