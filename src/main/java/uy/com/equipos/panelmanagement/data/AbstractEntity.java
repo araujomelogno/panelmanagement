@@ -1,5 +1,6 @@
 package uy.com.equipos.panelmanagement.data;
 
+import jakarta.persistence.Column;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
@@ -12,6 +13,7 @@ public abstract class AbstractEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @jakarta.persistence.Column(columnDefinition="BIGINT AUTO_INCREMENT PRIMARY KEY")
     private Long id;
 
     @Version
