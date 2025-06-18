@@ -1,6 +1,7 @@
 package uy.com.equipos.panelmanagement.views.panelists;
 
 import com.vaadin.flow.component.UI;
+import com.vaadin.flow.component.listbox.MultiSelectListBox;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.datepicker.DatePicker;
@@ -31,10 +32,15 @@ import com.vaadin.flow.router.Route;
 import com.vaadin.flow.spring.data.VaadinSpringDataHelpers;
 import jakarta.annotation.security.PermitAll;
 import java.time.LocalDate;
+import java.util.HashSet;
 import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
 import org.springframework.orm.ObjectOptimisticLockingFailureException;
 import org.vaadin.lineawesome.LineAwesomeIconUrl;
 import uy.com.equipos.panelmanagement.data.Panelist;
+import uy.com.equipos.panelmanagement.data.PanelistProperty;
+import uy.com.equipos.panelmanagement.services.PanelistPropertyService;
 import uy.com.equipos.panelmanagement.services.PanelistService;
 
 @PageTitle("Panelistas")
@@ -67,6 +73,7 @@ public class PanelistsView extends Div implements BeforeEnterObserver {
 	private TextField occupation;
 	private DatePicker lastContacted;
 	private DatePicker lastInterviewed;
+	private MultiSelectListBox<PanelistProperty> propertiesField;
 
 	private final Button cancel = new Button("Cancelar");
 	private final Button save = new Button("Guardar");
@@ -78,9 +85,11 @@ public class PanelistsView extends Div implements BeforeEnterObserver {
 	private Panelist panelist;
 
 	private final PanelistService panelistService;
+	private final PanelistPropertyService panelistPropertyService;
 
-	public PanelistsView(PanelistService panelistService) {
+	public PanelistsView(PanelistService panelistService, PanelistPropertyService panelistPropertyService) {
 		this.panelistService = panelistService;
+		this.panelistPropertyService = panelistPropertyService;
 		addClassNames("panelists-view");
 
 		// Initialize deleteButton EARLIER
@@ -198,6 +207,10 @@ public class PanelistsView extends Div implements BeforeEnterObserver {
 					this.panelist = new Panelist();
 				}
 				binder.writeBean(this.panelist);
+
+				Set<PanelistProperty> selectedProperties = propertiesField.getValue();
+				this.panelist.setProperties(new HashSet<>(selectedProperties));
+
 				panelistService.save(this.panelist);
 				clearForm();
 				refreshGrid();
@@ -256,7 +269,13 @@ public class PanelistsView extends Div implements BeforeEnterObserver {
 		occupation = new TextField("Ocupación");
 		lastContacted = new DatePicker("Último Contacto");
 		lastInterviewed = new DatePicker("Última Entrevista");
+		// START: Add properties field
+		propertiesField = new MultiSelectListBox<>();
+		propertiesField.setItems(panelistPropertyService.findAll());
+		propertiesField.setItemLabelGenerator(PanelistProperty::getName);
+		// END: Add properties field
 		formLayout.add(firstName, lastName, email, phone, dateOfBirth, occupation, lastContacted, lastInterviewed);
+		formLayout.addFormItem(propertiesField, "Propiedades"); // Add to form
 
 		editorDiv.add(formLayout);
 		createButtonLayout(editorLayoutDiv);
@@ -299,18 +318,31 @@ public class PanelistsView extends Div implements BeforeEnterObserver {
 		this.panelist = value;
 		binder.readBean(this.panelist);
 
-		if (deleteButton != null) { 
-			 deleteButton.setEnabled(value != null && value.getId() != null);
+		if (deleteButton != null) {
+			deleteButton.setEnabled(value != null && value.getId() != null);
 		}
+		// START: Populate properties field
+		if (value != null && value.getProperties() != null) {
+			propertiesField.setValue(value.getProperties());
+		} else {
+			if (propertiesField != null) { // Check if initialized
+				propertiesField.clear();
+			}
+		}
+		// END: Populate properties field
 	}
 
 	private void clearForm() {
-		populateForm(null);
+		populateForm(null); // This will also clear propertiesField if value is null
 		if (editorLayoutDiv != null) { // Buena práctica verificar nulidad
 			editorLayoutDiv.setVisible(false);
 		}
 		if (deleteButton != null) {
 			deleteButton.setEnabled(false);
+		}
+		// Explicitly clear propertiesField, ensure it's initialized
+		if (propertiesField != null) {
+			propertiesField.clear();
 		}
 	}
 
