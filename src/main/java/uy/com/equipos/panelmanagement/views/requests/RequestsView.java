@@ -207,4 +207,5 @@ public class RequestsView extends Div implements BeforeEnterObserver {
         binder.readBean(this.request);
 
     }
+    // Confirmando estado final de RequestsView con lógica de visibilidad y traducciones.
 }
