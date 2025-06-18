@@ -38,206 +38,202 @@ import uy.com.equipos.panelmanagement.services.RequestService;
 @PermitAll
 public class RequestsView extends Div implements BeforeEnterObserver {
 
-    private final String REQUEST_ID = "requestID";
-    private final String REQUEST_EDIT_ROUTE_TEMPLATE = "requests/%s/edit";
+	private final String REQUEST_ID = "requestID";
+	private final String REQUEST_EDIT_ROUTE_TEMPLATE = "requests/%s/edit";
 
-    private final Grid<Request> grid = new Grid<>(Request.class, false);
-    private Div editorLayoutDiv; // Declarado como miembro de la clase
+	private final Grid<Request> grid = new Grid<>(Request.class, false);
+	private Div editorLayoutDiv; // Declarado como miembro de la clase
 
-    private TextField firstName;
-    private TextField lastName;
-    private TextField birhtdate;
-    private TextField sex;
-    private TextField email;
-    private TextField phone;
+	private TextField firstName;
+	private TextField lastName;
+	private TextField birhtdate;
+	private TextField sex;
+	private TextField email;
+	private TextField phone;
 
-    private final Button cancel = new Button("Cancelar"); 
-    private final Button save = new Button("Guardar"); 
-    private Button nuevaSolicitudButton;
+	private final Button cancel = new Button("Cancelar");
+	private final Button save = new Button("Guardar");
+	private Button nuevaSolicitudButton;
 
-    private final BeanValidationBinder<Request> binder;
+	private final BeanValidationBinder<Request> binder;
 
-    private Request request;
+	private Request request;
 
-    private final RequestService requestService;
+	private final RequestService requestService;
 
-    public RequestsView(RequestService requestService) {
-        this.requestService = requestService;
-        addClassNames("requests-view");
+	public RequestsView(RequestService requestService) {
+		this.requestService = requestService;
+		addClassNames("requests-view");
 
-        // Create UI
-        SplitLayout splitLayout = new SplitLayout();
+		// Create UI
+		SplitLayout splitLayout = new SplitLayout();
 
-        createGridLayout(splitLayout);
-        createEditorLayout(splitLayout);
-        // editorLayoutDiv.setVisible(false); // Se maneja después de add(mainLayout)
+		createGridLayout(splitLayout);
+		createEditorLayout(splitLayout);
+		// editorLayoutDiv.setVisible(false); // Se maneja después de add(mainLayout)
 
-        // Crear barra de título
-        H2 pageTitleText = new H2("Solicitudes de Panelistas"); 
-        nuevaSolicitudButton = new Button("Nueva Solicitud");
-        HorizontalLayout titleBar = new HorizontalLayout(pageTitleText, nuevaSolicitudButton);
-        titleBar.setWidthFull();
-        titleBar.setDefaultVerticalComponentAlignment(Alignment.BASELINE);
-        titleBar.setJustifyContentMode(JustifyContentMode.BETWEEN);
+		nuevaSolicitudButton = new Button("Nueva Solicitud");
+		nuevaSolicitudButton.getStyle().set("margin-left", "18px"); 
+		VerticalLayout mainLayout = new VerticalLayout(nuevaSolicitudButton, splitLayout);
+		mainLayout.setSizeFull();
+		mainLayout.setPadding(false);
+		mainLayout.setSpacing(false);
 
-        VerticalLayout mainLayout = new VerticalLayout(titleBar, splitLayout);
-        mainLayout.setSizeFull();
-        mainLayout.setPadding(false);
-        mainLayout.setSpacing(false);
-        
-        add(mainLayout); 
-        if (this.editorLayoutDiv != null) { 
-            this.editorLayoutDiv.setVisible(false);
-        }
+		add(mainLayout);
+		if (this.editorLayoutDiv != null) {
+			this.editorLayoutDiv.setVisible(false);
+		}
 
-        // Listener para el botón "Nueva Solicitud"
-        nuevaSolicitudButton.addClickListener(click -> {
-            grid.asSingleSelect().clear();      
-            populateForm(new Request());        
-            if (editorLayoutDiv != null) {
-                editorLayoutDiv.setVisible(true); 
-            }
-            if (firstName != null) { 
-                firstName.focus();
-            }
-        });
-        
-        // Configure Grid
-        grid.addColumn("firstName").setAutoWidth(true);
-        grid.addColumn("lastName").setAutoWidth(true);
-        grid.addColumn("birhtdate").setAutoWidth(true);
-        grid.addColumn("sex").setAutoWidth(true);
-        grid.addColumn("email").setAutoWidth(true);
-        grid.addColumn("phone").setAutoWidth(true);
-        grid.setItems(query -> requestService.list(VaadinSpringDataHelpers.toSpringPageRequest(query)).stream());
-        grid.addThemeVariants(GridVariant.LUMO_NO_BORDER);
+		// Listener para el botón "Nueva Solicitud"
+		nuevaSolicitudButton.addClickListener(click -> {
+			grid.asSingleSelect().clear();
+			populateForm(new Request());
+			if (editorLayoutDiv != null) {
+				editorLayoutDiv.setVisible(true);
+			}
+			if (firstName != null) {
+				firstName.focus();
+			}
+		});
 
-        // when a row is selected or deselected, populate form
-        grid.asSingleSelect().addValueChangeListener(event -> {
-            if (event.getValue() != null) {
-                // this.editorLayoutDiv.setVisible(true); // Removido: beforeEnter lo manejará
-                UI.getCurrent().navigate(String.format(REQUEST_EDIT_ROUTE_TEMPLATE, event.getValue().getId()));
-            } else {
-                clearForm(); // clearForm ahora también oculta el editor
-                UI.getCurrent().navigate(RequestsView.class);
-            }
-        });
+		// Configure Grid
+		grid.addColumn("firstName").setAutoWidth(true);
+		grid.addColumn("lastName").setAutoWidth(true);
+		grid.addColumn("birhtdate").setAutoWidth(true);
+		grid.addColumn("sex").setAutoWidth(true);
+		grid.addColumn("email").setAutoWidth(true);
+		grid.addColumn("phone").setAutoWidth(true);
+		grid.setItems(query -> requestService.list(VaadinSpringDataHelpers.toSpringPageRequest(query)).stream());
+		grid.addThemeVariants(GridVariant.LUMO_NO_BORDER);
 
-        // Configure Form
-        binder = new BeanValidationBinder<>(Request.class);
+		// when a row is selected or deselected, populate form
+		grid.asSingleSelect().addValueChangeListener(event -> {
+			if (event.getValue() != null) {
+				// this.editorLayoutDiv.setVisible(true); // Removido: beforeEnter lo manejará
+				UI.getCurrent().navigate(String.format(REQUEST_EDIT_ROUTE_TEMPLATE, event.getValue().getId()));
+			} else {
+				clearForm(); // clearForm ahora también oculta el editor
+				UI.getCurrent().navigate(RequestsView.class);
+			}
+		});
 
-        // Bind fields. This is where you'd define e.g. validation rules
+		// Configure Form
+		binder = new BeanValidationBinder<>(Request.class);
 
-        binder.bindInstanceFields(this);
+		// Bind fields. This is where you'd define e.g. validation rules
 
-        cancel.addClickListener(e -> {
-            clearForm();
-            refreshGrid();
-        });
+		binder.bindInstanceFields(this);
 
-        save.addClickListener(e -> {
-            try {
-                if (this.request == null) {
-                    this.request = new Request();
-                }
-                binder.writeBean(this.request);
-                requestService.save(this.request);
-                clearForm();
-                refreshGrid();
-                Notification.show("Datos actualizados");
-                UI.getCurrent().navigate(RequestsView.class);
-            } catch (ObjectOptimisticLockingFailureException exception) {
-                Notification n = Notification.show(
-                        "Error al actualizar los datos. Otro usuario modificó el registro mientras usted realizaba cambios.");
-                n.setPosition(Position.MIDDLE);
-                n.addThemeVariants(NotificationVariant.LUMO_ERROR);
-            } catch (ValidationException validationException) {
-                Notification.show("Fallo al actualizar los datos. Verifique nuevamente que todos los valores sean válidos");
-            }
-        });
-    }
+		cancel.addClickListener(e -> {
+			clearForm();
+			refreshGrid();
+		});
 
-    @Override
-    public void beforeEnter(BeforeEnterEvent event) {
-        Optional<Long> requestId = event.getRouteParameters().get(REQUEST_ID).map(Long::parseLong);
-        if (requestId.isPresent()) {
-            Optional<Request> requestFromBackend = requestService.get(requestId.get());
-            if (requestFromBackend.isPresent()) {
-                populateForm(requestFromBackend.get());
-                if (this.editorLayoutDiv != null) {
-                    this.editorLayoutDiv.setVisible(true);
-                }
-            } else {
-                Notification.show(String.format("La solicitud no fue encontrada, ID = %s", requestId.get()), 3000,
-                        Notification.Position.BOTTOM_START);
-                // when a row is selected but the data is no longer available,
-                // refresh grid
-                refreshGrid();
-                if (this.editorLayoutDiv != null) {
-                    this.editorLayoutDiv.setVisible(false);
-                }
-                event.forwardTo(RequestsView.class);
-            }
-        } else {
-            clearForm(); // Asegurar que el editor esté oculto si no hay ID
-        }
-    }
+		save.addClickListener(e -> {
+			try {
+				if (this.request == null) {
+					this.request = new Request();
+				}
+				binder.writeBean(this.request);
+				requestService.save(this.request);
+				clearForm();
+				refreshGrid();
+				Notification.show("Datos actualizados");
+				UI.getCurrent().navigate(RequestsView.class);
+			} catch (ObjectOptimisticLockingFailureException exception) {
+				Notification n = Notification.show(
+						"Error al actualizar los datos. Otro usuario modificó el registro mientras usted realizaba cambios.");
+				n.setPosition(Position.MIDDLE);
+				n.addThemeVariants(NotificationVariant.LUMO_ERROR);
+			} catch (ValidationException validationException) {
+				Notification
+						.show("Fallo al actualizar los datos. Verifique nuevamente que todos los valores sean válidos");
+			}
+		});
+	}
 
-    private void createEditorLayout(SplitLayout splitLayout) {
-        this.editorLayoutDiv = new Div(); // Instanciar el miembro de la clase
-        this.editorLayoutDiv.setClassName("editor-layout");
+	@Override
+	public void beforeEnter(BeforeEnterEvent event) {
+		Optional<Long> requestId = event.getRouteParameters().get(REQUEST_ID).map(Long::parseLong);
+		if (requestId.isPresent()) {
+			Optional<Request> requestFromBackend = requestService.get(requestId.get());
+			if (requestFromBackend.isPresent()) {
+				populateForm(requestFromBackend.get());
+				if (this.editorLayoutDiv != null) {
+					this.editorLayoutDiv.setVisible(true);
+				}
+			} else {
+				Notification.show(String.format("La solicitud no fue encontrada, ID = %s", requestId.get()), 3000,
+						Notification.Position.BOTTOM_START);
+				// when a row is selected but the data is no longer available,
+				// refresh grid
+				refreshGrid();
+				if (this.editorLayoutDiv != null) {
+					this.editorLayoutDiv.setVisible(false);
+				}
+				event.forwardTo(RequestsView.class);
+			}
+		} else {
+			clearForm(); // Asegurar que el editor esté oculto si no hay ID
+		}
+	}
 
-        Div editorDiv = new Div();
-        editorDiv.setClassName("editor");
-        this.editorLayoutDiv.add(editorDiv);
+	private void createEditorLayout(SplitLayout splitLayout) {
+		this.editorLayoutDiv = new Div(); // Instanciar el miembro de la clase
+		this.editorLayoutDiv.setClassName("editor-layout");
 
-        FormLayout formLayout = new FormLayout();
-        firstName = new TextField("Nombre");
-        lastName = new TextField("Apellido");
-        birhtdate = new TextField("Fecha de Nacimiento");
-        sex = new TextField("Sexo");
-        email = new TextField("Correo Electrónico");
-        phone = new TextField("Teléfono");
-        formLayout.add(firstName, lastName, birhtdate, sex, email, phone);
+		Div editorDiv = new Div();
+		editorDiv.setClassName("editor");
+		this.editorLayoutDiv.add(editorDiv);
 
-        editorDiv.add(formLayout);
-        createButtonLayout(this.editorLayoutDiv);
+		FormLayout formLayout = new FormLayout();
+		firstName = new TextField("Nombre");
+		lastName = new TextField("Apellido");
+		birhtdate = new TextField("Fecha de Nacimiento");
+		sex = new TextField("Sexo");
+		email = new TextField("Correo Electrónico");
+		phone = new TextField("Teléfono");
+		formLayout.add(firstName, lastName, birhtdate, sex, email, phone);
 
-        splitLayout.addToSecondary(this.editorLayoutDiv);
-    }
+		editorDiv.add(formLayout);
+		createButtonLayout(this.editorLayoutDiv);
 
-    private void createButtonLayout(Div editorLayoutDiv) {
-        HorizontalLayout buttonLayout = new HorizontalLayout();
-        buttonLayout.setClassName("button-layout");
-        cancel.addThemeVariants(ButtonVariant.LUMO_TERTIARY);
-        save.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
-        buttonLayout.add(save, cancel);
-        editorLayoutDiv.add(buttonLayout);
-    }
+		splitLayout.addToSecondary(this.editorLayoutDiv);
+	}
 
-    private void createGridLayout(SplitLayout splitLayout) {
-        Div wrapper = new Div();
-        wrapper.setClassName("grid-wrapper");
-        splitLayout.addToPrimary(wrapper);
-        wrapper.add(grid);
-    }
+	private void createButtonLayout(Div editorLayoutDiv) {
+		HorizontalLayout buttonLayout = new HorizontalLayout();
+		buttonLayout.setClassName("button-layout");
+		cancel.addThemeVariants(ButtonVariant.LUMO_TERTIARY);
+		save.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
+		buttonLayout.add(save, cancel);
+		editorLayoutDiv.add(buttonLayout);
+	}
 
-    private void refreshGrid() {
-        grid.select(null);
-        grid.getDataProvider().refreshAll();
-    }
+	private void createGridLayout(SplitLayout splitLayout) {
+		Div wrapper = new Div();
+		wrapper.setClassName("grid-wrapper");
+		splitLayout.addToPrimary(wrapper);
+		wrapper.add(grid);
+	}
 
-    private void clearForm() {
-        populateForm(null);
-        if (this.editorLayoutDiv != null) { // Buena práctica verificar nulidad
-            this.editorLayoutDiv.setVisible(false);
-        }
-    }
+	private void refreshGrid() {
+		grid.select(null);
+		grid.getDataProvider().refreshAll();
+	}
 
-    private void populateForm(Request value) {
-        this.request = value;
-        binder.readBean(this.request);
+	private void clearForm() {
+		populateForm(null);
+		if (this.editorLayoutDiv != null) { // Buena práctica verificar nulidad
+			this.editorLayoutDiv.setVisible(false);
+		}
+	}
 
-    }
-    // Confirmando estado final de RequestsView con lógica de visibilidad y traducciones.
+	private void populateForm(Request value) {
+		this.request = value;
+		binder.readBean(this.request);
+
+	}
+	// Confirmando estado final de RequestsView con lógica de visibilidad y
+	// traducciones.
 }

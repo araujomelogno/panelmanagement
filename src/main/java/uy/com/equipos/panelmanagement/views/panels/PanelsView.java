@@ -49,233 +49,232 @@ import uy.com.equipos.panelmanagement.services.PanelService;
 @Uses(Icon.class)
 public class PanelsView extends Div implements BeforeEnterObserver {
 
-    private final String PANEL_ID = "panelID";
-    private final String PANEL_EDIT_ROUTE_TEMPLATE = "/%s/edit";
+	private final String PANEL_ID = "panelID";
+	private final String PANEL_EDIT_ROUTE_TEMPLATE = "/%s/edit";
 
-    private final Grid<Panel> grid = new Grid<>(Panel.class, false);
-    private Div editorLayoutDiv; // Declarado como miembro de la clase
+	private final Grid<Panel> grid = new Grid<>(Panel.class, false);
+	private Div editorLayoutDiv; // Declarado como miembro de la clase
 
-    // Filtros de columna
-    private TextField nameFilter = new TextField();
-    private DatePicker createdFilter = new DatePicker();
-    private ComboBox<String> activeFilter = new ComboBox<>();
+	// Filtros de columna
+	private TextField nameFilter = new TextField();
+	private DatePicker createdFilter = new DatePicker();
+	private ComboBox<String> activeFilter = new ComboBox<>();
 
-    private TextField name;
-    private DatePicker created;
-    private Checkbox active;
+	private TextField name;
+	private DatePicker created;
+	private Checkbox active;
 
-    private final Button cancel = new Button("Cancelar");
-    private final Button save = new Button("Guardar");
-    private Button nuevoPanelButton;
+	private final Button cancel = new Button("Cancelar");
+	private final Button save = new Button("Guardar");
+	private Button nuevoPanelButton;
 
-    private final BeanValidationBinder<Panel> binder;
+	private final BeanValidationBinder<Panel> binder;
 
-    private Panel panel;
+	private Panel panel;
 
-    private final PanelService panelService;
+	private final PanelService panelService;
 
-    public PanelsView(PanelService panelService) {
-        this.panelService = panelService;
-        addClassNames("panels-view");
+	public PanelsView(PanelService panelService) {
+		this.panelService = panelService;
+		addClassNames("panels-view");
 
-        // Configurar columnas del Grid PRIMERO
-        grid.addColumn(Panel::getName).setHeader("Nombre").setKey("name").setAutoWidth(true);
-        grid.addColumn(Panel::getCreated).setHeader("Creado").setKey("created").setAutoWidth(true);
-        LitRenderer<Panel> activeRenderer = LitRenderer.<Panel>of(
-                "<vaadin-icon icon='vaadin:${item.icon}' style='width: var(--lumo-icon-size-s); height: var(--lumo-icon-size-s); color: ${item.color};'></vaadin-icon>")
-                .withProperty("icon", panelItem -> panelItem.isActive() ? "check" : "minus") 
-                .withProperty("color", panelItem -> panelItem.isActive() 
-                        ? "var(--lumo-primary-text-color)"
-                        : "var(--lumo-disabled-text-color)");
-        grid.addColumn(activeRenderer).setHeader("Activo").setKey("active").setAutoWidth(true); 
-        grid.addThemeVariants(GridVariant.LUMO_NO_BORDER);
+		// Configurar columnas del Grid PRIMERO
+		grid.addColumn(Panel::getName).setHeader("Nombre").setKey("name").setAutoWidth(true);
+		grid.addColumn(Panel::getCreated).setHeader("Creado").setKey("created").setAutoWidth(true);
+		LitRenderer<Panel> activeRenderer = LitRenderer.<Panel>of(
+				"<vaadin-icon icon='vaadin:${item.icon}' style='width: var(--lumo-icon-size-s); height: var(--lumo-icon-size-s); color: ${item.color};'></vaadin-icon>")
+				.withProperty("icon", panelItem -> panelItem.isActive() ? "check" : "minus")
+				.withProperty("color", panelItem -> panelItem.isActive() ? "var(--lumo-primary-text-color)"
+						: "var(--lumo-disabled-text-color)");
+		grid.addColumn(activeRenderer).setHeader("Activo").setKey("active").setAutoWidth(true);
+		grid.addThemeVariants(GridVariant.LUMO_NO_BORDER);
 
-        // Create UI - SplitLayout
-        SplitLayout splitLayout = new SplitLayout();
-        // createGridLayout ahora puede acceder a las keys de las columnas de forma segura
-        createGridLayout(splitLayout); 
-        createEditorLayout(splitLayout);
-        // editorLayoutDiv.setVisible(false); // Se maneja después de add(mainLayout)
+		// Create UI - SplitLayout
+		SplitLayout splitLayout = new SplitLayout();
+		// createGridLayout ahora puede acceder a las keys de las columnas de forma
+		// segura
+		createGridLayout(splitLayout);
+		createEditorLayout(splitLayout);
+		// editorLayoutDiv.setVisible(false); // Se maneja después de add(mainLayout)
 
-        // Crear barra de título
-        H2 pageTitleText = new H2("Paneles"); 
-        nuevoPanelButton = new Button("Nuevo Panel");
-        HorizontalLayout titleBar = new HorizontalLayout(pageTitleText, nuevoPanelButton);
-        titleBar.setWidthFull();
-        titleBar.setDefaultVerticalComponentAlignment(Alignment.BASELINE);
-        titleBar.setJustifyContentMode(JustifyContentMode.BETWEEN);
+		nuevoPanelButton = new Button("Nuevo Panel");
+		nuevoPanelButton.getStyle().set("margin-left", "18px"); 
 
-        VerticalLayout mainLayout = new VerticalLayout(titleBar, splitLayout);
-        mainLayout.setSizeFull();
-        mainLayout.setPadding(false);
-        mainLayout.setSpacing(false);
+		VerticalLayout mainLayout = new VerticalLayout(nuevoPanelButton, splitLayout);
+		mainLayout.setSizeFull();
+		mainLayout.setPadding(false);
+		mainLayout.setSpacing(false);
 
-        add(mainLayout); 
-        if (editorLayoutDiv != null) { 
-            editorLayoutDiv.setVisible(false);
-        }
+		add(mainLayout);
+		if (editorLayoutDiv != null) {
+			editorLayoutDiv.setVisible(false);
+		}
 
-        // Listener para el botón "Nuevo Panel"
-        nuevoPanelButton.addClickListener(click -> {
-            grid.asSingleSelect().clear();      
-            populateForm(new Panel());        
-            if (editorLayoutDiv != null) {
-                editorLayoutDiv.setVisible(true); 
-            }
-            name.focus();                     
-        });
+		// Listener para el botón "Nuevo Panel"
+		nuevoPanelButton.addClickListener(click -> {
+			grid.asSingleSelect().clear();
+			populateForm(new Panel());
+			if (editorLayoutDiv != null) {
+				editorLayoutDiv.setVisible(true);
+			}
+			name.focus();
+		});
 
-        // Configurar placeholders para filtros (ya deberían estar inicializados como miembros de clase)
-        nameFilter.setPlaceholder("Filtrar por Nombre");
-        createdFilter.setPlaceholder("Filtrar por Fecha de Creación");
-        activeFilter.setPlaceholder("Filtrar por Estado");
-        activeFilter.setItems("Todos", "Activo", "Inactivo"); // Estos ya están en español o son universales
-        activeFilter.setValue("Todos");
+		// Configurar placeholders para filtros (ya deberían estar inicializados como
+		// miembros de clase)
+		nameFilter.setPlaceholder("Filtrar por Nombre");
+		createdFilter.setPlaceholder("Filtrar por Fecha de Creación");
+		activeFilter.setPlaceholder("Filtrar por Estado");
+		activeFilter.setItems("Todos", "Activo", "Inactivo"); // Estos ya están en español o son universales
+		activeFilter.setValue("Todos");
 
-        // Añadir listeners para refrescar el grid cuando cambian los filtros
-        // Estos listeners acceden a 'grid', que ya está inicializado.
-        nameFilter.addValueChangeListener(e -> grid.getDataProvider().refreshAll());
-        createdFilter.addValueChangeListener(e -> grid.getDataProvider().refreshAll());
-        activeFilter.addValueChangeListener(e -> grid.getDataProvider().refreshAll());
-        
-        // Configurar el DataProvider del Grid
-        // Esto necesita que los filtros (nameFilter, etc.) estén disponibles.
-        grid.setItems(query -> {
-            String nameVal = nameFilter.getValue(); 
-            LocalDate createdVal = createdFilter.getValue(); 
-            String activeString = activeFilter.getValue();
-            Boolean activeBoolean = null;
-            if ("Activo".equals(activeString)) {
-                activeBoolean = true;
-            } else if ("Inactivo".equals(activeString)) {
-                activeBoolean = false;
-            }
-            return panelService.list(VaadinSpringDataHelpers.toSpringPageRequest(query), nameVal, createdVal, activeBoolean).stream();
-        });
+		// Añadir listeners para refrescar el grid cuando cambian los filtros
+		// Estos listeners acceden a 'grid', que ya está inicializado.
+		nameFilter.addValueChangeListener(e -> grid.getDataProvider().refreshAll());
+		createdFilter.addValueChangeListener(e -> grid.getDataProvider().refreshAll());
+		activeFilter.addValueChangeListener(e -> grid.getDataProvider().refreshAll());
 
-        // when a row is selected or deselected, populate form
-        grid.asSingleSelect().addValueChangeListener(event -> {
-            if (event.getValue() != null) {
-                editorLayoutDiv.setVisible(true);
-                UI.getCurrent().navigate(String.format(PANEL_EDIT_ROUTE_TEMPLATE, event.getValue().getId()));
-            } else {
-                clearForm(); // clearForm ahora también oculta el editor
-                // editorLayoutDiv.setVisible(false); // Ya se hace en clearForm
-                UI.getCurrent().navigate(PanelsView.class);
-            }
-        });
+		// Configurar el DataProvider del Grid
+		// Esto necesita que los filtros (nameFilter, etc.) estén disponibles.
+		grid.setItems(query -> {
+			String nameVal = nameFilter.getValue();
+			LocalDate createdVal = createdFilter.getValue();
+			String activeString = activeFilter.getValue();
+			Boolean activeBoolean = null;
+			if ("Activo".equals(activeString)) {
+				activeBoolean = true;
+			} else if ("Inactivo".equals(activeString)) {
+				activeBoolean = false;
+			}
+			return panelService
+					.list(VaadinSpringDataHelpers.toSpringPageRequest(query), nameVal, createdVal, activeBoolean)
+					.stream();
+		});
 
-        // Configure Form
-        binder = new BeanValidationBinder<>(Panel.class);
+		// when a row is selected or deselected, populate form
+		grid.asSingleSelect().addValueChangeListener(event -> {
+			if (event.getValue() != null) {
+				editorLayoutDiv.setVisible(true);
+				UI.getCurrent().navigate(String.format(PANEL_EDIT_ROUTE_TEMPLATE, event.getValue().getId()));
+			} else {
+				clearForm(); // clearForm ahora también oculta el editor
+				// editorLayoutDiv.setVisible(false); // Ya se hace en clearForm
+				UI.getCurrent().navigate(PanelsView.class);
+			}
+		});
 
-        // Bind fields. This is where you'd define e.g. validation rules
-        binder.bindInstanceFields(this);
+		// Configure Form
+		binder = new BeanValidationBinder<>(Panel.class);
 
-        cancel.addClickListener(e -> {
-            clearForm();
-            refreshGrid();
-        });
+		// Bind fields. This is where you'd define e.g. validation rules
+		binder.bindInstanceFields(this);
 
-        save.addClickListener(e -> {
-            try {
-                if (this.panel == null) {
-                    this.panel = new Panel();
-                }
-                binder.writeBean(this.panel);
-                panelService.save(this.panel);
-                clearForm();
-                refreshGrid();
-                Notification.show("Datos actualizados");
-                UI.getCurrent().navigate(PanelsView.class);
-            } catch (ObjectOptimisticLockingFailureException exception) {
-                Notification n = Notification.show(
-                        "Error al actualizar los datos. Otro usuario modificó el registro mientras usted realizaba cambios.");
-                n.setPosition(Position.MIDDLE);
-                n.addThemeVariants(NotificationVariant.LUMO_ERROR);
-            } catch (ValidationException validationException) {
-                Notification.show("Fallo al actualizar los datos. Verifique nuevamente que todos los valores sean válidos");
-            }
-        });
-    }
+		cancel.addClickListener(e -> {
+			clearForm();
+			refreshGrid();
+		});
 
-    @Override
-    public void beforeEnter(BeforeEnterEvent event) {
-        Optional<Long> panelId = event.getRouteParameters().get(PANEL_ID).map(Long::parseLong);
-        if (panelId.isPresent()) {
-            Optional<Panel> panelFromBackend = panelService.get(panelId.get());
-            if (panelFromBackend.isPresent()) {
-                populateForm(panelFromBackend.get());
-                editorLayoutDiv.setVisible(true); 
-            } else {
-                Notification.show(String.format("El panel solicitado no fue encontrado, ID = %s", panelId.get()), 3000,
-                        Notification.Position.BOTTOM_START);
-                // when a row is selected but the data is no longer available,
-                // refresh grid
-                refreshGrid(); // Esto podría llamar a clearForm indirectamente si deselecciona
-                editorLayoutDiv.setVisible(false); // Asegurar que esté oculto
-                event.forwardTo(PanelsView.class);
-            }
-        } else {
-             // Si no hay panelId, asegurar que el formulario esté limpio y oculto
-            clearForm();
-        }
-    }
+		save.addClickListener(e -> {
+			try {
+				if (this.panel == null) {
+					this.panel = new Panel();
+				}
+				binder.writeBean(this.panel);
+				panelService.save(this.panel);
+				clearForm();
+				refreshGrid();
+				Notification.show("Datos actualizados");
+				UI.getCurrent().navigate(PanelsView.class);
+			} catch (ObjectOptimisticLockingFailureException exception) {
+				Notification n = Notification.show(
+						"Error al actualizar los datos. Otro usuario modificó el registro mientras usted realizaba cambios.");
+				n.setPosition(Position.MIDDLE);
+				n.addThemeVariants(NotificationVariant.LUMO_ERROR);
+			} catch (ValidationException validationException) {
+				Notification
+						.show("Fallo al actualizar los datos. Verifique nuevamente que todos los valores sean válidos");
+			}
+		});
+	}
 
-    private void createEditorLayout(SplitLayout splitLayout) {
-        editorLayoutDiv = new Div(); // Instanciar el miembro de la clase
-        editorLayoutDiv.setClassName("editor-layout");
+	@Override
+	public void beforeEnter(BeforeEnterEvent event) {
+		Optional<Long> panelId = event.getRouteParameters().get(PANEL_ID).map(Long::parseLong);
+		if (panelId.isPresent()) {
+			Optional<Panel> panelFromBackend = panelService.get(panelId.get());
+			if (panelFromBackend.isPresent()) {
+				populateForm(panelFromBackend.get());
+				editorLayoutDiv.setVisible(true);
+			} else {
+				Notification.show(String.format("El panel solicitado no fue encontrado, ID = %s", panelId.get()), 3000,
+						Notification.Position.BOTTOM_START);
+				// when a row is selected but the data is no longer available,
+				// refresh grid
+				refreshGrid(); // Esto podría llamar a clearForm indirectamente si deselecciona
+				editorLayoutDiv.setVisible(false); // Asegurar que esté oculto
+				event.forwardTo(PanelsView.class);
+			}
+		} else {
+			// Si no hay panelId, asegurar que el formulario esté limpio y oculto
+			clearForm();
+		}
+	}
 
-        Div editorDiv = new Div();
-        editorDiv.setClassName("editor");
-        editorLayoutDiv.add(editorDiv);
+	private void createEditorLayout(SplitLayout splitLayout) {
+		editorLayoutDiv = new Div(); // Instanciar el miembro de la clase
+		editorLayoutDiv.setClassName("editor-layout");
 
-        FormLayout formLayout = new FormLayout();
-        name = new TextField("Nombre");
-        created = new DatePicker("Fecha de Creación");
-        active = new Checkbox("Activo");
-        formLayout.add(name, created, active);
+		Div editorDiv = new Div();
+		editorDiv.setClassName("editor");
+		editorLayoutDiv.add(editorDiv);
 
-        editorDiv.add(formLayout);
-        createButtonLayout(editorLayoutDiv);
+		FormLayout formLayout = new FormLayout();
+		name = new TextField("Nombre");
+		created = new DatePicker("Fecha de Creación");
+		active = new Checkbox("Activo");
+		formLayout.add(name, created, active);
 
-        splitLayout.addToSecondary(editorLayoutDiv);
-    }
+		editorDiv.add(formLayout);
+		createButtonLayout(editorLayoutDiv);
 
-    private void createButtonLayout(Div editorLayoutDiv) {
-        HorizontalLayout buttonLayout = new HorizontalLayout();
-        buttonLayout.setClassName("button-layout");
-        cancel.addThemeVariants(ButtonVariant.LUMO_TERTIARY);
-        save.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
-        buttonLayout.add(save, cancel);
-        editorLayoutDiv.add(buttonLayout);
-    }
+		splitLayout.addToSecondary(editorLayoutDiv);
+	}
 
-    private void createGridLayout(SplitLayout splitLayout) {
-        Div wrapper = new Div();
-        wrapper.setClassName("grid-wrapper");
-        splitLayout.addToPrimary(wrapper);
-        wrapper.add(grid);
+	private void createButtonLayout(Div editorLayoutDiv) {
+		HorizontalLayout buttonLayout = new HorizontalLayout();
+		buttonLayout.setClassName("button-layout");
+		cancel.addThemeVariants(ButtonVariant.LUMO_TERTIARY);
+		save.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
+		buttonLayout.add(save, cancel);
+		editorLayoutDiv.add(buttonLayout);
+	}
 
-        HeaderRow headerRow = grid.appendHeaderRow();
-        headerRow.getCell(grid.getColumnByKey("name")).setComponent(nameFilter);
-        headerRow.getCell(grid.getColumnByKey("created")).setComponent(createdFilter);
-        headerRow.getCell(grid.getColumnByKey("active")).setComponent(activeFilter);
-    }
+	private void createGridLayout(SplitLayout splitLayout) {
+		Div wrapper = new Div();
+		wrapper.setClassName("grid-wrapper");
+		splitLayout.addToPrimary(wrapper);
+		wrapper.add(grid);
 
-    private void refreshGrid() {
-        grid.select(null);
-        grid.getDataProvider().refreshAll();
-    }
+		HeaderRow headerRow = grid.appendHeaderRow();
+		headerRow.getCell(grid.getColumnByKey("name")).setComponent(nameFilter);
+		headerRow.getCell(grid.getColumnByKey("created")).setComponent(createdFilter);
+		headerRow.getCell(grid.getColumnByKey("active")).setComponent(activeFilter);
+	}
 
-    private void clearForm() {
-        populateForm(null);
-        editorLayoutDiv.setVisible(false); // Ocultar el editor al limpiar el formulario
-    }
+	private void refreshGrid() {
+		grid.select(null);
+		grid.getDataProvider().refreshAll();
+	}
 
-    private void populateForm(Panel value) {
-        this.panel = value;
-        binder.readBean(this.panel);
+	private void clearForm() {
+		populateForm(null);
+		editorLayoutDiv.setVisible(false); // Ocultar el editor al limpiar el formulario
+	}
 
-    }
-    // Cambio trivial para republicar en nueva rama
+	private void populateForm(Panel value) {
+		this.panel = value;
+		binder.readBean(this.panel);
+
+	}
+	// Cambio trivial para republicar en nueva rama
 }

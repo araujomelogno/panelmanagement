@@ -41,271 +41,262 @@ import uy.com.equipos.panelmanagement.services.PanelistService;
 @PermitAll
 public class PanelistsView extends Div implements BeforeEnterObserver {
 
-    private final String PANELIST_ID = "panelistID";
-    private final String PANELIST_EDIT_ROUTE_TEMPLATE = "panelists/%s/edit";
+	private final String PANELIST_ID = "panelistID";
+	private final String PANELIST_EDIT_ROUTE_TEMPLATE = "panelists/%s/edit";
 
-    private final Grid<Panelist> grid = new Grid<>(Panelist.class, false);
-    private Div editorLayoutDiv; // Declarado como miembro de la clase
+	private final Grid<Panelist> grid = new Grid<>(Panelist.class, false);
+	private Div editorLayoutDiv; // Declarado como miembro de la clase
 
-    // Campos de filtro
-    private TextField firstNameFilter = new TextField();
-    private TextField lastNameFilter = new TextField();
-    private TextField emailFilter = new TextField();
-    private TextField phoneFilter = new TextField();
-    private DatePicker dateOfBirthFilter = new DatePicker();
-    private TextField occupationFilter = new TextField();
-    private DatePicker lastContactedFilter = new DatePicker();
-    private DatePicker lastInterviewedFilter = new DatePicker();
+	// Campos de filtro
+	private TextField firstNameFilter = new TextField();
+	private TextField lastNameFilter = new TextField();
+	private TextField emailFilter = new TextField();
+	private TextField phoneFilter = new TextField();
+	private DatePicker dateOfBirthFilter = new DatePicker();
+	private TextField occupationFilter = new TextField();
+	private DatePicker lastContactedFilter = new DatePicker();
+	private DatePicker lastInterviewedFilter = new DatePicker();
 
-    private TextField firstName;
-    private TextField lastName;
-    private TextField email;
-    private TextField phone;
-    private DatePicker dateOfBirth;
-    private TextField occupation;
-    private DatePicker lastContacted;
-    private DatePicker lastInterviewed;
+	private TextField firstName;
+	private TextField lastName;
+	private TextField email;
+	private TextField phone;
+	private DatePicker dateOfBirth;
+	private TextField occupation;
+	private DatePicker lastContacted;
+	private DatePicker lastInterviewed;
 
-    private final Button cancel = new Button("Cancelar");
-    private final Button save = new Button("Guardar");
-    private Button nuevoPanelistaButton;
+	private final Button cancel = new Button("Cancelar");
+	private final Button save = new Button("Guardar");
+	private Button nuevoPanelistaButton;
 
-    private final BeanValidationBinder<Panelist> binder;
+	private final BeanValidationBinder<Panelist> binder;
 
-    private Panelist panelist;
+	private Panelist panelist;
 
-    private final PanelistService panelistService;
+	private final PanelistService panelistService;
 
-    public PanelistsView(PanelistService panelistService) {
-        this.panelistService = panelistService;
-        addClassNames("panelists-view");
+	public PanelistsView(PanelistService panelistService) {
+		this.panelistService = panelistService;
+		addClassNames("panelists-view");
 
-        // Configurar columnas del Grid PRIMERO
-        grid.addColumn(Panelist::getFirstName).setHeader("Nombre").setKey("firstName").setAutoWidth(true);
-        grid.addColumn(Panelist::getLastName).setHeader("Apellido").setKey("lastName").setAutoWidth(true);
-        grid.addColumn(Panelist::getEmail).setHeader("Correo Electrónico").setKey("email").setAutoWidth(true);
-        grid.addColumn(Panelist::getPhone).setHeader("Teléfono").setKey("phone").setAutoWidth(true);
-        grid.addColumn(Panelist::getDateOfBirth).setHeader("Fecha de Nacimiento").setKey("dateOfBirth").setAutoWidth(true);
-        grid.addColumn(Panelist::getOccupation).setHeader("Ocupación").setKey("occupation").setAutoWidth(true);
-        grid.addColumn(Panelist::getLastContacted).setHeader("Último Contacto").setKey("lastContacted").setAutoWidth(true);
-        grid.addColumn(Panelist::getLastInterviewed).setHeader("Última Entrevista").setKey("lastInterviewed").setAutoWidth(true);
-        grid.addThemeVariants(GridVariant.LUMO_NO_BORDER);
+		// Configurar columnas del Grid PRIMERO
+		grid.addColumn(Panelist::getFirstName).setHeader("Nombre").setKey("firstName").setAutoWidth(true);
+		grid.addColumn(Panelist::getLastName).setHeader("Apellido").setKey("lastName").setAutoWidth(true);
+		grid.addColumn(Panelist::getEmail).setHeader("Correo Electrónico").setKey("email").setAutoWidth(true);
+		grid.addColumn(Panelist::getPhone).setHeader("Teléfono").setKey("phone").setAutoWidth(true);
+		grid.addColumn(Panelist::getDateOfBirth).setHeader("Fecha de Nacimiento").setKey("dateOfBirth")
+				.setAutoWidth(true);
+		grid.addColumn(Panelist::getOccupation).setHeader("Ocupación").setKey("occupation").setAutoWidth(true);
+		grid.addColumn(Panelist::getLastContacted).setHeader("Último Contacto").setKey("lastContacted")
+				.setAutoWidth(true);
+		grid.addColumn(Panelist::getLastInterviewed).setHeader("Última Entrevista").setKey("lastInterviewed")
+				.setAutoWidth(true);
+		grid.addThemeVariants(GridVariant.LUMO_NO_BORDER);
 
-        // Create UI - SplitLayout
-        SplitLayout splitLayout = new SplitLayout();
-        // createGridLayout ahora puede acceder a las keys de las columnas de forma segura
-        createGridLayout(splitLayout);
-        createEditorLayout(splitLayout);
-        // editorLayoutDiv.setVisible(false); // Se maneja después de add(mainLayout)
+		// Create UI - SplitLayout
+		SplitLayout splitLayout = new SplitLayout();
+		// createGridLayout ahora puede acceder a las keys de las columnas de forma
+		// segura
+		createGridLayout(splitLayout);
+		createEditorLayout(splitLayout);
+		// editorLayoutDiv.setVisible(false); // Se maneja después de add(mainLayout)
 
-        // Crear barra de título
-        H2 pageTitleText = new H2("Panelistas");
-        nuevoPanelistaButton = new Button("Nuevo Panelista");
-        HorizontalLayout titleBar = new HorizontalLayout(pageTitleText, nuevoPanelistaButton);
-        titleBar.setWidthFull();
-        titleBar.setDefaultVerticalComponentAlignment(Alignment.BASELINE);
-        titleBar.setJustifyContentMode(JustifyContentMode.BETWEEN);
+		// Crear barra de título
+		nuevoPanelistaButton = new Button("Nuevo Panelista");
+		nuevoPanelistaButton.getStyle().set("margin-left", "18px"); 
+		VerticalLayout mainLayout = new VerticalLayout(nuevoPanelistaButton, splitLayout);
+		mainLayout.setSizeFull();
+		mainLayout.setPadding(false);
+		mainLayout.setSpacing(false);
 
-        VerticalLayout mainLayout = new VerticalLayout(titleBar, splitLayout);
-        mainLayout.setSizeFull();
-        mainLayout.setPadding(false);
-        mainLayout.setSpacing(false);
+		add(mainLayout);
+		if (editorLayoutDiv != null) {
+			editorLayoutDiv.setVisible(false);
+		}
 
-        add(mainLayout);
-        if (editorLayoutDiv != null) { 
-            editorLayoutDiv.setVisible(false);
-        }
-        
-        // Listener para el botón "Nuevo Panelista"
-        nuevoPanelistaButton.addClickListener(click -> {
-            grid.asSingleSelect().clear();      
-            populateForm(new Panelist());        
-            if (editorLayoutDiv != null) {
-                editorLayoutDiv.setVisible(true); 
-            }
-            if (firstName != null) { 
-                firstName.focus();
-            }
-        });
+		// Listener para el botón "Nuevo Panelista"
+		nuevoPanelistaButton.addClickListener(click -> {
+			grid.asSingleSelect().clear();
+			populateForm(new Panelist());
+			if (editorLayoutDiv != null) {
+				editorLayoutDiv.setVisible(true);
+			}
+			if (firstName != null) {
+				firstName.focus();
+			}
+		});
 
-        // Configurar placeholders para filtros
-        firstNameFilter.setPlaceholder("Filtrar por Nombre");
-        lastNameFilter.setPlaceholder("Filtrar por Apellido");
-        emailFilter.setPlaceholder("Filtrar por Correo Electrónico");
-        phoneFilter.setPlaceholder("Filtrar por Teléfono");
-        dateOfBirthFilter.setPlaceholder("Filtrar por Fecha de Nacimiento");
-        occupationFilter.setPlaceholder("Filtrar por Ocupación");
-        lastContactedFilter.setPlaceholder("Filtrar por Último Contacto");
-        lastInterviewedFilter.setPlaceholder("Filtrar por Última Entrevista");
+		// Configurar placeholders para filtros
+		firstNameFilter.setPlaceholder("Filtrar por Nombre");
+		lastNameFilter.setPlaceholder("Filtrar por Apellido");
+		emailFilter.setPlaceholder("Filtrar por Correo Electrónico");
+		phoneFilter.setPlaceholder("Filtrar por Teléfono");
+		dateOfBirthFilter.setPlaceholder("Filtrar por Fecha de Nacimiento");
+		occupationFilter.setPlaceholder("Filtrar por Ocupación");
+		lastContactedFilter.setPlaceholder("Filtrar por Último Contacto");
+		lastInterviewedFilter.setPlaceholder("Filtrar por Última Entrevista");
 
-        // Añadir listeners para refrescar el grid
-        firstNameFilter.addValueChangeListener(e -> grid.getDataProvider().refreshAll());
-        lastNameFilter.addValueChangeListener(e -> grid.getDataProvider().refreshAll());
-        emailFilter.addValueChangeListener(e -> grid.getDataProvider().refreshAll());
-        phoneFilter.addValueChangeListener(e -> grid.getDataProvider().refreshAll());
-        dateOfBirthFilter.addValueChangeListener(e -> grid.getDataProvider().refreshAll());
-        occupationFilter.addValueChangeListener(e -> grid.getDataProvider().refreshAll());
-        lastContactedFilter.addValueChangeListener(e -> grid.getDataProvider().refreshAll());
-        lastInterviewedFilter.addValueChangeListener(e -> grid.getDataProvider().refreshAll());
-        
-        // Configurar el DataProvider del Grid
-        grid.setItems(query -> {
-            String firstNameVal = firstNameFilter.getValue();
-            String lastNameVal = lastNameFilter.getValue();
-            String emailVal = emailFilter.getValue();
-            String phoneVal = phoneFilter.getValue();
-            LocalDate dateOfBirthVal = dateOfBirthFilter.getValue();
-            String occupationVal = occupationFilter.getValue();
-            LocalDate lastContactedVal = lastContactedFilter.getValue();
-            LocalDate lastInterviewedVal = lastInterviewedFilter.getValue();
+		// Añadir listeners para refrescar el grid
+		firstNameFilter.addValueChangeListener(e -> grid.getDataProvider().refreshAll());
+		lastNameFilter.addValueChangeListener(e -> grid.getDataProvider().refreshAll());
+		emailFilter.addValueChangeListener(e -> grid.getDataProvider().refreshAll());
+		phoneFilter.addValueChangeListener(e -> grid.getDataProvider().refreshAll());
+		dateOfBirthFilter.addValueChangeListener(e -> grid.getDataProvider().refreshAll());
+		occupationFilter.addValueChangeListener(e -> grid.getDataProvider().refreshAll());
+		lastContactedFilter.addValueChangeListener(e -> grid.getDataProvider().refreshAll());
+		lastInterviewedFilter.addValueChangeListener(e -> grid.getDataProvider().refreshAll());
 
-            return panelistService.list(
-                VaadinSpringDataHelpers.toSpringPageRequest(query),
-                firstNameVal,
-                lastNameVal,
-                emailVal,
-                phoneVal,
-                dateOfBirthVal,
-                occupationVal,
-                lastContactedVal,
-                lastInterviewedVal
-            ).stream();
-        });
+		// Configurar el DataProvider del Grid
+		grid.setItems(query -> {
+			String firstNameVal = firstNameFilter.getValue();
+			String lastNameVal = lastNameFilter.getValue();
+			String emailVal = emailFilter.getValue();
+			String phoneVal = phoneFilter.getValue();
+			LocalDate dateOfBirthVal = dateOfBirthFilter.getValue();
+			String occupationVal = occupationFilter.getValue();
+			LocalDate lastContactedVal = lastContactedFilter.getValue();
+			LocalDate lastInterviewedVal = lastInterviewedFilter.getValue();
 
-        // when a row is selected or deselected, populate form
-        grid.asSingleSelect().addValueChangeListener(event -> {
-            if (event.getValue() != null) {
-                editorLayoutDiv.setVisible(true);
-                UI.getCurrent().navigate(String.format(PANELIST_EDIT_ROUTE_TEMPLATE, event.getValue().getId()));
-            } else {
-                clearForm(); // clearForm ahora también oculta el editor
-                UI.getCurrent().navigate(PanelistsView.class);
-            }
-        });
+			return panelistService.list(VaadinSpringDataHelpers.toSpringPageRequest(query), firstNameVal, lastNameVal,
+					emailVal, phoneVal, dateOfBirthVal, occupationVal, lastContactedVal, lastInterviewedVal).stream();
+		});
 
-        // Configure Form
-        binder = new BeanValidationBinder<>(Panelist.class);
+		// when a row is selected or deselected, populate form
+		grid.asSingleSelect().addValueChangeListener(event -> {
+			if (event.getValue() != null) {
+				editorLayoutDiv.setVisible(true);
+				UI.getCurrent().navigate(String.format(PANELIST_EDIT_ROUTE_TEMPLATE, event.getValue().getId()));
+			} else {
+				clearForm(); // clearForm ahora también oculta el editor
+				UI.getCurrent().navigate(PanelistsView.class);
+			}
+		});
 
-        // Bind fields. This is where you'd define e.g. validation rules
-        binder.bindInstanceFields(this);
+		// Configure Form
+		binder = new BeanValidationBinder<>(Panelist.class);
 
-        cancel.addClickListener(e -> {
-            clearForm();
-            refreshGrid();
-        });
+		// Bind fields. This is where you'd define e.g. validation rules
+		binder.bindInstanceFields(this);
 
-        save.addClickListener(e -> {
-            try {
-                if (this.panelist == null) {
-                    this.panelist = new Panelist();
-                }
-                binder.writeBean(this.panelist);
-                panelistService.save(this.panelist);
-                clearForm();
-                refreshGrid();
-                Notification.show("Datos actualizados");
-                UI.getCurrent().navigate(PanelistsView.class);
-            } catch (ObjectOptimisticLockingFailureException exception) {
-                Notification n = Notification.show(
-                        "Error al actualizar los datos. Otro usuario modificó el registro mientras usted realizaba cambios.");
-                n.setPosition(Position.MIDDLE);
-                n.addThemeVariants(NotificationVariant.LUMO_ERROR);
-            } catch (ValidationException validationException) {
-                Notification.show("Fallo al actualizar los datos. Verifique nuevamente que todos los valores sean válidos");
-            }
-        });
-    }
+		cancel.addClickListener(e -> {
+			clearForm();
+			refreshGrid();
+		});
 
-    @Override
-    public void beforeEnter(BeforeEnterEvent event) {
-        Optional<Long> panelistId = event.getRouteParameters().get(PANELIST_ID).map(Long::parseLong);
-        if (panelistId.isPresent()) {
-            Optional<Panelist> panelistFromBackend = panelistService.get(panelistId.get());
-            if (panelistFromBackend.isPresent()) {
-                populateForm(panelistFromBackend.get());
-                editorLayoutDiv.setVisible(true);
-            } else {
-                Notification.show(String.format("El panelista solicitado no fue encontrado, ID = %s", panelistId.get()),
-                        3000, Notification.Position.BOTTOM_START);
-                // when a row is selected but the data is no longer available,
-                // refresh grid
-                refreshGrid();
-                if (editorLayoutDiv != null) { // Asegurar que no sea nulo si beforeEnter se llama muy temprano
-                    editorLayoutDiv.setVisible(false);
-                }
-                event.forwardTo(PanelistsView.class);
-            }
-        } else {
-            clearForm(); // Asegurar que el editor esté oculto si no hay ID
-        }
-    }
+		save.addClickListener(e -> {
+			try {
+				if (this.panelist == null) {
+					this.panelist = new Panelist();
+				}
+				binder.writeBean(this.panelist);
+				panelistService.save(this.panelist);
+				clearForm();
+				refreshGrid();
+				Notification.show("Datos actualizados");
+				UI.getCurrent().navigate(PanelistsView.class);
+			} catch (ObjectOptimisticLockingFailureException exception) {
+				Notification n = Notification.show(
+						"Error al actualizar los datos. Otro usuario modificó el registro mientras usted realizaba cambios.");
+				n.setPosition(Position.MIDDLE);
+				n.addThemeVariants(NotificationVariant.LUMO_ERROR);
+			} catch (ValidationException validationException) {
+				Notification
+						.show("Fallo al actualizar los datos. Verifique nuevamente que todos los valores sean válidos");
+			}
+		});
+	}
 
-    private void createEditorLayout(SplitLayout splitLayout) {
-        editorLayoutDiv = new Div(); // Instanciar el miembro de la clase
-        editorLayoutDiv.setClassName("editor-layout");
+	@Override
+	public void beforeEnter(BeforeEnterEvent event) {
+		Optional<Long> panelistId = event.getRouteParameters().get(PANELIST_ID).map(Long::parseLong);
+		if (panelistId.isPresent()) {
+			Optional<Panelist> panelistFromBackend = panelistService.get(panelistId.get());
+			if (panelistFromBackend.isPresent()) {
+				populateForm(panelistFromBackend.get());
+				editorLayoutDiv.setVisible(true);
+			} else {
+				Notification.show(String.format("El panelista solicitado no fue encontrado, ID = %s", panelistId.get()),
+						3000, Notification.Position.BOTTOM_START);
+				// when a row is selected but the data is no longer available,
+				// refresh grid
+				refreshGrid();
+				if (editorLayoutDiv != null) { // Asegurar que no sea nulo si beforeEnter se llama muy temprano
+					editorLayoutDiv.setVisible(false);
+				}
+				event.forwardTo(PanelistsView.class);
+			}
+		} else {
+			clearForm(); // Asegurar que el editor esté oculto si no hay ID
+		}
+	}
 
-        Div editorDiv = new Div();
-        editorDiv.setClassName("editor");
-        editorLayoutDiv.add(editorDiv);
+	private void createEditorLayout(SplitLayout splitLayout) {
+		editorLayoutDiv = new Div(); // Instanciar el miembro de la clase
+		editorLayoutDiv.setClassName("editor-layout");
 
-        FormLayout formLayout = new FormLayout();
-        firstName = new TextField("Nombre");
-        lastName = new TextField("Apellido");
-        email = new TextField("Correo Electrónico");
-        phone = new TextField("Teléfono");
-        dateOfBirth = new DatePicker("Fecha de Nacimiento");
-        occupation = new TextField("Ocupación");
-        lastContacted = new DatePicker("Último Contacto");
-        lastInterviewed = new DatePicker("Última Entrevista");
-        formLayout.add(firstName, lastName, email, phone, dateOfBirth, occupation, lastContacted, lastInterviewed);
+		Div editorDiv = new Div();
+		editorDiv.setClassName("editor");
+		editorLayoutDiv.add(editorDiv);
 
-        editorDiv.add(formLayout);
-        createButtonLayout(editorLayoutDiv);
+		FormLayout formLayout = new FormLayout();
+		firstName = new TextField("Nombre");
+		lastName = new TextField("Apellido");
+		email = new TextField("Correo Electrónico");
+		phone = new TextField("Teléfono");
+		dateOfBirth = new DatePicker("Fecha de Nacimiento");
+		occupation = new TextField("Ocupación");
+		lastContacted = new DatePicker("Último Contacto");
+		lastInterviewed = new DatePicker("Última Entrevista");
+		formLayout.add(firstName, lastName, email, phone, dateOfBirth, occupation, lastContacted, lastInterviewed);
 
-        splitLayout.addToSecondary(editorLayoutDiv);
-    }
+		editorDiv.add(formLayout);
+		createButtonLayout(editorLayoutDiv);
 
-    private void createButtonLayout(Div editorLayoutDiv) {
-        HorizontalLayout buttonLayout = new HorizontalLayout();
-        buttonLayout.setClassName("button-layout");
-        cancel.addThemeVariants(ButtonVariant.LUMO_TERTIARY);
-        save.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
-        buttonLayout.add(save, cancel);
-        editorLayoutDiv.add(buttonLayout);
-    }
+		splitLayout.addToSecondary(editorLayoutDiv);
+	}
 
-    private void createGridLayout(SplitLayout splitLayout) {
-        Div wrapper = new Div();
-        wrapper.setClassName("grid-wrapper");
-        splitLayout.addToPrimary(wrapper);
-        wrapper.add(grid);
+	private void createButtonLayout(Div editorLayoutDiv) {
+		HorizontalLayout buttonLayout = new HorizontalLayout();
+		buttonLayout.setClassName("button-layout");
+		cancel.addThemeVariants(ButtonVariant.LUMO_TERTIARY);
+		save.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
+		buttonLayout.add(save, cancel);
+		editorLayoutDiv.add(buttonLayout);
+	}
 
-        HeaderRow headerRow = grid.appendHeaderRow();
-        headerRow.getCell(grid.getColumnByKey("firstName")).setComponent(firstNameFilter);
-        headerRow.getCell(grid.getColumnByKey("lastName")).setComponent(lastNameFilter);
-        headerRow.getCell(grid.getColumnByKey("email")).setComponent(emailFilter);
-        headerRow.getCell(grid.getColumnByKey("phone")).setComponent(phoneFilter);
-        headerRow.getCell(grid.getColumnByKey("dateOfBirth")).setComponent(dateOfBirthFilter);
-        headerRow.getCell(grid.getColumnByKey("occupation")).setComponent(occupationFilter);
-        headerRow.getCell(grid.getColumnByKey("lastContacted")).setComponent(lastContactedFilter);
-        headerRow.getCell(grid.getColumnByKey("lastInterviewed")).setComponent(lastInterviewedFilter);
-    }
+	private void createGridLayout(SplitLayout splitLayout) {
+		Div wrapper = new Div();
+		wrapper.setClassName("grid-wrapper");
+		splitLayout.addToPrimary(wrapper);
+		wrapper.add(grid);
 
-    private void refreshGrid() {
-        grid.select(null);
-        grid.getDataProvider().refreshAll();
-    }
+		HeaderRow headerRow = grid.appendHeaderRow();
+		headerRow.getCell(grid.getColumnByKey("firstName")).setComponent(firstNameFilter);
+		headerRow.getCell(grid.getColumnByKey("lastName")).setComponent(lastNameFilter);
+		headerRow.getCell(grid.getColumnByKey("email")).setComponent(emailFilter);
+		headerRow.getCell(grid.getColumnByKey("phone")).setComponent(phoneFilter);
+		headerRow.getCell(grid.getColumnByKey("dateOfBirth")).setComponent(dateOfBirthFilter);
+		headerRow.getCell(grid.getColumnByKey("occupation")).setComponent(occupationFilter);
+		headerRow.getCell(grid.getColumnByKey("lastContacted")).setComponent(lastContactedFilter);
+		headerRow.getCell(grid.getColumnByKey("lastInterviewed")).setComponent(lastInterviewedFilter);
+	}
 
-    private void clearForm() {
-        populateForm(null);
-        if (editorLayoutDiv != null) { // Buena práctica verificar nulidad
-            editorLayoutDiv.setVisible(false);
-        }
-    }
+	private void refreshGrid() {
+		grid.select(null);
+		grid.getDataProvider().refreshAll();
+	}
 
-    private void populateForm(Panelist value) {
-        this.panelist = value;
-        binder.readBean(this.panelist);
+	private void clearForm() {
+		populateForm(null);
+		if (editorLayoutDiv != null) { // Buena práctica verificar nulidad
+			editorLayoutDiv.setVisible(false);
+		}
+	}
 
-    }
+	private void populateForm(Panelist value) {
+		this.panelist = value;
+		binder.readBean(this.panelist);
+
+	}
 }

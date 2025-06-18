@@ -41,226 +41,219 @@ import uy.com.equipos.panelmanagement.services.SurveyService;
 @PermitAll
 public class SurveysView extends Div implements BeforeEnterObserver {
 
-    private final String SURVEY_ID = "surveyID";
-    private final String SURVEY_EDIT_ROUTE_TEMPLATE = "surveys/%s/edit";
+	private final String SURVEY_ID = "surveyID";
+	private final String SURVEY_EDIT_ROUTE_TEMPLATE = "surveys/%s/edit";
 
-    private final Grid<Survey> grid = new Grid<>(Survey.class, false);
-    private Div editorLayoutDiv; // Declarado como miembro de la clase
+	private final Grid<Survey> grid = new Grid<>(Survey.class, false);
+	private Div editorLayoutDiv; // Declarado como miembro de la clase
 
-    // Campos de filtro
-    private TextField nameFilter = new TextField();
-    private DatePicker initDateFilter = new DatePicker();
-    private TextField linkFilter = new TextField();
+	// Campos de filtro
+	private TextField nameFilter = new TextField();
+	private DatePicker initDateFilter = new DatePicker();
+	private TextField linkFilter = new TextField();
 
-    private TextField name;
-    private DatePicker initDate;
-    private TextField link;
+	private TextField name;
+	private DatePicker initDate;
+	private TextField link;
 
-    private final Button cancel = new Button("Cancelar");
-    private final Button save = new Button("Guardar");
-    private Button nuevaEncuestaButton;
+	private final Button cancel = new Button("Cancelar");
+	private final Button save = new Button("Guardar");
+	private Button nuevaEncuestaButton;
 
-    private final BeanValidationBinder<Survey> binder;
+	private final BeanValidationBinder<Survey> binder;
 
-    private Survey survey;
+	private Survey survey;
 
-    private final SurveyService surveyService;
+	private final SurveyService surveyService;
 
-    public SurveysView(SurveyService surveyService) {
-        this.surveyService = surveyService;
-        addClassNames("surveys-view");
+	public SurveysView(SurveyService surveyService) {
+		this.surveyService = surveyService;
+		addClassNames("surveys-view");
 
-        // Configurar columnas del Grid PRIMERO
-        grid.addColumn(Survey::getName).setHeader("Nombre").setKey("name").setAutoWidth(true);
-        grid.addColumn(Survey::getInitDate).setHeader("Fecha de Inicio").setKey("initDate").setAutoWidth(true);
-        grid.addColumn(Survey::getLink).setHeader("Enlace").setKey("link").setAutoWidth(true);
-        grid.addThemeVariants(GridVariant.LUMO_NO_BORDER);
+		// Configurar columnas del Grid PRIMERO
+		grid.addColumn(Survey::getName).setHeader("Nombre").setKey("name").setAutoWidth(true);
+		grid.addColumn(Survey::getInitDate).setHeader("Fecha de Inicio").setKey("initDate").setAutoWidth(true);
+		grid.addColumn(Survey::getLink).setHeader("Enlace").setKey("link").setAutoWidth(true);
+		grid.addThemeVariants(GridVariant.LUMO_NO_BORDER);
 
-        // Create UI - SplitLayout
-        SplitLayout splitLayout = new SplitLayout();
-        // createGridLayout ahora puede acceder a las keys de las columnas de forma segura
-        createGridLayout(splitLayout);
-        createEditorLayout(splitLayout);
-        // editorLayoutDiv.setVisible(false); // Se maneja después de add(mainLayout)
+		// Create UI - SplitLayout
+		SplitLayout splitLayout = new SplitLayout();
+		// createGridLayout ahora puede acceder a las keys de las columnas de forma
+		// segura
+		createGridLayout(splitLayout);
+		createEditorLayout(splitLayout);
+		// editorLayoutDiv.setVisible(false); // Se maneja después de add(mainLayout)
 
-        // Crear barra de título
-        H2 pageTitleText = new H2("Encuestas"); 
-        nuevaEncuestaButton = new Button("Nueva Encuesta");
-        HorizontalLayout titleBar = new HorizontalLayout(pageTitleText, nuevaEncuestaButton);
-        titleBar.setWidthFull();
-        titleBar.setDefaultVerticalComponentAlignment(Alignment.BASELINE);
-        titleBar.setJustifyContentMode(JustifyContentMode.BETWEEN);
+		nuevaEncuestaButton = new Button("Nueva Encuesta");
+		nuevaEncuestaButton.getStyle().set("margin-left", "18px");  
 
-        VerticalLayout mainLayout = new VerticalLayout(titleBar, splitLayout);
-        mainLayout.setSizeFull();
-        mainLayout.setPadding(false);
-        mainLayout.setSpacing(false);
+		VerticalLayout mainLayout = new VerticalLayout(nuevaEncuestaButton, splitLayout);
+		mainLayout.setSizeFull();
+		mainLayout.setPadding(false);
+		mainLayout.setSpacing(false);
 
-        add(mainLayout); 
-        if (editorLayoutDiv != null) { 
-            editorLayoutDiv.setVisible(false);
-        }
-        
-        // Listener para el botón "Nueva Encuesta"
-        nuevaEncuestaButton.addClickListener(click -> {
-            grid.asSingleSelect().clear();      
-            populateForm(new Survey());        
-            if (editorLayoutDiv != null) {
-                editorLayoutDiv.setVisible(true); 
-            }
-            if (name != null) { 
-                name.focus();
-            }
-        });
+		add(mainLayout);
+		if (editorLayoutDiv != null) {
+			editorLayoutDiv.setVisible(false);
+		}
 
-        // Configurar placeholders para filtros
-        nameFilter.setPlaceholder("Filtrar por Nombre");
-        initDateFilter.setPlaceholder("Filtrar por Fecha de Inicio");
-        linkFilter.setPlaceholder("Filtrar por Enlace");
+		// Listener para el botón "Nueva Encuesta"
+		nuevaEncuestaButton.addClickListener(click -> {
+			grid.asSingleSelect().clear();
+			populateForm(new Survey());
+			if (editorLayoutDiv != null) {
+				editorLayoutDiv.setVisible(true);
+			}
+			if (name != null) {
+				name.focus();
+			}
+		});
 
-        // Añadir listeners para refrescar el grid
-        nameFilter.addValueChangeListener(e -> grid.getDataProvider().refreshAll());
-        initDateFilter.addValueChangeListener(e -> grid.getDataProvider().refreshAll());
-        linkFilter.addValueChangeListener(e -> grid.getDataProvider().refreshAll());
-        
-        // Configurar el DataProvider del Grid
-        grid.setItems(query -> {
-            String nameVal = nameFilter.getValue();
-            LocalDate initDateVal = initDateFilter.getValue();
-            String linkVal = linkFilter.getValue();
+		// Configurar placeholders para filtros
+		nameFilter.setPlaceholder("Filtrar por Nombre");
+		initDateFilter.setPlaceholder("Filtrar por Fecha de Inicio");
+		linkFilter.setPlaceholder("Filtrar por Enlace");
 
-            return surveyService.list(
-                VaadinSpringDataHelpers.toSpringPageRequest(query),
-                nameVal,
-                initDateVal,
-                linkVal
-            ).stream();
-        });
+		// Añadir listeners para refrescar el grid
+		nameFilter.addValueChangeListener(e -> grid.getDataProvider().refreshAll());
+		initDateFilter.addValueChangeListener(e -> grid.getDataProvider().refreshAll());
+		linkFilter.addValueChangeListener(e -> grid.getDataProvider().refreshAll());
 
-        // when a row is selected or deselected, populate form
-        grid.asSingleSelect().addValueChangeListener(event -> {
-            if (event.getValue() != null) {
-                editorLayoutDiv.setVisible(true);
-                UI.getCurrent().navigate(String.format(SURVEY_EDIT_ROUTE_TEMPLATE, event.getValue().getId()));
-            } else {
-                clearForm(); // clearForm ahora también oculta el editor
-                UI.getCurrent().navigate(SurveysView.class);
-            }
-        });
+		// Configurar el DataProvider del Grid
+		grid.setItems(query -> {
+			String nameVal = nameFilter.getValue();
+			LocalDate initDateVal = initDateFilter.getValue();
+			String linkVal = linkFilter.getValue();
 
-        // Configure Form
-        binder = new BeanValidationBinder<>(Survey.class);
+			return surveyService.list(VaadinSpringDataHelpers.toSpringPageRequest(query), nameVal, initDateVal, linkVal)
+					.stream();
+		});
 
-        // Bind fields. This is where you'd define e.g. validation rules
-        binder.bindInstanceFields(this);
+		// when a row is selected or deselected, populate form
+		grid.asSingleSelect().addValueChangeListener(event -> {
+			if (event.getValue() != null) {
+				editorLayoutDiv.setVisible(true);
+				UI.getCurrent().navigate(String.format(SURVEY_EDIT_ROUTE_TEMPLATE, event.getValue().getId()));
+			} else {
+				clearForm(); // clearForm ahora también oculta el editor
+				UI.getCurrent().navigate(SurveysView.class);
+			}
+		});
 
-        cancel.addClickListener(e -> {
-            clearForm();
-            refreshGrid();
-        });
+		// Configure Form
+		binder = new BeanValidationBinder<>(Survey.class);
 
-        save.addClickListener(e -> {
-            try {
-                if (this.survey == null) {
-                    this.survey = new Survey();
-                }
-                binder.writeBean(this.survey);
-                surveyService.save(this.survey);
-                clearForm();
-                refreshGrid();
-                Notification.show("Datos actualizados");
-                UI.getCurrent().navigate(SurveysView.class);
-            } catch (ObjectOptimisticLockingFailureException exception) {
-                Notification n = Notification.show(
-                        "Error al actualizar los datos. Otro usuario modificó el registro mientras usted realizaba cambios.");
-                n.setPosition(Position.MIDDLE);
-                n.addThemeVariants(NotificationVariant.LUMO_ERROR);
-            } catch (ValidationException validationException) {
-                Notification.show("Fallo al actualizar los datos. Verifique nuevamente que todos los valores sean válidos");
-            }
-        });
-    }
+		// Bind fields. This is where you'd define e.g. validation rules
+		binder.bindInstanceFields(this);
 
-    @Override
-    public void beforeEnter(BeforeEnterEvent event) {
-        Optional<Long> surveyId = event.getRouteParameters().get(SURVEY_ID).map(Long::parseLong);
-        if (surveyId.isPresent()) {
-            Optional<Survey> surveyFromBackend = surveyService.get(surveyId.get());
-            if (surveyFromBackend.isPresent()) {
-                populateForm(surveyFromBackend.get());
-                editorLayoutDiv.setVisible(true);
-            } else {
-                Notification.show(String.format("La encuesta solicitada no fue encontrada, ID = %s", surveyId.get()), 3000,
-                        Notification.Position.BOTTOM_START);
-                // when a row is selected but the data is no longer available,
-                // refresh grid
-                refreshGrid();
-                if (editorLayoutDiv != null) { 
-                    editorLayoutDiv.setVisible(false);
-                }
-                event.forwardTo(SurveysView.class);
-            }
-        } else {
-            clearForm(); // Asegurar que el editor esté oculto si no hay ID
-        }
-    }
+		cancel.addClickListener(e -> {
+			clearForm();
+			refreshGrid();
+		});
 
-    private void createEditorLayout(SplitLayout splitLayout) {
-        editorLayoutDiv = new Div(); // Instanciar el miembro de la clase
-        editorLayoutDiv.setClassName("editor-layout");
+		save.addClickListener(e -> {
+			try {
+				if (this.survey == null) {
+					this.survey = new Survey();
+				}
+				binder.writeBean(this.survey);
+				surveyService.save(this.survey);
+				clearForm();
+				refreshGrid();
+				Notification.show("Datos actualizados");
+				UI.getCurrent().navigate(SurveysView.class);
+			} catch (ObjectOptimisticLockingFailureException exception) {
+				Notification n = Notification.show(
+						"Error al actualizar los datos. Otro usuario modificó el registro mientras usted realizaba cambios.");
+				n.setPosition(Position.MIDDLE);
+				n.addThemeVariants(NotificationVariant.LUMO_ERROR);
+			} catch (ValidationException validationException) {
+				Notification
+						.show("Fallo al actualizar los datos. Verifique nuevamente que todos los valores sean válidos");
+			}
+		});
+	}
 
-        Div editorDiv = new Div();
-        editorDiv.setClassName("editor");
-        editorLayoutDiv.add(editorDiv);
+	@Override
+	public void beforeEnter(BeforeEnterEvent event) {
+		Optional<Long> surveyId = event.getRouteParameters().get(SURVEY_ID).map(Long::parseLong);
+		if (surveyId.isPresent()) {
+			Optional<Survey> surveyFromBackend = surveyService.get(surveyId.get());
+			if (surveyFromBackend.isPresent()) {
+				populateForm(surveyFromBackend.get());
+				editorLayoutDiv.setVisible(true);
+			} else {
+				Notification.show(String.format("La encuesta solicitada no fue encontrada, ID = %s", surveyId.get()),
+						3000, Notification.Position.BOTTOM_START);
+				// when a row is selected but the data is no longer available,
+				// refresh grid
+				refreshGrid();
+				if (editorLayoutDiv != null) {
+					editorLayoutDiv.setVisible(false);
+				}
+				event.forwardTo(SurveysView.class);
+			}
+		} else {
+			clearForm(); // Asegurar que el editor esté oculto si no hay ID
+		}
+	}
 
-        FormLayout formLayout = new FormLayout();
-        name = new TextField("Nombre");
-        initDate = new DatePicker("Fecha de Inicio");
-        link = new TextField("Enlace");
-        formLayout.add(name, initDate, link);
+	private void createEditorLayout(SplitLayout splitLayout) {
+		editorLayoutDiv = new Div(); // Instanciar el miembro de la clase
+		editorLayoutDiv.setClassName("editor-layout");
 
-        editorDiv.add(formLayout);
-        createButtonLayout(editorLayoutDiv);
+		Div editorDiv = new Div();
+		editorDiv.setClassName("editor");
+		editorLayoutDiv.add(editorDiv);
 
-        splitLayout.addToSecondary(editorLayoutDiv);
-    }
+		FormLayout formLayout = new FormLayout();
+		name = new TextField("Nombre");
+		initDate = new DatePicker("Fecha de Inicio");
+		link = new TextField("Enlace");
+		formLayout.add(name, initDate, link);
 
-    private void createButtonLayout(Div editorLayoutDiv) {
-        HorizontalLayout buttonLayout = new HorizontalLayout();
-        buttonLayout.setClassName("button-layout");
-        cancel.addThemeVariants(ButtonVariant.LUMO_TERTIARY);
-        save.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
-        buttonLayout.add(save, cancel);
-        editorLayoutDiv.add(buttonLayout);
-    }
+		editorDiv.add(formLayout);
+		createButtonLayout(editorLayoutDiv);
 
-    private void createGridLayout(SplitLayout splitLayout) {
-        Div wrapper = new Div();
-        wrapper.setClassName("grid-wrapper");
-        splitLayout.addToPrimary(wrapper);
-        wrapper.add(grid);
+		splitLayout.addToSecondary(editorLayoutDiv);
+	}
 
-        HeaderRow headerRow = grid.appendHeaderRow();
-        headerRow.getCell(grid.getColumnByKey("name")).setComponent(nameFilter);
-        headerRow.getCell(grid.getColumnByKey("initDate")).setComponent(initDateFilter);
-        headerRow.getCell(grid.getColumnByKey("link")).setComponent(linkFilter);
-    }
+	private void createButtonLayout(Div editorLayoutDiv) {
+		HorizontalLayout buttonLayout = new HorizontalLayout();
+		buttonLayout.setClassName("button-layout");
+		cancel.addThemeVariants(ButtonVariant.LUMO_TERTIARY);
+		save.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
+		buttonLayout.add(save, cancel);
+		editorLayoutDiv.add(buttonLayout);
+	}
 
-    private void refreshGrid() {
-        grid.select(null);
-        grid.getDataProvider().refreshAll();
-    }
+	private void createGridLayout(SplitLayout splitLayout) {
+		Div wrapper = new Div();
+		wrapper.setClassName("grid-wrapper");
+		splitLayout.addToPrimary(wrapper);
+		wrapper.add(grid);
 
-    private void clearForm() {
-        populateForm(null);
-        if (editorLayoutDiv != null) { // Buena práctica verificar nulidad
-            editorLayoutDiv.setVisible(false);
-        }
-    }
+		HeaderRow headerRow = grid.appendHeaderRow();
+		headerRow.getCell(grid.getColumnByKey("name")).setComponent(nameFilter);
+		headerRow.getCell(grid.getColumnByKey("initDate")).setComponent(initDateFilter);
+		headerRow.getCell(grid.getColumnByKey("link")).setComponent(linkFilter);
+	}
 
-    private void populateForm(Survey value) {
-        this.survey = value;
-        binder.readBean(this.survey);
+	private void refreshGrid() {
+		grid.select(null);
+		grid.getDataProvider().refreshAll();
+	}
 
-    }
+	private void clearForm() {
+		populateForm(null);
+		if (editorLayoutDiv != null) { // Buena práctica verificar nulidad
+			editorLayoutDiv.setVisible(false);
+		}
+	}
+
+	private void populateForm(Survey value) {
+		this.survey = value;
+		binder.readBean(this.survey);
+
+	}
 }

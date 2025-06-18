@@ -1,4 +1,4 @@
-package uy.com.equipos.panelmanagement.views.users;
+package uy.com.equipos.panelmanagement.views.propierties;
 
 import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.button.Button;
@@ -26,51 +26,49 @@ import com.vaadin.flow.router.Menu;
 import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
 import com.vaadin.flow.spring.data.VaadinSpringDataHelpers;
-import jakarta.annotation.security.RolesAllowed;
+import jakarta.annotation.security.PermitAll;
 import java.util.Optional;
 import org.springframework.orm.ObjectOptimisticLockingFailureException;
 import org.vaadin.lineawesome.LineAwesomeIconUrl;
-import uy.com.equipos.panelmanagement.data.AppUser;
-import uy.com.equipos.panelmanagement.services.AppUserService;
+import uy.com.equipos.panelmanagement.data.PanelistProperty;
+import uy.com.equipos.panelmanagement.services.PanelistPropertyService;
 
-@PageTitle("Usuarios")
-@Route("users/:appUserID?/:action?(edit)")
-@Menu(order = 6, icon = LineAwesomeIconUrl.COLUMNS_SOLID)
-@RolesAllowed("ADMIN")
-public class UsersView extends Div implements BeforeEnterObserver {
+@PageTitle("Propiedades de panelistas")
+@Route("properties/:panelistPropertyID?/:action?(edit)")
+@Menu(order = 2, icon = LineAwesomeIconUrl.EDIT)
+@PermitAll
+public class PropertiesView extends Div implements BeforeEnterObserver {
 
-	private final String APPUSER_ID = "appUserID";
-	private final String APPUSER_EDIT_ROUTE_TEMPLATE = "users/%s/edit";
+	private final String PANELISTPROPERTY_ID = "panelistPropertyID";
+	private final String PANELISTPROPERTY_EDIT_ROUTE_TEMPLATE = "properties/%s/edit";
 
-	private final Grid<AppUser> grid = new Grid<>(AppUser.class, false);
+	private final Grid<PanelistProperty> grid = new Grid<>(PanelistProperty.class, false);
 	private Div editorLayoutDiv; // Declarado como miembro de la clase
 
 	// Campos de filtro
 	private TextField nameFilter = new TextField();
-	private TextField emailFilter = new TextField();
+	private TextField typeFilter = new TextField();
 
 	private TextField name;
-	private TextField password;
-	private TextField email;
+	private TextField type;
 
 	private final Button cancel = new Button("Cancelar");
 	private final Button save = new Button("Guardar");
-	private Button nuevoUsuarioButton;
+	private Button nuevaPropiedadButton;
 
-	private final BeanValidationBinder<AppUser> binder;
+	private final BeanValidationBinder<PanelistProperty> binder;
 
-	private AppUser appUser;
+	private PanelistProperty panelistProperty;
 
-	private final AppUserService appUserService;
+	private final PanelistPropertyService panelistPropertyService;
 
-	public UsersView(AppUserService appUserService) {
-		this.appUserService = appUserService;
-		addClassNames("users-view");
+	public PropertiesView(PanelistPropertyService panelistPropertyService) {
+		this.panelistPropertyService = panelistPropertyService;
+		addClassNames("propierties-view");
 
 		// Configurar columnas del Grid PRIMERO
-		grid.addColumn(AppUser::getName).setHeader("Nombre").setKey("name").setAutoWidth(true);
-		grid.addColumn(AppUser::getPassword).setHeader("Contraseña").setAutoWidth(true);
-		grid.addColumn(AppUser::getEmail).setHeader("Correo Electrónico").setKey("email").setAutoWidth(true);
+		grid.addColumn(PanelistProperty::getName).setHeader("Nombre").setKey("name").setAutoWidth(true);
+		grid.addColumn(PanelistProperty::getType).setHeader("Tipo").setKey("type").setAutoWidth(true);
 		grid.addThemeVariants(GridVariant.LUMO_NO_BORDER);
 
 		// Create UI - SplitLayout
@@ -81,10 +79,10 @@ public class UsersView extends Div implements BeforeEnterObserver {
 		createEditorLayout(splitLayout);
 		// editorLayoutDiv.setVisible(false); // Se maneja después de add(mainLayout)
 
-		nuevoUsuarioButton = new Button("Nuevo Usuario");
-		nuevoUsuarioButton.getStyle().set("margin-left", "18px");   
-
-		VerticalLayout mainLayout = new VerticalLayout(nuevoUsuarioButton, splitLayout);
+		nuevaPropiedadButton = new Button("Nueva Propiedad");
+		nuevaPropiedadButton.getStyle().set("margin-left", "18px");
+		
+		VerticalLayout mainLayout = new VerticalLayout(nuevaPropiedadButton, splitLayout);
 		mainLayout.setSizeFull();
 		mainLayout.setPadding(false);
 		mainLayout.setSpacing(false);
@@ -94,10 +92,10 @@ public class UsersView extends Div implements BeforeEnterObserver {
 			editorLayoutDiv.setVisible(false);
 		}
 
-		// Listener para el botón "Nuevo Usuario"
-		nuevoUsuarioButton.addClickListener(click -> {
+		// Listener para el botón "Nueva Propiedad"
+		nuevaPropiedadButton.addClickListener(click -> {
 			grid.asSingleSelect().clear();
-			populateForm(new AppUser());
+			populateForm(new PanelistProperty());
 			if (editorLayoutDiv != null) {
 				editorLayoutDiv.setVisible(true);
 			}
@@ -108,32 +106,34 @@ public class UsersView extends Div implements BeforeEnterObserver {
 
 		// Configurar placeholders para filtros
 		nameFilter.setPlaceholder("Filtrar por Nombre");
-		emailFilter.setPlaceholder("Filtrar por Correo Electrónico");
+		typeFilter.setPlaceholder("Filtrar por Tipo");
 
 		// Añadir listeners para refrescar el grid
 		nameFilter.addValueChangeListener(e -> grid.getDataProvider().refreshAll());
-		emailFilter.addValueChangeListener(e -> grid.getDataProvider().refreshAll());
+		typeFilter.addValueChangeListener(e -> grid.getDataProvider().refreshAll());
 
 		// Configurar el DataProvider del Grid
 		grid.setItems(query -> {
 			String nameVal = nameFilter.getValue();
-			String emailVal = emailFilter.getValue();
-			return appUserService.list(VaadinSpringDataHelpers.toSpringPageRequest(query), nameVal, emailVal).stream();
+			String typeVal = typeFilter.getValue();
+
+			return panelistPropertyService.list(VaadinSpringDataHelpers.toSpringPageRequest(query), nameVal, typeVal)
+					.stream();
 		});
 
 		// when a row is selected or deselected, populate form
 		grid.asSingleSelect().addValueChangeListener(event -> {
 			if (event.getValue() != null) {
 				editorLayoutDiv.setVisible(true);
-				UI.getCurrent().navigate(String.format(APPUSER_EDIT_ROUTE_TEMPLATE, event.getValue().getId()));
+				UI.getCurrent().navigate(String.format(PANELISTPROPERTY_EDIT_ROUTE_TEMPLATE, event.getValue().getId()));
 			} else {
 				clearForm(); // clearForm ahora también oculta el editor
-				UI.getCurrent().navigate(UsersView.class);
+				UI.getCurrent().navigate(PropertiesView.class);
 			}
 		});
 
 		// Configure Form
-		binder = new BeanValidationBinder<>(AppUser.class);
+		binder = new BeanValidationBinder<>(PanelistProperty.class);
 
 		// Bind fields. This is where you'd define e.g. validation rules
 		binder.bindInstanceFields(this);
@@ -145,15 +145,15 @@ public class UsersView extends Div implements BeforeEnterObserver {
 
 		save.addClickListener(e -> {
 			try {
-				if (this.appUser == null) {
-					this.appUser = new AppUser();
+				if (this.panelistProperty == null) {
+					this.panelistProperty = new PanelistProperty();
 				}
-				binder.writeBean(this.appUser);
-				appUserService.save(this.appUser);
+				binder.writeBean(this.panelistProperty);
+				panelistPropertyService.save(this.panelistProperty);
 				clearForm();
 				refreshGrid();
 				Notification.show("Datos actualizados");
-				UI.getCurrent().navigate(UsersView.class);
+				UI.getCurrent().navigate(PropertiesView.class);
 			} catch (ObjectOptimisticLockingFailureException exception) {
 				Notification n = Notification.show(
 						"Error al actualizar los datos. Otro usuario modificó el registro mientras usted realizaba cambios.");
@@ -168,22 +168,23 @@ public class UsersView extends Div implements BeforeEnterObserver {
 
 	@Override
 	public void beforeEnter(BeforeEnterEvent event) {
-		Optional<Long> appUserId = event.getRouteParameters().get(APPUSER_ID).map(Long::parseLong);
-		if (appUserId.isPresent()) {
-			Optional<AppUser> appUserFromBackend = appUserService.get(appUserId.get());
-			if (appUserFromBackend.isPresent()) {
-				populateForm(appUserFromBackend.get());
+		Optional<Long> panelistPropertyId = event.getRouteParameters().get(PANELISTPROPERTY_ID).map(Long::parseLong);
+		if (panelistPropertyId.isPresent()) {
+			Optional<PanelistProperty> panelistPropertyFromBackend = panelistPropertyService
+					.get(panelistPropertyId.get());
+			if (panelistPropertyFromBackend.isPresent()) {
+				populateForm(panelistPropertyFromBackend.get());
 				editorLayoutDiv.setVisible(true);
 			} else {
-				Notification.show(String.format("El usuario solicitado no fue encontrado, ID = %s", appUserId.get()),
-						3000, Notification.Position.BOTTOM_START);
+				Notification.show(String.format("La propiedad de panelista solicitada no fue encontrada, ID = %s",
+						panelistPropertyId.get()), 3000, Notification.Position.BOTTOM_START);
 				// when a row is selected but the data is no longer available,
 				// refresh grid
 				refreshGrid();
 				if (editorLayoutDiv != null) {
 					editorLayoutDiv.setVisible(false);
 				}
-				event.forwardTo(UsersView.class);
+				event.forwardTo(PropertiesView.class);
 			}
 		} else {
 			clearForm(); // Asegurar que el editor esté oculto si no hay ID
@@ -200,9 +201,8 @@ public class UsersView extends Div implements BeforeEnterObserver {
 
 		FormLayout formLayout = new FormLayout();
 		name = new TextField("Nombre");
-		password = new TextField("Contraseña");
-		email = new TextField("Correo Electrónico");
-		formLayout.add(name, password, email);
+		type = new TextField("Tipo");
+		formLayout.add(name, type);
 
 		editorDiv.add(formLayout);
 		createButtonLayout(editorLayoutDiv);
@@ -227,7 +227,7 @@ public class UsersView extends Div implements BeforeEnterObserver {
 
 		HeaderRow headerRow = grid.appendHeaderRow();
 		headerRow.getCell(grid.getColumnByKey("name")).setComponent(nameFilter);
-		headerRow.getCell(grid.getColumnByKey("email")).setComponent(emailFilter);
+		headerRow.getCell(grid.getColumnByKey("type")).setComponent(typeFilter);
 	}
 
 	private void refreshGrid() {
@@ -242,9 +242,9 @@ public class UsersView extends Div implements BeforeEnterObserver {
 		}
 	}
 
-	private void populateForm(AppUser value) {
-		this.appUser = value;
-		binder.readBean(this.appUser);
+	private void populateForm(PanelistProperty value) {
+		this.panelistProperty = value;
+		binder.readBean(this.panelistProperty);
 
 	}
 }
