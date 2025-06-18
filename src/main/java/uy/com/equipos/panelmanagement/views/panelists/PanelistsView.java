@@ -21,6 +21,8 @@ import com.vaadin.flow.component.splitlayout.SplitLayout;
 import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.data.binder.BeanValidationBinder;
 import com.vaadin.flow.data.binder.ValidationException;
+import com.vaadin.flow.component.confirmdialog.ConfirmDialog; // Added import
+import org.springframework.dao.DataIntegrityViolationException; // Added import
 import com.vaadin.flow.router.BeforeEnterEvent;
 import com.vaadin.flow.router.BeforeEnterObserver;
 import com.vaadin.flow.router.Menu;
@@ -68,6 +70,7 @@ public class PanelistsView extends Div implements BeforeEnterObserver {
 
 	private final Button cancel = new Button("Cancelar");
 	private final Button save = new Button("Guardar");
+	private Button deleteButton; // Add this with other button declarations
 	private Button nuevoPanelistaButton;
 
 	private final BeanValidationBinder<Panelist> binder;
@@ -179,6 +182,10 @@ public class PanelistsView extends Div implements BeforeEnterObserver {
 		// Bind fields. This is where you'd define e.g. validation rules
 		binder.bindInstanceFields(this);
 
+		deleteButton = new Button("Eliminar");
+		deleteButton.addThemeVariants(ButtonVariant.LUMO_ERROR, ButtonVariant.LUMO_PRIMARY);
+		deleteButton.addClickListener(e -> onDeleteClicked());
+
 		cancel.addClickListener(e -> {
 			clearForm();
 			refreshGrid();
@@ -261,7 +268,7 @@ public class PanelistsView extends Div implements BeforeEnterObserver {
 		buttonLayout.setClassName("button-layout");
 		cancel.addThemeVariants(ButtonVariant.LUMO_TERTIARY);
 		save.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
-		buttonLayout.add(save, cancel);
+		buttonLayout.add(save, deleteButton, cancel);
 		editorLayoutDiv.add(buttonLayout);
 	}
 
@@ -298,5 +305,50 @@ public class PanelistsView extends Div implements BeforeEnterObserver {
 		this.panelist = value;
 		binder.readBean(this.panelist);
 
+		if (deleteButton != null) {
+			 deleteButton.setEnabled(value != null && value.getId() != null);
+		}
+	}
+
+	private void clearForm() {
+		populateForm(null);
+		if (editorLayoutDiv != null) { // Buena práctica verificar nulidad
+			editorLayoutDiv.setVisible(false);
+		}
+		if (deleteButton != null) {
+			deleteButton.setEnabled(false);
+		}
+	}
+
+	private void onDeleteClicked() {
+		if (this.panelist == null || this.panelist.getId() == null) {
+			Notification.show("No hay panelista seleccionado para eliminar.", 3000, Notification.Position.MIDDLE);
+			return;
+		}
+
+		com.vaadin.flow.component.confirmdialog.ConfirmDialog dialog = new com.vaadin.flow.component.confirmdialog.ConfirmDialog();
+		dialog.setHeader("Confirmar Eliminación");
+		dialog.setText("¿Está seguro de que desea eliminar el panelista '" + this.panelist.getFirstName() + " " + this.panelist.getLastName() + "'?");
+
+		dialog.setConfirmText("Eliminar");
+		dialog.setConfirmButtonTheme("error primary");
+		dialog.setCancelText("Cancelar");
+
+		dialog.addConfirmListener(event -> {
+			try {
+				panelistService.delete(this.panelist.getId());
+				clearForm();
+				refreshGrid();
+				Notification.show("Panelista eliminado correctamente.", 3000, Notification.Position.BOTTOM_START);
+				UI.getCurrent().navigate(PanelistsView.class);
+			} catch (org.springframework.dao.DataIntegrityViolationException ex) {
+				Notification.show("No se puede eliminar el panelista. Es posible que esté siendo referenciado por otras entidades.", 5000, Notification.Position.MIDDLE)
+					.addThemeVariants(NotificationVariant.LUMO_ERROR);
+			} catch (Exception ex) {
+				Notification.show("Ocurrió un error al intentar eliminar el panelista: " + ex.getMessage(), 5000, Notification.Position.MIDDLE)
+					.addThemeVariants(NotificationVariant.LUMO_ERROR);
+			}
+		});
+		dialog.open();
 	}
 }
