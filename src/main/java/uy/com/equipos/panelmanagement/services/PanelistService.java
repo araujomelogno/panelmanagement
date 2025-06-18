@@ -4,10 +4,12 @@ import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import org.hibernate.Hibernate;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import jakarta.persistence.criteria.Predicate;
 import uy.com.equipos.panelmanagement.data.Panelist;
 import uy.com.equipos.panelmanagement.data.PanelistRepository;
@@ -21,8 +23,11 @@ public class PanelistService {
         this.repository = repository;
     }
 
+    @Transactional(readOnly = true)
     public Optional<Panelist> get(Long id) {
-        return repository.findById(id);
+        Optional<Panelist> panelistOptional = repository.findById(id);
+        panelistOptional.ifPresent(panelist -> Hibernate.initialize(panelist.getProperties()));
+        return panelistOptional;
     }
 
     public Panelist save(Panelist entity) {
