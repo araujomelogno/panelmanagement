@@ -703,3 +703,13 @@ insert into app_user(version, id,name,password,email) values (1, 97,'ji','ji','g
 insert into app_user(version, id,name,password,email) values (1, 98,'lojet','lojet','earl.giovannoni@lojet.ge')
 insert into app_user(version, id,name,password,email) values (1, 99,'ukve','ukve','helen.zanieri@ukve.tn')
 insert into app_user(version, id,name,password,email) values (1, 100,'viipo','viipo','agnes.toccafondi@viipo.ae')
+
+-- Convert existing PanelistProperty types to new Enum string values
+UPDATE PanelistProperty SET type = 'TEXTO' WHERE type = 'Texto';
+UPDATE PanelistProperty SET type = 'FECHA' WHERE type = 'Fecha';
+UPDATE PanelistProperty SET type = 'NUMERO' WHERE type = 'Número'; -- Note the accent
+UPDATE PanelistProperty SET type = 'CODIGO' WHERE type = 'Codigo';
+
+-- Note: If the PanelistPropertyCode table or PanelistProperty.codes column
+-- needs initial data related to existing 'Codigo' type properties,
+-- those inserts/updates would also go here. For now, we are only converting types.
