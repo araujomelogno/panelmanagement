@@ -367,7 +367,7 @@ public class PanelistsView extends Div implements BeforeEnterObserver {
         gestionarPropiedadesDialog = new Dialog(); // Recreate for simplicity during dev, or clear previous content
         gestionarPropiedadesDialog.setHeaderTitle("Gestionar Propiedades del Panelista: " +
             (this.panelist != null ? this.panelist.getFirstName() + " " + this.panelist.getLastName() : ""));
-        gestionarPropiedadesDialog.setWidth("600px"); // Set a reasonable width
+        gestionarPropiedadesDialog.setWidth("750px"); // Set a reasonable width
         gestionarPropiedadesDialog.setHeight("500px");
 
         final List<PanelistProperty> allProperties = panelistPropertyService.findAll();
@@ -410,7 +410,7 @@ public class PanelistsView extends Div implements BeforeEnterObserver {
         Grid.Column<PanelistProperty> nameColumn = propertiesGrid.addColumn(PanelistProperty::getName).setHeader("Propiedad").setKey("name").setFlexGrow(1);
         Grid.Column<PanelistProperty> typeColumn = propertiesGrid.addColumn(PanelistProperty::getType).setHeader("Tipo").setKey("type").setFlexGrow(1);
 
-        propertiesGrid.addComponentColumn(panelistProperty -> {
+        Grid.Column<PanelistProperty> valueColumn = propertiesGrid.addComponentColumn(panelistProperty -> {
             TextField valueField = new TextField();
             valueField.setPlaceholder("Valor...");
             String existingValue = existingValuesMap.get(panelistProperty);
@@ -419,7 +419,7 @@ public class PanelistsView extends Div implements BeforeEnterObserver {
             }
             propertyValueFields.put(panelistProperty.getId(), valueField);
             return valueField;
-        }).setHeader("Valor").setFlexGrow(2);
+        }).setHeader("Valor").setKey("valor").setFlexGrow(2);
 
         // propertiesGrid.setItems(allProperties); // DataProvider is used now
         propertiesGrid.setWidthFull();
@@ -435,12 +435,20 @@ public class PanelistsView extends Div implements BeforeEnterObserver {
         typeFilter.setWidthFull();
         typeFilter.getStyle().set("max-width", "100%");
 
+        TextField valueFilter = new TextField();
+        valueFilter.setPlaceholder("Filtrar por Valor");
+        valueFilter.setWidthFull();
+        valueFilter.getStyle().set("max-width", "100%");
+
         HeaderRow filterHeaderRow = propertiesGrid.appendHeaderRow();
         filterHeaderRow.getCell(nameColumn).setComponent(nameFilter);
         filterHeaderRow.getCell(typeColumn).setComponent(typeFilter);
+        filterHeaderRow.getCell(valueColumn).setComponent(valueFilter);
+
 
         nameFilter.addValueChangeListener(event -> dataProvider.refreshAll());
         typeFilter.addValueChangeListener(event -> dataProvider.refreshAll());
+        valueFilter.addValueChangeListener(event -> dataProvider.refreshAll());
 
         dataProvider.addFilter(panelistProperty -> {
             String nameSearch = nameFilter.getValue().trim().toLowerCase();
@@ -453,6 +461,14 @@ public class PanelistsView extends Div implements BeforeEnterObserver {
             if (typeSearch.isEmpty()) return true;
             String propertyType = panelistProperty.getType();
             return propertyType != null && propertyType.toLowerCase().contains(typeSearch);
+        });
+        dataProvider.addFilter(panelistProperty -> {
+            String valueSearch = valueFilter.getValue().trim().toLowerCase();
+            if (valueSearch.isEmpty()) {
+                return true;
+            }
+            String propertyCurrentValue = existingValuesMap.get(panelistProperty);
+            return propertyCurrentValue != null && propertyCurrentValue.toLowerCase().contains(valueSearch);
         });
 
 
