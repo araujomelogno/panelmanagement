@@ -262,30 +262,32 @@ public class PropertiesView extends Div implements BeforeEnterObserver {
 
         // Event handling for type ComboBox
         type.addValueChangeListener(event -> {
-            boolean isCodigo = PropertyType.CODIGO.equals(event.getValue());
-            codesManagementSection.setVisible(isCodigo);
-            boolean enableControls = binder.getBean() != null && isCodigo; // Enable only if bean exists AND type is CODIGO
+            PropertyType selectedType = event.getValue(); // Use the event's value directly
+            PanelistProperty currentBean = binder.getBean();
 
-            // codesManagementLayout refers to the layout holding input fields and button.
-            // codesManagementSection is the broader container.
-            // For simplicity, let's assume codesManagementSection contains newCodeLayout which is what we want to enable/disable.
-            // Or, more directly, enable/disable the input fields and button.
-            newCodeValueField.setEnabled(enableControls);
-            newCodeDescriptionField.setEnabled(enableControls);
-            addCodeButton.setEnabled(enableControls);
-            codesGrid.setVisible(isCodigo); // Grid visibility still tied to isCodigo
+            boolean isPropertyBound = (currentBean != null);
+            boolean isTypeCodigo = PropertyType.CODIGO.equals(selectedType);
 
-            if (binder.getBean() != null) {
-                if (isCodigo) {
-                    if (binder.getBean().getCodes() == null) {
-                        binder.getBean().setCodes(new ArrayList<>());
+            boolean enableCodeControls = isPropertyBound && isTypeCodigo;
+            boolean showCodesSection = isTypeCodigo; // Section visibility depends only on type being CODIGO
+
+            codesManagementSection.setVisible(showCodesSection);
+
+            // Enable/disable individual controls
+            if (newCodeValueField != null) newCodeValueField.setEnabled(enableCodeControls);
+            if (newCodeDescriptionField != null) newCodeDescriptionField.setEnabled(enableCodeControls);
+            if (addCodeButton != null) addCodeButton.setEnabled(enableCodeControls);
+
+            // Grid visibility is part of codesManagementSection, but items depend on bean
+            if (codesGrid != null) {
+                if (showCodesSection && isPropertyBound) { // Show grid content only if section visible AND bean bound
+                    if (currentBean.getCodes() == null) {
+                        currentBean.setCodes(new ArrayList<>());
                     }
-                    codesGrid.setItems(binder.getBean().getCodes());
+                    codesGrid.setItems(currentBean.getCodes());
                 } else {
-                    codesGrid.setItems(new ArrayList<>());
+                    codesGrid.setItems(new ArrayList<>()); // Clear grid if not CODIGO or no bean
                 }
-            } else {
-                codesGrid.setItems(new ArrayList<>());
             }
         });
 
