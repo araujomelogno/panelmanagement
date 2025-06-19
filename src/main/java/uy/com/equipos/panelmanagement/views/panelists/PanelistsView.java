@@ -198,9 +198,7 @@ public class PanelistsView extends Div implements BeforeEnterObserver {
 			// Let's assume the service method will be updated to:
 			// list(Pageable, String, String, String, String, LocalDate, LocalDate)
 			return panelistService.list(VaadinSpringDataHelpers.toSpringPageRequest(query),
-										firstNameVal, lastNameVal, emailVal, phoneVal,
-										null, // Placeholder for dateOfBirthVal
-										null, // Placeholder for occupationVal
+										firstNameVal, lastNameVal, emailVal, phoneVal, 
 										lastContactedVal, lastInterviewedVal).stream();
 		});
 

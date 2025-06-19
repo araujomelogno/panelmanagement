@@ -1,9 +1,7 @@
 package uy.com.equipos.panelmanagement.data;
 
 import jakarta.persistence.Entity;
-// import jakarta.persistence.ManyToMany; // Removed
-// import java.util.HashSet; // Removed
-// import java.util.Set; // Removed
+
 
 @Entity
 public class PanelistProperty extends AbstractEntity {
