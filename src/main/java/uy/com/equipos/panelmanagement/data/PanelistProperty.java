@@ -1,9 +1,9 @@
 package uy.com.equipos.panelmanagement.data;
 
 import jakarta.persistence.Entity;
-import jakarta.persistence.ManyToMany;
-import java.util.HashSet;
-import java.util.Set;
+// import jakarta.persistence.ManyToMany; // Removed
+// import java.util.HashSet; // Removed
+// import java.util.Set; // Removed
 
 @Entity
 public class PanelistProperty extends AbstractEntity {
@@ -24,14 +24,5 @@ public class PanelistProperty extends AbstractEntity {
         this.type = type;
     }
 
-    @ManyToMany(mappedBy = "properties")
-    private Set<Panelist> panelists = new HashSet<>();
-
-    public Set<Panelist> getPanelists() {
-        return panelists;
-    }
-
-    public void setPanelists(Set<Panelist> panelists) {
-        this.panelists = panelists;
-    }
+    // The panelists field and its getter/setter are removed from here.
 }
