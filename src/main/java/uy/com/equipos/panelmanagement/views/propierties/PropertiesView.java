@@ -1,28 +1,29 @@
 package uy.com.equipos.panelmanagement.views.propierties;
 
-import com.vaadin.flow.component.Key; // Added for keyboard shortcut
+import com.vaadin.flow.component.Key;
 import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
+import com.vaadin.flow.component.combobox.ComboBox; // Added import
 import com.vaadin.flow.component.formlayout.FormLayout;
 import com.vaadin.flow.component.grid.Grid;
 import com.vaadin.flow.component.grid.GridVariant;
 import com.vaadin.flow.component.grid.HeaderRow;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.H2;
+import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.component.notification.Notification;
 import com.vaadin.flow.component.notification.Notification.Position;
 import com.vaadin.flow.component.notification.NotificationVariant;
 import com.vaadin.flow.component.orderedlayout.FlexComponent.Alignment;
-import com.vaadin.flow.component.orderedlayout.FlexComponent.JustifyContentMode;
-import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
+import com.vaadin.flow.component.orderedlayout.HorizontalLayout; // Added import
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.splitlayout.SplitLayout;
-import com.vaadin.flow.component.textfield.TextField;
+import com.vaadin.flow.component.textfield.TextField; // Added import (already present but good to confirm)
 import com.vaadin.flow.data.binder.BeanValidationBinder;
 import com.vaadin.flow.data.binder.ValidationException;
-import com.vaadin.flow.component.confirmdialog.ConfirmDialog; // Added import
-import org.springframework.dao.DataIntegrityViolationException; // Added import
+import com.vaadin.flow.component.confirmdialog.ConfirmDialog;
+import org.springframework.dao.DataIntegrityViolationException;
 import com.vaadin.flow.router.BeforeEnterEvent;
 import com.vaadin.flow.router.BeforeEnterObserver;
 import com.vaadin.flow.router.Menu;
@@ -30,10 +31,16 @@ import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
 import com.vaadin.flow.spring.data.VaadinSpringDataHelpers;
 import jakarta.annotation.security.PermitAll;
+
+import java.util.ArrayList; // Added import
+import java.util.List; // Added import
 import java.util.Optional;
 import org.springframework.orm.ObjectOptimisticLockingFailureException;
 import org.vaadin.lineawesome.LineAwesomeIconUrl;
+
 import uy.com.equipos.panelmanagement.data.PanelistProperty;
+import uy.com.equipos.panelmanagement.data.PanelistPropertyCode; // Added import
+import uy.com.equipos.panelmanagement.data.PropertyType; // Added import
 import uy.com.equipos.panelmanagement.services.PanelistPropertyService;
 
 @PageTitle("Propiedades de panelistas")
@@ -42,257 +49,358 @@ import uy.com.equipos.panelmanagement.services.PanelistPropertyService;
 @PermitAll
 public class PropertiesView extends Div implements BeforeEnterObserver {
 
-	private final String PANELISTPROPERTY_ID = "panelistPropertyID";
-	private final String PANELISTPROPERTY_EDIT_ROUTE_TEMPLATE = "properties/%s/edit";
+    private final String PANELISTPROPERTY_ID = "panelistPropertyID";
+    private final String PANELISTPROPERTY_EDIT_ROUTE_TEMPLATE = "properties/%s/edit";
 
-	private final Grid<PanelistProperty> grid = new Grid<>(PanelistProperty.class, false);
-	private Div editorLayoutDiv; // Declarado como miembro de la clase
+    private final Grid<PanelistProperty> grid = new Grid<>(PanelistProperty.class, false);
+    private Div editorLayoutDiv;
 
-	// Campos de filtro
-	private TextField nameFilter = new TextField();
-	private TextField typeFilter = new TextField();
+    private TextField nameFilter = new TextField();
+    private ComboBox<PropertyType> typeFilterCombo = new ComboBox<>(); // Changed for consistency if filtering by enum
 
-	private TextField name;
-	private TextField type;
+    private TextField name;
+    // private TextField type; // Replaced by ComboBox
+    private ComboBox<PropertyType> type; // New ComboBox for property type
 
-	private final Button cancel = new Button("Cancelar");
-	private final Button save = new Button("Guardar");
-	private Button deleteButton; // Add this with other button declarations
-	private Button nuevaPropiedadButton;
+    // Fields for managing codes
+    private Grid<PanelistPropertyCode> codesGrid;
+    private TextField newCodeValueField;
+    private TextField newCodeDescriptionField;
+    private Button addCodeButton;
+    private VerticalLayout codesManagementSection; // Changed to VerticalLayout for better structure
 
-	private final BeanValidationBinder<PanelistProperty> binder;
+    private final Button cancel = new Button("Cancelar");
+    private final Button save = new Button("Guardar");
+    private Button deleteButton;
+    private Button nuevaPropiedadButton;
 
-	private PanelistProperty panelistProperty;
+    private final BeanValidationBinder<PanelistProperty> binder;
 
-	private final PanelistPropertyService panelistPropertyService;
+    private PanelistProperty panelistProperty;
 
-	public PropertiesView(PanelistPropertyService panelistPropertyService) {
-		this.panelistPropertyService = panelistPropertyService;
-		addClassNames("propierties-view");
+    private final PanelistPropertyService panelistPropertyService;
 
-		// Initialize deleteButton EARLIER
-		deleteButton = new Button("Eliminar");
-		deleteButton.addThemeVariants(ButtonVariant.LUMO_ERROR, ButtonVariant.LUMO_PRIMARY);
-		deleteButton.addClickListener(e -> onDeleteClicked());
+    public PropertiesView(PanelistPropertyService panelistPropertyService) {
+        this.panelistPropertyService = panelistPropertyService;
+        addClassNames("propierties-view");
 
-		// Configurar columnas del Grid PRIMERO
-		grid.addColumn(PanelistProperty::getName).setHeader("Nombre").setKey("name").setAutoWidth(true);
-		grid.addColumn(PanelistProperty::getType).setHeader("Tipo").setKey("type").setAutoWidth(true);
-		grid.addThemeVariants(GridVariant.LUMO_NO_BORDER);
+        deleteButton = new Button("Eliminar");
+        deleteButton.addThemeVariants(ButtonVariant.LUMO_ERROR, ButtonVariant.LUMO_PRIMARY);
+        deleteButton.addClickListener(e -> onDeleteClicked());
 
-		// Create UI - SplitLayout
-		SplitLayout splitLayout = new SplitLayout();
-		// createGridLayout ahora puede acceder a las keys de las columnas de forma
-		// segura
-		createGridLayout(splitLayout);
-		createEditorLayout(splitLayout);
-		// editorLayoutDiv.setVisible(false); // Se maneja después de add(mainLayout)
+        grid.addColumn(PanelistProperty::getName).setHeader("Nombre").setKey("name").setAutoWidth(true);
+        grid.addColumn(PanelistProperty::getType).setHeader("Tipo").setKey("type").setAutoWidth(true); // This will now display enum toString
+        grid.addThemeVariants(GridVariant.LUMO_NO_BORDER);
 
-		nuevaPropiedadButton = new Button("Nueva Propiedad");
-		nuevaPropiedadButton.getStyle().set("margin-left", "18px");
-		
-		VerticalLayout mainLayout = new VerticalLayout(nuevaPropiedadButton, splitLayout);
-		mainLayout.setSizeFull();
-		mainLayout.setPadding(false);
-		mainLayout.setSpacing(false);
+        SplitLayout splitLayout = new SplitLayout();
+        createGridLayout(splitLayout);
+        createEditorLayout(splitLayout);
 
-		add(mainLayout);
-		if (editorLayoutDiv != null) {
-			editorLayoutDiv.setVisible(false);
-		}
+        nuevaPropiedadButton = new Button("Nueva Propiedad");
+        nuevaPropiedadButton.getStyle().set("margin-left", "18px");
 
-		// Listener para el botón "Nueva Propiedad"
-		nuevaPropiedadButton.addClickListener(click -> {
-			grid.asSingleSelect().clear();
-			populateForm(new PanelistProperty());
-			if (editorLayoutDiv != null) {
-				editorLayoutDiv.setVisible(true);
-			}
-			if (name != null) {
-				name.focus();
-			}
-		});
+        VerticalLayout mainLayout = new VerticalLayout(nuevaPropiedadButton, splitLayout);
+        mainLayout.setSizeFull();
+        mainLayout.setPadding(false);
+        mainLayout.setSpacing(false);
 
-		// Configurar placeholders para filtros
-		nameFilter.setPlaceholder("Filtrar por Nombre");
-		typeFilter.setPlaceholder("Filtrar por Tipo");
+        add(mainLayout);
+        if (editorLayoutDiv != null) {
+            editorLayoutDiv.setVisible(false);
+        }
 
-		// Añadir listeners para refrescar el grid
-		nameFilter.addValueChangeListener(e -> grid.getDataProvider().refreshAll());
-		typeFilter.addValueChangeListener(e -> grid.getDataProvider().refreshAll());
+        nuevaPropiedadButton.addClickListener(click -> {
+            grid.asSingleSelect().clear();
+            populateForm(new PanelistProperty());
+            if (editorLayoutDiv != null) {
+                editorLayoutDiv.setVisible(true);
+            }
+            if (name != null) {
+                name.focus();
+            }
+        });
 
-		// Configurar el DataProvider del Grid
-		grid.setItems(query -> {
-			String nameVal = nameFilter.getValue();
-			String typeVal = typeFilter.getValue();
+        nameFilter.setPlaceholder("Filtrar por Nombre");
+        typeFilterCombo.setPlaceholder("Filtrar por Tipo");
+        typeFilterCombo.setItems(PropertyType.values());
 
-			return panelistPropertyService.list(VaadinSpringDataHelpers.toSpringPageRequest(query), nameVal, typeVal)
-					.stream();
-		});
 
-		// when a row is selected or deselected, populate form
-		grid.asSingleSelect().addValueChangeListener(event -> {
-			if (event.getValue() != null) {
-				editorLayoutDiv.setVisible(true);
-				UI.getCurrent().navigate(String.format(PANELISTPROPERTY_EDIT_ROUTE_TEMPLATE, event.getValue().getId()));
-			} else {
-				clearForm(); // clearForm ahora también oculta el editor
-				UI.getCurrent().navigate(PropertiesView.class);
-			}
-		});
+        nameFilter.addValueChangeListener(e -> refreshGridData());
+        typeFilterCombo.addValueChangeListener(e -> refreshGridData());
 
-		// Configure Form
-		binder = new BeanValidationBinder<>(PanelistProperty.class);
 
-		// Bind fields. This is where you'd define e.g. validation rules
-		binder.bindInstanceFields(this);
+        grid.setItems(query -> {
+            String nameVal = nameFilter.getValue();
+            PropertyType typeVal = typeFilterCombo.getValue(); // Get value from ComboBox
 
-		cancel.addClickListener(e -> {
-			clearForm();
-			refreshGrid();
-		});
+            // Pass PropertyType to service method
+            return panelistPropertyService.list(VaadinSpringDataHelpers.toSpringPageRequest(query), nameVal, typeVal)
+                    .stream();
+        });
 
-		save.addClickListener(e -> {
-			try {
-				if (this.panelistProperty == null) {
-					this.panelistProperty = new PanelistProperty();
-				}
-				binder.writeBean(this.panelistProperty);
-				panelistPropertyService.save(this.panelistProperty);
-				clearForm();
-				refreshGrid();
-				Notification.show("Datos actualizados");
-				UI.getCurrent().navigate(PropertiesView.class);
-			} catch (ObjectOptimisticLockingFailureException exception) {
-				Notification n = Notification.show(
-						"Error al actualizar los datos. Otro usuario modificó el registro mientras usted realizaba cambios.");
-				n.setPosition(Position.MIDDLE);
-				n.addThemeVariants(NotificationVariant.LUMO_ERROR);
-			} catch (ValidationException validationException) {
-				Notification
-						.show("Fallo al actualizar los datos. Verifique nuevamente que todos los valores sean válidos");
-			}
-		});
-		save.addClickShortcut(Key.ENTER);
-	}
+        grid.asSingleSelect().addValueChangeListener(event -> {
+            if (event.getValue() != null) {
+                editorLayoutDiv.setVisible(true);
+                UI.getCurrent().navigate(String.format(PANELISTPROPERTY_EDIT_ROUTE_TEMPLATE, event.getValue().getId()));
+            } else {
+                clearForm();
+                UI.getCurrent().navigate(PropertiesView.class);
+            }
+        });
 
-	@Override
-	public void beforeEnter(BeforeEnterEvent event) {
-		Optional<Long> panelistPropertyId = event.getRouteParameters().get(PANELISTPROPERTY_ID).map(Long::parseLong);
-		if (panelistPropertyId.isPresent()) {
-			Optional<PanelistProperty> panelistPropertyFromBackend = panelistPropertyService
-					.get(panelistPropertyId.get());
-			if (panelistPropertyFromBackend.isPresent()) {
-				populateForm(panelistPropertyFromBackend.get());
-				editorLayoutDiv.setVisible(true);
-			} else {
-				Notification.show(String.format("La propiedad de panelista solicitada no fue encontrada, ID = %s",
-						panelistPropertyId.get()), 3000, Notification.Position.BOTTOM_START);
-				// when a row is selected but the data is no longer available,
-				// refresh grid
-				refreshGrid();
-				if (editorLayoutDiv != null) {
-					editorLayoutDiv.setVisible(false);
-				}
-				event.forwardTo(PropertiesView.class);
-			}
-		} else {
-			clearForm(); // Asegurar que el editor esté oculto si no hay ID
-		}
-	}
+        binder = new BeanValidationBinder<>(PanelistProperty.class);
+        // type field is now a ComboBox
+        binder.forField(type).asRequired("Tipo es requerido").bind(PanelistProperty::getType, PanelistProperty::setType);
+        binder.bindInstanceFields(this); // Binds 'name' automatically
 
-	private void createEditorLayout(SplitLayout splitLayout) {
-		editorLayoutDiv = new Div(); // Instanciar el miembro de la clase
-		editorLayoutDiv.setClassName("editor-layout");
+        cancel.addClickListener(e -> {
+            clearForm();
+            refreshGrid();
+        });
 
-		Div editorDiv = new Div();
-		editorDiv.setClassName("editor");
-		editorLayoutDiv.add(editorDiv);
+        save.addClickListener(e -> {
+            try {
+                if (this.panelistProperty == null) {
+                    this.panelistProperty = new PanelistProperty();
+                }
+                // Codes are managed directly in the list of panelistProperty
+                binder.writeBean(this.panelistProperty);
+                panelistPropertyService.save(this.panelistProperty);
+                clearForm();
+                refreshGrid();
+                Notification.show("Datos actualizados");
+                UI.getCurrent().navigate(PropertiesView.class);
+            } catch (ObjectOptimisticLockingFailureException exception) {
+                Notification n = Notification.show(
+                        "Error al actualizar los datos. Otro usuario modificó el registro mientras usted realizaba cambios.");
+                n.setPosition(Position.MIDDLE);
+                n.addThemeVariants(NotificationVariant.LUMO_ERROR);
+            } catch (ValidationException validationException) {
+                Notification.show("Fallo al actualizar los datos. Verifique nuevamente que todos los valores sean válidos");
+            }
+        });
+        save.addClickShortcut(Key.ENTER);
+    }
 
-		FormLayout formLayout = new FormLayout();
-		name = new TextField("Nombre");
-		type = new TextField("Tipo");
-		formLayout.add(name, type);
+    private void refreshGridData() {
+        grid.getDataProvider().refreshAll();
+    }
 
-		editorDiv.add(formLayout);
-		createButtonLayout(editorLayoutDiv);
 
-		splitLayout.addToSecondary(editorLayoutDiv);
-	}
+    @Override
+    public void beforeEnter(BeforeEnterEvent event) {
+        Optional<Long> panelistPropertyId = event.getRouteParameters().get(PANELISTPROPERTY_ID).map(Long::parseLong);
+        if (panelistPropertyId.isPresent()) {
+            Optional<PanelistProperty> panelistPropertyFromBackend = panelistPropertyService.get(panelistPropertyId.get());
+            if (panelistPropertyFromBackend.isPresent()) {
+                populateForm(panelistPropertyFromBackend.get());
+                editorLayoutDiv.setVisible(true);
+            } else {
+                Notification.show(String.format("La propiedad de panelista solicitada no fue encontrada, ID = %s", panelistPropertyId.get()), 3000, Notification.Position.BOTTOM_START);
+                refreshGrid();
+                if (editorLayoutDiv != null) {
+                    editorLayoutDiv.setVisible(false);
+                }
+                event.forwardTo(PropertiesView.class);
+            }
+        } else {
+            clearForm();
+        }
+    }
 
-	private void createButtonLayout(Div editorLayoutDiv) {
-		HorizontalLayout buttonLayout = new HorizontalLayout();
-		buttonLayout.setClassName("button-layout");
-		cancel.addThemeVariants(ButtonVariant.LUMO_TERTIARY);
-		save.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
-		buttonLayout.add(save, deleteButton, cancel);
-		editorLayoutDiv.add(buttonLayout);
-	}
+    private void createEditorLayout(SplitLayout splitLayout) {
+        editorLayoutDiv = new Div();
+        editorLayoutDiv.setClassName("editor-layout");
 
-	private void createGridLayout(SplitLayout splitLayout) {
-		Div wrapper = new Div();
-		wrapper.setClassName("grid-wrapper");
-		splitLayout.addToPrimary(wrapper);
-		wrapper.add(grid);
+        Div editorDiv = new Div();
+        editorDiv.setClassName("editor");
+        editorLayoutDiv.add(editorDiv);
 
-		HeaderRow headerRow = grid.appendHeaderRow();
-		headerRow.getCell(grid.getColumnByKey("name")).setComponent(nameFilter);
-		headerRow.getCell(grid.getColumnByKey("type")).setComponent(typeFilter);
-	}
+        FormLayout formLayout = new FormLayout();
+        name = new TextField("Nombre");
+        type = new ComboBox<>("Tipo");
+        type.setItems(PropertyType.values());
+        // type.setItemLabelGenerator(PropertyType::name); // Or a more user-friendly representation
 
-	private void refreshGrid() {
-		grid.select(null);
-		grid.getDataProvider().refreshAll();
-	}
+        formLayout.add(name, type);
+        editorDiv.add(formLayout);
 
-	private void populateForm(PanelistProperty value) {
-		this.panelistProperty = value;
-		binder.readBean(this.panelistProperty);
+        // Initialize codes management components
+        codesManagementSection = new VerticalLayout();
+        codesManagementSection.setClassName("codes-management-section");
+        codesManagementSection.setPadding(false);
+        codesManagementSection.setSpacing(true); // Add some space between elements
 
-		if (deleteButton != null) { 
-			 deleteButton.setEnabled(value != null && value.getId() != null);
-		}
-	}
+        codesGrid = new Grid<>(PanelistPropertyCode.class, false);
+        codesGrid.setClassName("codes-grid");
+        codesGrid.addColumn(PanelistPropertyCode::getCode).setHeader("Código").setAutoWidth(true);
+        codesGrid.addColumn(PanelistPropertyCode::getDescription).setHeader("Descripción").setAutoWidth(true);
+        codesGrid.addComponentColumn(code -> new Button(VaadinIcon.TRASH.create(), click -> {
+            PanelistProperty property = binder.getBean();
+            if (property != null) {
+                property.removeCode(code); // Use helper method
+                codesGrid.setItems(property.getCodes()); // Refresh grid
+            }
+        })).setHeader("Acciones").setAutoWidth(true);
+        codesGrid.addThemeVariants(GridVariant.LUMO_COMPACT, GridVariant.LUMO_ROW_STRIPES);
 
-	private void clearForm() {
-		populateForm(null);
-		if (editorLayoutDiv != null) { // Buena práctica verificar nulidad
-			editorLayoutDiv.setVisible(false);
-		}
-		if (deleteButton != null) {
-			deleteButton.setEnabled(false);
-		}
-	}
 
-	private void onDeleteClicked() {
-		if (this.panelistProperty == null || this.panelistProperty.getId() == null) {
-			Notification.show("No hay propiedad seleccionada para eliminar.", 3000, Notification.Position.MIDDLE);
-			return;
-		}
+        newCodeValueField = new TextField("Valor del Código");
+        newCodeDescriptionField = new TextField("Descripción del Código");
+        addCodeButton = new Button("Añadir Código", VaadinIcon.PLUS.create(), event -> addCodeAction());
+        addCodeButton.addThemeVariants(ButtonVariant.LUMO_SMALL);
 
-		com.vaadin.flow.component.confirmdialog.ConfirmDialog dialog = new com.vaadin.flow.component.confirmdialog.ConfirmDialog();
-		dialog.setHeader("Confirmar Eliminación");
-		dialog.setText("¿Está seguro de que desea eliminar la propiedad '" + this.panelistProperty.getName() + "'?");
-		
-		dialog.setConfirmText("Eliminar");
-		dialog.setConfirmButtonTheme("error primary");
-		dialog.setCancelText("Cancelar");
+        HorizontalLayout newCodeLayout = new HorizontalLayout(newCodeValueField, newCodeDescriptionField, addCodeButton);
+        newCodeLayout.setAlignItems(Alignment.BASELINE);
+        newCodeLayout.setSpacing(true);
 
-		dialog.addConfirmListener(event -> {
-			try {
-				panelistPropertyService.delete(this.panelistProperty.getId());
-				clearForm();
-				refreshGrid();
-				Notification.show("Propiedad eliminada correctamente.", 3000, Notification.Position.BOTTOM_START);
-				UI.getCurrent().navigate(PropertiesView.class);
-			} catch (org.springframework.dao.DataIntegrityViolationException ex) {
-				Notification.show("No se puede eliminar la propiedad. Es posible que esté siendo referenciada por otras entidades.", 5000, Notification.Position.MIDDLE)
-					.addThemeVariants(NotificationVariant.LUMO_ERROR);
-			} catch (Exception ex) {
-				Notification.show("Ocurrió un error al intentar eliminar la propiedad: " + ex.getMessage(), 5000, Notification.Position.MIDDLE)
-					.addThemeVariants(NotificationVariant.LUMO_ERROR);
-			}
-		});
-		dialog.open();
-	}
+        codesManagementSection.add(new H2("Códigos"), codesGrid, newCodeLayout);
+        editorDiv.add(codesManagementSection); // Add section to editor
+
+        // Initial visibility
+        codesManagementSection.setVisible(false);
+
+        // Event handling for type ComboBox
+        type.addValueChangeListener(event -> {
+            boolean isCodigo = PropertyType.CODIGO.equals(event.getValue());
+            codesManagementSection.setVisible(isCodigo);
+            if (binder.getBean() != null) { // Check if a bean is bound
+                if (isCodigo) {
+                    if (binder.getBean().getCodes() == null) {
+                         binder.getBean().setCodes(new ArrayList<>()); // Initialize if null
+                    }
+                    codesGrid.setItems(binder.getBean().getCodes());
+                } else {
+                    codesGrid.setItems(new ArrayList<>()); // Clear grid if not CODIGO
+                }
+            } else {
+                 codesGrid.setItems(new ArrayList<>()); // Clear grid if no bean
+            }
+        });
+
+        createButtonLayout(editorLayoutDiv);
+        splitLayout.addToSecondary(editorLayoutDiv);
+    }
+
+    private void addCodeAction() {
+        PanelistProperty currentProperty = binder.getBean();
+        if (currentProperty != null && newCodeValueField.getValue() != null && !newCodeValueField.getValue().isEmpty()) {
+            PanelistPropertyCode newCode = new PanelistPropertyCode();
+            newCode.setCode(newCodeValueField.getValue());
+            newCode.setDescription(newCodeDescriptionField.getValue());
+
+            // Ensure codes list is initialized
+            if (currentProperty.getCodes() == null) {
+                currentProperty.setCodes(new ArrayList<>());
+            }
+            currentProperty.addCode(newCode); // Uses the helper method
+
+            codesGrid.setItems(currentProperty.getCodes()); // Refresh grid
+            newCodeValueField.clear();
+            newCodeDescriptionField.clear();
+            newCodeValueField.focus();
+        } else {
+            Notification.show("El valor del código no puede estar vacío y debe haber una propiedad seleccionada.", 3000, Notification.Position.MIDDLE);
+        }
+    }
+
+    private void createButtonLayout(Div editorLayoutDiv) {
+        HorizontalLayout buttonLayout = new HorizontalLayout();
+        buttonLayout.setClassName("button-layout");
+        cancel.addThemeVariants(ButtonVariant.LUMO_TERTIARY);
+        save.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
+        buttonLayout.add(save, deleteButton, cancel);
+        buttonLayout.setJustifyContentMode(com.vaadin.flow.component.orderedlayout.FlexComponent.JustifyContentMode.END); // Align buttons to the right
+        buttonLayout.setWidthFull();
+        editorLayoutDiv.add(buttonLayout);
+    }
+
+    private void createGridLayout(SplitLayout splitLayout) {
+        Div wrapper = new Div();
+        wrapper.setClassName("grid-wrapper");
+        splitLayout.addToPrimary(wrapper);
+        wrapper.add(grid);
+
+        HeaderRow headerRow = grid.appendHeaderRow();
+        headerRow.getCell(grid.getColumnByKey("name")).setComponent(nameFilter);
+        // headerRow.getCell(grid.getColumnByKey("type")).setComponent(typeFilter); // Old text filter
+        headerRow.getCell(grid.getColumnByKey("type")).setComponent(typeFilterCombo); // New combo filter
+    }
+
+    private void refreshGrid() {
+        grid.select(null);
+        grid.getDataProvider().refreshAll();
+    }
+
+    private void populateForm(PanelistProperty value) {
+        this.panelistProperty = value;
+        binder.readBean(this.panelistProperty);
+
+        if (deleteButton != null) {
+            deleteButton.setEnabled(value != null && value.getId() != null);
+        }
+
+        // Handle visibility and content of codes section
+        if (value != null) {
+            boolean isCodigo = PropertyType.CODIGO.equals(value.getType());
+            codesManagementSection.setVisible(isCodigo);
+            if (isCodigo) {
+                codesGrid.setItems(value.getCodes() != null ? value.getCodes() : new ArrayList<>());
+            } else {
+                codesGrid.setItems(new ArrayList<>());
+            }
+        } else {
+            codesManagementSection.setVisible(false);
+            codesGrid.setItems(new ArrayList<>());
+        }
+    }
+
+    private void clearForm() {
+        populateForm(null); // This will also hide codesManagementSection and clear grid
+        if (editorLayoutDiv != null) {
+            editorLayoutDiv.setVisible(false);
+        }
+        if (deleteButton != null) {
+            deleteButton.setEnabled(false);
+        }
+        // Explicitly ensure type combo is cleared and code fields too
+        if (type != null) {
+            type.clear();
+        }
+        if (newCodeValueField != null) newCodeValueField.clear();
+        if (newCodeDescriptionField != null) newCodeDescriptionField.clear();
+
+    }
+
+    private void onDeleteClicked() {
+        if (this.panelistProperty == null || this.panelistProperty.getId() == null) {
+            Notification.show("No hay propiedad seleccionada para eliminar.", 3000, Notification.Position.MIDDLE);
+            return;
+        }
+
+        ConfirmDialog dialog = new ConfirmDialog();
+        dialog.setHeader("Confirmar Eliminación");
+        dialog.setText("¿Está seguro de que desea eliminar la propiedad '" + this.panelistProperty.getName() + "'?");
+
+        dialog.setConfirmText("Eliminar");
+        dialog.setConfirmButtonTheme("error primary");
+        dialog.setCancelText("Cancelar");
+
+        dialog.addConfirmListener(event -> {
+            try {
+                panelistPropertyService.delete(this.panelistProperty.getId());
+                clearForm();
+                refreshGrid();
+                Notification.show("Propiedad eliminada correctamente.", 3000, Notification.Position.BOTTOM_START);
+                UI.getCurrent().navigate(PropertiesView.class);
+            } catch (DataIntegrityViolationException ex) {
+                Notification.show("No se puede eliminar la propiedad. Es posible que esté siendo referenciada por otras entidades.", 5000, Notification.Position.MIDDLE)
+                    .addThemeVariants(NotificationVariant.LUMO_ERROR);
+            } catch (Exception ex) {
+                Notification.show("Ocurrió un error al intentar eliminar la propiedad: " + ex.getMessage(), 5000, Notification.Position.MIDDLE)
+                    .addThemeVariants(NotificationVariant.LUMO_ERROR);
+            }
+        });
+        dialog.open();
+    }
 }

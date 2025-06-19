@@ -10,6 +10,7 @@ import org.springframework.stereotype.Service;
 import jakarta.persistence.criteria.Predicate;
 import uy.com.equipos.panelmanagement.data.PanelistProperty;
 import uy.com.equipos.panelmanagement.data.PanelistPropertyRepository;
+import uy.com.equipos.panelmanagement.data.PropertyType;
 
 @Service
 public class PanelistPropertyService {
@@ -40,14 +41,14 @@ public class PanelistPropertyService {
         return repository.findAll(filter, pageable);
     }
 
-    public Page<PanelistProperty> list(Pageable pageable, String name, String type) {
+    public Page<PanelistProperty> list(Pageable pageable, String name, PropertyType type) {
         Specification<PanelistProperty> spec = (root, query, cb) -> {
             List<Predicate> predicates = new ArrayList<>();
             if (name != null && !name.isEmpty()) {
                 predicates.add(cb.like(cb.lower(root.get("name")), "%" + name.toLowerCase() + "%"));
             }
-            if (type != null && !type.isEmpty()) {
-                predicates.add(cb.like(cb.lower(root.get("type")), "%" + type.toLowerCase() + "%"));
+            if (type != null) {
+                predicates.add(cb.equal(root.get("type"), type));
             }
             return cb.and(predicates.toArray(new Predicate[0]));
         };
