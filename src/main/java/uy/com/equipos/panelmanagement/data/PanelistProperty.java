@@ -17,7 +17,7 @@ public class PanelistProperty extends AbstractEntity {
     @Enumerated(EnumType.STRING)
     private PropertyType type;
 
-    @OneToMany(mappedBy = "panelistProperty", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.EAGER)
+    @OneToMany(mappedBy = "panelistProperty", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     private List<PanelistPropertyCode> codes = new ArrayList<>();
 
     public String getName() {
