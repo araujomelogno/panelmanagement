@@ -42,6 +42,7 @@ import java.util.Map; // Added
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors; // Added/Uncommented
+import java.util.Collections; // Added for Collections.emptySet()
 import org.springframework.orm.ObjectOptimisticLockingFailureException;
 import org.vaadin.lineawesome.LineAwesomeIconUrl;
 import uy.com.equipos.panelmanagement.data.Panelist;
@@ -463,47 +464,40 @@ public class PanelistsView extends Div implements BeforeEnterObserver {
                 return;
             }
 
-            Set<PanelistPropertyValue> currentPropertyValues = this.panelist.getPropertyValues();
-            if (currentPropertyValues == null) {
-                currentPropertyValues = new HashSet<>();
-            }
-            Set<PanelistPropertyValue> updatedPropertyValues = new HashSet<>(currentPropertyValues);
+            // Initialize finalPpvSet which will hold the desired state
+            Set<PanelistPropertyValue> finalPpvSet = new HashSet<>();
 
             for (PanelistProperty prop : allProperties) {
                 Checkbox checkbox = propertyCheckboxes.get(prop);
-                TextField valueField = propertyValueFields.get(prop.getId());
+                TextField valueField = propertyValueFields.get(prop.getId()); // Keyed by PanelistProperty.getId()
+                String newValue = (valueField != null && valueField.getValue() != null) ? valueField.getValue() : "";
 
-                String newValue = "";
-                if (valueField != null) {
-                    newValue = valueField.getValue();
-                }
-                if (newValue == null) {
-                    newValue = ""; // Ensure not null
-                }
-
-                Optional<PanelistPropertyValue> existingPpvOptional = updatedPropertyValues.stream()
-                    .filter(ppv -> ppv.getPanelistProperty().equals(prop))
-                    .findFirst();
-
-                if (checkbox != null && checkbox.getValue()) { // Checkbox is checked
-                    if (existingPpvOptional.isPresent()) {
-                        // Update existing value
-                        existingPpvOptional.get().setValue(newValue);
-                    } else {
-                        // Create new PanelistPropertyValue
-                        PanelistPropertyValue newPpv = new PanelistPropertyValue();
-                        newPpv.setPanelist(this.panelist);
-                        newPpv.setPanelistProperty(prop);
-                        newPpv.setValue(newValue);
-                        updatedPropertyValues.add(newPpv);
+                if (checkbox != null && checkbox.getValue()) { // Checkbox is CHECKED
+                    Optional<PanelistPropertyValue> ppvOpt = panelistPropertyValueService.findByPanelistAndPanelistProperty(this.panelist, prop);
+                    PanelistPropertyValue ppvToProcess;
+                    if (ppvOpt.isPresent()) { // Exists in DB
+                        ppvToProcess = ppvOpt.get();
+                        ppvToProcess.setValue(newValue); // Update value
+                    } else { // Does not exist in DB, create new
+                        ppvToProcess = new PanelistPropertyValue();
+                        ppvToProcess.setPanelist(this.panelist);
+                        ppvToProcess.setPanelistProperty(prop);
+                        ppvToProcess.setValue(newValue);
                     }
-                } else { // Checkbox is NOT checked
-                    // If it existed, remove it
-                    existingPpvOptional.ifPresent(updatedPropertyValues::remove);
+                    finalPpvSet.add(ppvToProcess);
+                } else {
+                    // NOT CHECKED: If it existed, it will not be added to finalPpvSet.
+                    // orphanRemoval=true on Panelist.propertyValues should handle deletion from DB
+                    // when panelistService.save() is called if it was in the original collection.
                 }
             }
 
-            this.panelist.setPropertyValues(updatedPropertyValues);
+            // Update the panelist's collection to the final desired state
+            if (this.panelist.getPropertyValues() == null) {
+                this.panelist.setPropertyValues(new HashSet<>());
+            }
+            this.panelist.getPropertyValues().clear();
+            this.panelist.getPropertyValues().addAll(finalPpvSet);
 
             try {
                 panelistService.save(this.panelist);
