@@ -70,8 +70,8 @@ public class PanelistsView extends Div implements BeforeEnterObserver {
 	private TextField lastNameFilter = new TextField();
 	private TextField emailFilter = new TextField();
 	private TextField phoneFilter = new TextField();
-	private DatePicker dateOfBirthFilter = new DatePicker();
-	private TextField occupationFilter = new TextField();
+	// private DatePicker dateOfBirthFilter = new DatePicker(); // Removed
+	// private TextField occupationFilter = new TextField(); // Removed
 	private DatePicker lastContactedFilter = new DatePicker();
 	private DatePicker lastInterviewedFilter = new DatePicker();
 
@@ -79,8 +79,8 @@ public class PanelistsView extends Div implements BeforeEnterObserver {
 	private TextField lastName;
 	private TextField email;
 	private TextField phone;
-	private DatePicker dateOfBirth;
-	private TextField occupation;
+	// private DatePicker dateOfBirth; // Removed
+	// private TextField occupation; // Removed
 	private DatePicker lastContacted;
 	private DatePicker lastInterviewed;
 	// private MultiSelectListBox<PanelistProperty> propertiesField; // Removed
@@ -117,9 +117,9 @@ public class PanelistsView extends Div implements BeforeEnterObserver {
 		grid.addColumn(Panelist::getLastName).setHeader("Apellido").setKey("lastName").setAutoWidth(true);
 		grid.addColumn(Panelist::getEmail).setHeader("Correo Electrónico").setKey("email").setAutoWidth(true);
 		grid.addColumn(Panelist::getPhone).setHeader("Teléfono").setKey("phone").setAutoWidth(true);
-		grid.addColumn(Panelist::getDateOfBirth).setHeader("Fecha de Nacimiento").setKey("dateOfBirth")
-				.setAutoWidth(true);
-		grid.addColumn(Panelist::getOccupation).setHeader("Ocupación").setKey("occupation").setAutoWidth(true);
+		// grid.addColumn(Panelist::getDateOfBirth).setHeader("Fecha de Nacimiento").setKey("dateOfBirth")
+		// .setAutoWidth(true); // Removed
+		// grid.addColumn(Panelist::getOccupation).setHeader("Ocupación").setKey("occupation").setAutoWidth(true); // Removed
 		grid.addColumn(Panelist::getLastContacted).setHeader("Último Contacto").setKey("lastContacted")
 				.setAutoWidth(true);
 		grid.addColumn(Panelist::getLastInterviewed).setHeader("Última Entrevista").setKey("lastInterviewed")
@@ -164,8 +164,8 @@ public class PanelistsView extends Div implements BeforeEnterObserver {
 		lastNameFilter.setPlaceholder("Filtrar por Apellido");
 		emailFilter.setPlaceholder("Filtrar por Correo Electrónico");
 		phoneFilter.setPlaceholder("Filtrar por Teléfono");
-		dateOfBirthFilter.setPlaceholder("Filtrar por Fecha de Nacimiento");
-		occupationFilter.setPlaceholder("Filtrar por Ocupación");
+		// dateOfBirthFilter.setPlaceholder("Filtrar por Fecha de Nacimiento"); // Removed
+		// occupationFilter.setPlaceholder("Filtrar por Ocupación"); // Removed
 		lastContactedFilter.setPlaceholder("Filtrar por Último Contacto");
 		lastInterviewedFilter.setPlaceholder("Filtrar por Última Entrevista");
 
@@ -174,8 +174,8 @@ public class PanelistsView extends Div implements BeforeEnterObserver {
 		lastNameFilter.addValueChangeListener(e -> grid.getDataProvider().refreshAll());
 		emailFilter.addValueChangeListener(e -> grid.getDataProvider().refreshAll());
 		phoneFilter.addValueChangeListener(e -> grid.getDataProvider().refreshAll());
-		dateOfBirthFilter.addValueChangeListener(e -> grid.getDataProvider().refreshAll());
-		occupationFilter.addValueChangeListener(e -> grid.getDataProvider().refreshAll());
+		// dateOfBirthFilter.addValueChangeListener(e -> grid.getDataProvider().refreshAll()); // Removed
+		// occupationFilter.addValueChangeListener(e -> grid.getDataProvider().refreshAll()); // Removed
 		lastContactedFilter.addValueChangeListener(e -> grid.getDataProvider().refreshAll());
 		lastInterviewedFilter.addValueChangeListener(e -> grid.getDataProvider().refreshAll());
 
@@ -185,13 +185,23 @@ public class PanelistsView extends Div implements BeforeEnterObserver {
 			String lastNameVal = lastNameFilter.getValue();
 			String emailVal = emailFilter.getValue();
 			String phoneVal = phoneFilter.getValue();
-			LocalDate dateOfBirthVal = dateOfBirthFilter.getValue();
-			String occupationVal = occupationFilter.getValue();
+			// LocalDate dateOfBirthVal = dateOfBirthFilter.getValue(); // Removed
+			// String occupationVal = occupationFilter.getValue(); // Removed
 			LocalDate lastContactedVal = lastContactedFilter.getValue();
 			LocalDate lastInterviewedVal = lastInterviewedFilter.getValue();
 
-			return panelistService.list(VaadinSpringDataHelpers.toSpringPageRequest(query), firstNameVal, lastNameVal,
-					emailVal, phoneVal, dateOfBirthVal, occupationVal, lastContactedVal, lastInterviewedVal).stream();
+			// Adjust the call to panelistService.list to exclude dateOfBirthVal and occupationVal
+			// This assumes the service method will be updated accordingly in a later step.
+			// For now, we'll pass null or an equivalent that the current service method might expect,
+			// or if the service method is overloaded or flexible.
+			// Based on the current plan, the service method signature would change.
+			// Let's assume the service method will be updated to:
+			// list(Pageable, String, String, String, String, LocalDate, LocalDate)
+			return panelistService.list(VaadinSpringDataHelpers.toSpringPageRequest(query),
+										firstNameVal, lastNameVal, emailVal, phoneVal,
+										null, // Placeholder for dateOfBirthVal
+										null, // Placeholder for occupationVal
+										lastContactedVal, lastInterviewedVal).stream();
 		});
 
 		// when a row is selected or deselected, populate form
@@ -281,8 +291,8 @@ public class PanelistsView extends Div implements BeforeEnterObserver {
 		lastName = new TextField("Apellido");
 		email = new TextField("Correo Electrónico");
 		phone = new TextField("Teléfono");
-		dateOfBirth = new DatePicker("Fecha de Nacimiento");
-		occupation = new TextField("Ocupación");
+		// dateOfBirth = new DatePicker("Fecha de Nacimiento"); // Removed
+		// occupation = new TextField("Ocupación"); // Removed
 		lastContacted = new DatePicker("Último Contacto");
 		lastInterviewed = new DatePicker("Última Entrevista");
 		// START: Add properties field - Removed
@@ -302,7 +312,7 @@ public class PanelistsView extends Div implements BeforeEnterObserver {
 				Notification.show("Por favor, seleccione un panelista primero.", 3000, Notification.Position.MIDDLE);
 			}
 		});
-		formLayout.add(firstName, lastName, email, phone, dateOfBirth, occupation, lastContacted, lastInterviewed);
+		formLayout.add(firstName, lastName, email, phone, lastContacted, lastInterviewed); // Removed dateOfBirth, occupation
 		formLayout.add(gestionarPropiedadesButton); // Added button here
 
 		editorDiv.add(formLayout);
@@ -331,8 +341,8 @@ public class PanelistsView extends Div implements BeforeEnterObserver {
 		headerRow.getCell(grid.getColumnByKey("lastName")).setComponent(lastNameFilter);
 		headerRow.getCell(grid.getColumnByKey("email")).setComponent(emailFilter);
 		headerRow.getCell(grid.getColumnByKey("phone")).setComponent(phoneFilter);
-		headerRow.getCell(grid.getColumnByKey("dateOfBirth")).setComponent(dateOfBirthFilter);
-		headerRow.getCell(grid.getColumnByKey("occupation")).setComponent(occupationFilter);
+		// headerRow.getCell(grid.getColumnByKey("dateOfBirth")).setComponent(dateOfBirthFilter); // Removed
+		// headerRow.getCell(grid.getColumnByKey("occupation")).setComponent(occupationFilter); // Removed
 		headerRow.getCell(grid.getColumnByKey("lastContacted")).setComponent(lastContactedFilter);
 		headerRow.getCell(grid.getColumnByKey("lastInterviewed")).setComponent(lastInterviewedFilter);
 	}

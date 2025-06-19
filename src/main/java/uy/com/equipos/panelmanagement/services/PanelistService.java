@@ -47,7 +47,7 @@ public class PanelistService {
     }
 
     public Page<Panelist> list(Pageable pageable, String firstName, String lastName, String email, String phone,
-                               LocalDate dateOfBirth, String occupation, LocalDate lastContacted, LocalDate lastInterviewed) {
+                               LocalDate lastContacted, LocalDate lastInterviewed) {
         Specification<Panelist> spec = (root, query, cb) -> {
             List<Predicate> predicates = new ArrayList<>();
             if (firstName != null && !firstName.isEmpty()) {
@@ -62,12 +62,8 @@ public class PanelistService {
             if (phone != null && !phone.isEmpty()) {
                 predicates.add(cb.like(cb.lower(root.get("phone")), "%" + phone.toLowerCase() + "%"));
             }
-            if (dateOfBirth != null) {
-                predicates.add(cb.equal(root.get("dateOfBirth"), dateOfBirth));
-            }
-            if (occupation != null && !occupation.isEmpty()) {
-                predicates.add(cb.like(cb.lower(root.get("occupation")), "%" + occupation.toLowerCase() + "%"));
-            }
+            // Removed dateOfBirth filter logic
+            // Removed occupation filter logic
             if (lastContacted != null) {
                 predicates.add(cb.equal(root.get("lastContacted"), lastContacted));
             }
