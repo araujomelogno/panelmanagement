@@ -6,6 +6,7 @@ import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.formlayout.FormLayout;
 import com.vaadin.flow.component.grid.Grid;
 import com.vaadin.flow.component.grid.GridVariant;
+import com.vaadin.flow.component.grid.HeaderRow; // Added import
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.H2;
 import com.vaadin.flow.component.notification.Notification;
@@ -27,6 +28,7 @@ import com.vaadin.flow.router.Menu;
 import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
 import com.vaadin.flow.spring.data.VaadinSpringDataHelpers;
+import org.springframework.data.domain.Pageable; // Added import
 import jakarta.annotation.security.PermitAll;
 import java.util.Optional;
 import org.springframework.orm.ObjectOptimisticLockingFailureException;
@@ -46,12 +48,21 @@ public class RequestsView extends Div implements BeforeEnterObserver {
 	private final Grid<Request> grid = new Grid<>(Request.class, false);
 	private Div editorLayoutDiv; // Declarado como miembro de la clase
 
+	// Form fields
 	private TextField firstName;
 	private TextField lastName;
-	private TextField birhtdate;
+	private TextField birhtdate; // Field in entity is 'birhtdate'
 	private TextField sex;
 	private TextField email;
 	private TextField phone;
+
+	// Filter fields
+	private TextField firstNameFilter = new TextField();
+	private TextField lastNameFilter = new TextField();
+	private TextField birhtdateFilter = new TextField();
+	private TextField sexFilter = new TextField();
+	private TextField emailFilter = new TextField();
+	private TextField phoneFilter = new TextField();
 
 	private final Button cancel = new Button("Cancelar");
 	private final Button save = new Button("Guardar");
@@ -105,14 +116,53 @@ public class RequestsView extends Div implements BeforeEnterObserver {
 		});
 
 		// Configure Grid
-		grid.addColumn("firstName").setAutoWidth(true);
-		grid.addColumn("lastName").setAutoWidth(true);
-		grid.addColumn("birhtdate").setAutoWidth(true);
-		grid.addColumn("sex").setAutoWidth(true);
-		grid.addColumn("email").setAutoWidth(true);
-		grid.addColumn("phone").setAutoWidth(true);
-		grid.setItems(query -> requestService.list(VaadinSpringDataHelpers.toSpringPageRequest(query)).stream());
+		Grid.Column<Request> firstNameCol = grid.addColumn(Request::getFirstName).setHeader("Nombre").setKey("firstName").setAutoWidth(true);
+		Grid.Column<Request> lastNameCol = grid.addColumn(Request::getLastName).setHeader("Apellido").setKey("lastName").setAutoWidth(true);
+		Grid.Column<Request> birhtdateCol = grid.addColumn(Request::getBirhtdate).setHeader("Fecha de Nacimiento").setKey("birhtdate").setAutoWidth(true);
+		Grid.Column<Request> sexCol = grid.addColumn(Request::getSex).setHeader("Sexo").setKey("sex").setAutoWidth(true);
+		Grid.Column<Request> emailCol = grid.addColumn(Request::getEmail).setHeader("Correo Electrónico").setKey("email").setAutoWidth(true);
+		Grid.Column<Request> phoneCol = grid.addColumn(Request::getPhone).setHeader("Teléfono").setKey("phone").setAutoWidth(true);
 		grid.addThemeVariants(GridVariant.LUMO_NO_BORDER);
+
+		// Add filter row
+		HeaderRow filterRow = grid.appendHeaderRow();
+
+		firstNameFilter.setPlaceholder("Filtrar por Nombre...");
+		filterRow.getCell(firstNameCol).setComponent(firstNameFilter);
+
+		lastNameFilter.setPlaceholder("Filtrar por Apellido...");
+		filterRow.getCell(lastNameCol).setComponent(lastNameFilter);
+
+		birhtdateFilter.setPlaceholder("Filtrar por Fecha Nac...");
+		filterRow.getCell(birhtdateCol).setComponent(birhtdateFilter);
+
+		sexFilter.setPlaceholder("Filtrar por Sexo...");
+		filterRow.getCell(sexCol).setComponent(sexFilter);
+
+		emailFilter.setPlaceholder("Filtrar por Email...");
+		filterRow.getCell(emailCol).setComponent(emailFilter);
+
+		phoneFilter.setPlaceholder("Filtrar por Teléfono...");
+		filterRow.getCell(phoneCol).setComponent(phoneFilter);
+
+		// Add listeners to filter fields
+		firstNameFilter.addValueChangeListener(e -> grid.getDataProvider().refreshAll());
+		lastNameFilter.addValueChangeListener(e -> grid.getDataProvider().refreshAll());
+		birhtdateFilter.addValueChangeListener(e -> grid.getDataProvider().refreshAll());
+		sexFilter.addValueChangeListener(e -> grid.getDataProvider().refreshAll());
+		emailFilter.addValueChangeListener(e -> grid.getDataProvider().refreshAll());
+		phoneFilter.addValueChangeListener(e -> grid.getDataProvider().refreshAll());
+
+		grid.setItems(query -> {
+            Pageable pageable = VaadinSpringDataHelpers.toSpringPageRequest(query);
+            String fName = firstNameFilter.getValue();
+            String lName = lastNameFilter.getValue();
+            String bDate = birhtdateFilter.getValue();
+            String sSex = sexFilter.getValue();
+            String mail = emailFilter.getValue();
+            String ph = phoneFilter.getValue();
+            return requestService.list(pageable, fName, lName, bDate, sSex, mail, ph).stream();
+        });
 
 		// when a row is selected or deselected, populate form
 		grid.asSingleSelect().addValueChangeListener(event -> {
