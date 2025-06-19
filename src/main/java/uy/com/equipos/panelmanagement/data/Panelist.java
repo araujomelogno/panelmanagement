@@ -20,8 +20,8 @@ public class Panelist extends AbstractEntity {
     @Email
     private String email;
     private String phone;
-    private LocalDate dateOfBirth;
-    private String occupation;
+    // private LocalDate dateOfBirth; // Removed
+    // private String occupation; // Removed
     private LocalDate lastContacted;
     private LocalDate lastInterviewed;
 
@@ -34,10 +34,10 @@ public class Panelist extends AbstractEntity {
     public void setEmail(String email) { this.email = email; }
     public String getPhone() { return phone; }
     public void setPhone(String phone) { this.phone = phone; }
-    public LocalDate getDateOfBirth() { return dateOfBirth; }
-    public void setDateOfBirth(LocalDate dateOfBirth) { this.dateOfBirth = dateOfBirth; }
-    public String getOccupation() { return occupation; }
-    public void setOccupation(String occupation) { this.occupation = occupation; }
+    // public LocalDate getDateOfBirth() { return dateOfBirth; } // Removed
+    // public void setDateOfBirth(LocalDate dateOfBirth) { this.dateOfBirth = dateOfBirth; } // Removed
+    // public String getOccupation() { return occupation; } // Removed
+    // public void setOccupation(String occupation) { this.occupation = occupation; } // Removed
     public LocalDate getLastContacted() { return lastContacted; }
     public void setLastContacted(LocalDate lastContacted) { this.lastContacted = lastContacted; }
     public LocalDate getLastInterviewed() { return lastInterviewed; }
