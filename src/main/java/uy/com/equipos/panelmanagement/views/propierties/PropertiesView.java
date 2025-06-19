@@ -264,17 +264,28 @@ public class PropertiesView extends Div implements BeforeEnterObserver {
         type.addValueChangeListener(event -> {
             boolean isCodigo = PropertyType.CODIGO.equals(event.getValue());
             codesManagementSection.setVisible(isCodigo);
-            if (binder.getBean() != null) { // Check if a bean is bound
+            boolean enableControls = binder.getBean() != null && isCodigo; // Enable only if bean exists AND type is CODIGO
+
+            // codesManagementLayout refers to the layout holding input fields and button.
+            // codesManagementSection is the broader container.
+            // For simplicity, let's assume codesManagementSection contains newCodeLayout which is what we want to enable/disable.
+            // Or, more directly, enable/disable the input fields and button.
+            newCodeValueField.setEnabled(enableControls);
+            newCodeDescriptionField.setEnabled(enableControls);
+            addCodeButton.setEnabled(enableControls);
+            codesGrid.setVisible(isCodigo); // Grid visibility still tied to isCodigo
+
+            if (binder.getBean() != null) {
                 if (isCodigo) {
                     if (binder.getBean().getCodes() == null) {
-                         binder.getBean().setCodes(new ArrayList<>()); // Initialize if null
+                        binder.getBean().setCodes(new ArrayList<>());
                     }
                     codesGrid.setItems(binder.getBean().getCodes());
                 } else {
-                    codesGrid.setItems(new ArrayList<>()); // Clear grid if not CODIGO
+                    codesGrid.setItems(new ArrayList<>());
                 }
             } else {
-                 codesGrid.setItems(new ArrayList<>()); // Clear grid if no bean
+                codesGrid.setItems(new ArrayList<>());
             }
         });
 
@@ -284,24 +295,37 @@ public class PropertiesView extends Div implements BeforeEnterObserver {
 
     private void addCodeAction() {
         PanelistProperty currentProperty = binder.getBean();
-        if (currentProperty != null && newCodeValueField.getValue() != null && !newCodeValueField.getValue().isEmpty()) {
-            PanelistPropertyCode newCode = new PanelistPropertyCode();
-            newCode.setCode(newCodeValueField.getValue());
-            newCode.setDescription(newCodeDescriptionField.getValue());
 
-            // Ensure codes list is initialized
-            if (currentProperty.getCodes() == null) {
-                currentProperty.setCodes(new ArrayList<>());
-            }
-            currentProperty.addCode(newCode); // Uses the helper method
-
-            codesGrid.setItems(currentProperty.getCodes()); // Refresh grid
-            newCodeValueField.clear();
-            newCodeDescriptionField.clear();
-            newCodeValueField.focus();
-        } else {
-            Notification.show("El valor del código no puede estar vacío y debe haber una propiedad seleccionada.", 3000, Notification.Position.MIDDLE);
+        if (currentProperty == null) {
+            Notification.show("Por favor, seleccione o guarde la propiedad principal antes de añadir códigos.", 3000, Notification.Position.MIDDLE);
+            return;
         }
+
+        String codeValue = newCodeValueField.getValue();
+        if (codeValue == null || codeValue.trim().isEmpty()) {
+            Notification.show("El valor del código no puede estar vacío.", 3000, Notification.Position.MIDDLE);
+            newCodeValueField.focus(); // Optional: set focus back to the field
+            return;
+        }
+
+        PanelistPropertyCode newCode = new PanelistPropertyCode();
+        newCode.setCode(codeValue.trim());
+        newCode.setDescription(newCodeDescriptionField.getValue() != null ? newCodeDescriptionField.getValue().trim() : null); // Trim description too
+
+        // Ensure codes list is initialized - addCode helper should handle this, but defensive check is fine
+        if (currentProperty.getCodes() == null) {
+            currentProperty.setCodes(new ArrayList<>());
+        }
+        currentProperty.addCode(newCode); // Uses the helper method
+
+        // Refresh grid only if it's visible (i.e., type is CODIGO)
+        if (PropertyType.CODIGO.equals(type.getValue())) {
+             codesGrid.setItems(currentProperty.getCodes());
+        }
+
+        newCodeValueField.clear();
+        newCodeDescriptionField.clear();
+        newCodeValueField.focus(); // Optional: set focus for next entry
     }
 
     private void createButtonLayout(Div editorLayoutDiv) {
@@ -341,17 +365,32 @@ public class PropertiesView extends Div implements BeforeEnterObserver {
         }
 
         // Handle visibility and content of codes section
+        boolean isExistingProperty = value != null && value.getId() != null; // Existing if ID is present
+        boolean isNewUnsavedProperty = value != null && value.getId() == null; // New but not yet saved
+
         if (value != null) {
             boolean isCodigo = PropertyType.CODIGO.equals(value.getType());
             codesManagementSection.setVisible(isCodigo);
+
+            // Enable controls only if property type is CODIGO and property is not null (selected or new)
+            boolean enableCodeControls = isCodigo && (value != null);
+            newCodeValueField.setEnabled(enableCodeControls);
+            newCodeDescriptionField.setEnabled(enableCodeControls);
+            addCodeButton.setEnabled(enableCodeControls);
+            // codesGrid.setEnabled(enableCodeControls); // Grid itself might not need to be disabled, just its content managed
+
             if (isCodigo) {
                 codesGrid.setItems(value.getCodes() != null ? value.getCodes() : new ArrayList<>());
             } else {
                 codesGrid.setItems(new ArrayList<>());
             }
-        } else {
+        } else { // Value is null (form is being cleared)
             codesManagementSection.setVisible(false);
             codesGrid.setItems(new ArrayList<>());
+            newCodeValueField.setEnabled(false);
+            newCodeDescriptionField.setEnabled(false);
+            addCodeButton.setEnabled(false);
+            // codesGrid.setEnabled(false);
         }
     }
 
@@ -365,11 +404,18 @@ public class PropertiesView extends Div implements BeforeEnterObserver {
         }
         // Explicitly ensure type combo is cleared and code fields too
         if (type != null) {
-            type.clear();
+            type.clear(); // This will trigger its value change listener which should handle disabling code fields
         }
-        if (newCodeValueField != null) newCodeValueField.clear();
-        if (newCodeDescriptionField != null) newCodeDescriptionField.clear();
+        // The populateForm(null) call already handles hiding the section and clearing the grid.
+        // The type.clear() above, through its listener, should ensure controls are disabled.
+        // However, an explicit disable here is safer if the listener logic changes or has complex conditions.
+        newCodeValueField.setEnabled(false);
+        newCodeDescriptionField.setEnabled(false);
+        addCodeButton.setEnabled(false);
+        // codesGrid.setEnabled(false); // If grid itself needs disabling
 
+        if (newCodeValueField != null) newCodeValueField.clear(); // Still good to clear values
+        if (newCodeDescriptionField != null) newCodeDescriptionField.clear();
     }
 
     private void onDeleteClicked() {
