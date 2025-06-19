@@ -98,7 +98,7 @@ public class PropertiesView extends Div implements BeforeEnterObserver {
 
         nuevaPropiedadButton = new Button("Nueva Propiedad");
         nuevaPropiedadButton.getStyle().set("margin-left", "18px");
-
+        
         VerticalLayout mainLayout = new VerticalLayout(nuevaPropiedadButton, splitLayout);
         mainLayout.setSizeFull();
         mainLayout.setPadding(false);
@@ -137,7 +137,7 @@ public class PropertiesView extends Div implements BeforeEnterObserver {
             return panelistPropertyService.list(VaadinSpringDataHelpers.toSpringPageRequest(query), nameVal, typeVal)
                     .stream();
         });
-
+        
         grid.asSingleSelect().addValueChangeListener(event -> {
             if (event.getValue() != null) {
                 editorLayoutDiv.setVisible(true);
@@ -181,7 +181,7 @@ public class PropertiesView extends Div implements BeforeEnterObserver {
         });
         save.addClickShortcut(Key.ENTER);
     }
-
+    
     private void refreshGridData() {
         grid.getDataProvider().refreshAll();
     }
@@ -253,7 +253,7 @@ public class PropertiesView extends Div implements BeforeEnterObserver {
         HorizontalLayout newCodeLayout = new HorizontalLayout(newCodeValueField, newCodeDescriptionField, addCodeButton);
         newCodeLayout.setAlignItems(Alignment.BASELINE);
         newCodeLayout.setSpacing(true);
-
+        
         codesManagementSection.add(new H2("Códigos"), codesGrid, newCodeLayout);
         editorDiv.add(codesManagementSection); // Add section to editor
 
@@ -262,33 +262,35 @@ public class PropertiesView extends Div implements BeforeEnterObserver {
 
         // Event handling for type ComboBox
         type.addValueChangeListener(event -> {
-            boolean isCodigo = PropertyType.CODIGO.equals(event.getValue());
-            codesManagementSection.setVisible(isCodigo);
-            boolean enableControls = binder.getBean() != null && isCodigo; // Enable only if bean exists AND type is CODIGO
+            PropertyType selectedType = event.getValue(); // Use the event's value directly
+            PanelistProperty currentBean = binder.getBean();
 
-            // codesManagementLayout refers to the layout holding input fields and button.
-            // codesManagementSection is the broader container.
-            // For simplicity, let's assume codesManagementSection contains newCodeLayout which is what we want to enable/disable.
-            // Or, more directly, enable/disable the input fields and button.
-            newCodeValueField.setEnabled(enableControls);
-            newCodeDescriptionField.setEnabled(enableControls);
-            addCodeButton.setEnabled(enableControls);
-            codesGrid.setVisible(isCodigo); // Grid visibility still tied to isCodigo
+            boolean isPropertyBound = (currentBean != null);
+            boolean isTypeCodigo = PropertyType.CODIGO.equals(selectedType);
 
-            if (binder.getBean() != null) {
-                if (isCodigo) {
-                    if (binder.getBean().getCodes() == null) {
-                        binder.getBean().setCodes(new ArrayList<>());
+            boolean enableCodeControls = isPropertyBound && isTypeCodigo;
+            boolean showCodesSection = isTypeCodigo; // Section visibility depends only on type being CODIGO
+
+            codesManagementSection.setVisible(showCodesSection);
+            
+            // Enable/disable individual controls
+            if (newCodeValueField != null) newCodeValueField.setEnabled(enableCodeControls);
+            if (newCodeDescriptionField != null) newCodeDescriptionField.setEnabled(enableCodeControls);
+            if (addCodeButton != null) addCodeButton.setEnabled(enableCodeControls);
+            
+            // Grid visibility is part of codesManagementSection, but items depend on bean
+            if (codesGrid != null) {
+                if (showCodesSection && isPropertyBound) { // Show grid content only if section visible AND bean bound
+                    if (currentBean.getCodes() == null) {
+                        currentBean.setCodes(new ArrayList<>());
                     }
-                    codesGrid.setItems(binder.getBean().getCodes());
+                    codesGrid.setItems(currentBean.getCodes());
                 } else {
-                    codesGrid.setItems(new ArrayList<>());
+                    codesGrid.setItems(new ArrayList<>()); // Clear grid if not CODIGO or no bean
                 }
-            } else {
-                codesGrid.setItems(new ArrayList<>());
             }
         });
-
+        
         createButtonLayout(editorLayoutDiv);
         splitLayout.addToSecondary(editorLayoutDiv);
     }
@@ -322,7 +324,7 @@ public class PropertiesView extends Div implements BeforeEnterObserver {
         if (PropertyType.CODIGO.equals(type.getValue())) {
              codesGrid.setItems(currentProperty.getCodes());
         }
-
+       
         newCodeValueField.clear();
         newCodeDescriptionField.clear();
         newCodeValueField.focus(); // Optional: set focus for next entry
@@ -335,7 +337,7 @@ public class PropertiesView extends Div implements BeforeEnterObserver {
         save.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
         buttonLayout.add(save, deleteButton, cancel);
         buttonLayout.setJustifyContentMode(com.vaadin.flow.component.orderedlayout.FlexComponent.JustifyContentMode.END); // Align buttons to the right
-        buttonLayout.setWidthFull();
+        buttonLayout.setWidthFull(); 
         editorLayoutDiv.add(buttonLayout);
     }
 
@@ -363,7 +365,7 @@ public class PropertiesView extends Div implements BeforeEnterObserver {
         if (deleteButton != null) {
             deleteButton.setEnabled(value != null && value.getId() != null);
         }
-
+        
         // Handle visibility and content of codes section
         boolean isExistingProperty = value != null && value.getId() != null; // Existing if ID is present
         boolean isNewUnsavedProperty = value != null && value.getId() == null; // New but not yet saved
@@ -371,9 +373,9 @@ public class PropertiesView extends Div implements BeforeEnterObserver {
         if (value != null) {
             boolean isCodigo = PropertyType.CODIGO.equals(value.getType());
             codesManagementSection.setVisible(isCodigo);
-
+            
             // Enable controls only if property type is CODIGO and property is not null (selected or new)
-            boolean enableCodeControls = isCodigo && (value != null);
+            boolean enableCodeControls = isCodigo && (value != null); 
             newCodeValueField.setEnabled(enableCodeControls);
             newCodeDescriptionField.setEnabled(enableCodeControls);
             addCodeButton.setEnabled(enableCodeControls);
@@ -427,7 +429,7 @@ public class PropertiesView extends Div implements BeforeEnterObserver {
         ConfirmDialog dialog = new ConfirmDialog();
         dialog.setHeader("Confirmar Eliminación");
         dialog.setText("¿Está seguro de que desea eliminar la propiedad '" + this.panelistProperty.getName() + "'?");
-
+        
         dialog.setConfirmText("Eliminar");
         dialog.setConfirmButtonTheme("error primary");
         dialog.setCancelText("Cancelar");
