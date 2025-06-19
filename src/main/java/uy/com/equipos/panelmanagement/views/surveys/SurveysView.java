@@ -1,5 +1,6 @@
 package uy.com.equipos.panelmanagement.views.surveys;
 
+import com.vaadin.flow.component.Key; // Added for keyboard shortcut
 import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
@@ -180,6 +181,7 @@ public class SurveysView extends Div implements BeforeEnterObserver {
 						.show("Fallo al actualizar los datos. Verifique nuevamente que todos los valores sean válidos");
 			}
 		});
+		save.addClickShortcut(Key.ENTER);
 	}
 
 	@Override

@@ -17,7 +17,7 @@ public class PanelistPropertyValue extends AbstractEntity {
     @NotNull
     private Panelist panelist;
 
-    @ManyToOne(fetch = FetchType.LAZY) // LAZY es generalmente preferible para relaciones ManyToOne
+    @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "panelist_property_id")
     @NotNull
     private PanelistProperty panelistProperty;

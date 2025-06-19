@@ -26,12 +26,7 @@ public class PanelistPropertyValueService {
 
     @Transactional(readOnly = true)
     public Optional<PanelistPropertyValue> findByPanelistAndPanelistProperty(Panelist panelist, PanelistProperty panelistProperty) {
-        // This would require a custom query in the repository, e.g.:
-        // return repository.findByPanelistAndPanelistProperty(panelist, panelistProperty);
-        // For now, implementing it by filtering the list from findByPanelist:
-        return findByPanelist(panelist).stream()
-                .filter(pv -> pv.getPanelistProperty().equals(panelistProperty))
-                .findFirst();
+        return repository.findByPanelistAndPanelistProperty(panelist, panelistProperty);
     }
 
     @Transactional
