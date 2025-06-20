@@ -230,9 +230,11 @@ public class PropertiesView extends Div implements BeforeEnterObserver {
         codesManagementSection.setClassName("codes-management-section");
         codesManagementSection.setPadding(false);
         codesManagementSection.setSpacing(true); // Add some space between elements
+        codesManagementSection.setSizeFull(); // Allow codesManagementSection to fill available space
 
         codesGrid = new Grid<>(PanelistPropertyCode.class, false);
         codesGrid.setClassName("codes-grid");
+        codesGrid.setHeight("100%"); // Allow codesGrid to take full height within its container
         codesGrid.addColumn(PanelistPropertyCode::getCode).setHeader("Código").setAutoWidth(true);
         codesGrid.addColumn(PanelistPropertyCode::getDescription).setHeader("Descripción").setAutoWidth(true);
         codesGrid.addComponentColumn(code -> new Button(VaadinIcon.TRASH.create(), click -> {
@@ -250,11 +252,13 @@ public class PropertiesView extends Div implements BeforeEnterObserver {
         addCodeButton = new Button("Añadir Código", VaadinIcon.PLUS.create(), event -> addCodeAction());
         addCodeButton.addThemeVariants(ButtonVariant.LUMO_SMALL);
 
-        HorizontalLayout newCodeLayout = new HorizontalLayout(newCodeValueField, newCodeDescriptionField, addCodeButton);
-        newCodeLayout.setAlignItems(Alignment.BASELINE);
-        newCodeLayout.setSpacing(true);
+        // Changed to VerticalLayout, components are added in the desired order.
+        VerticalLayout newCodeLayout = new VerticalLayout(newCodeValueField, newCodeDescriptionField, addCodeButton);
+        newCodeLayout.setSpacing(true); // Keep spacing, remove baseline alignment not typically used in VerticalLayout this way
         
-        codesManagementSection.add(new H2("Códigos"), codesGrid, newCodeLayout);
+        // Corrected order of components in codesManagementSection
+        codesManagementSection.add(new H2("Códigos"), newCodeLayout, codesGrid);
+        codesManagementSection.expand(codesGrid); // Make codesGrid take available space
         editorDiv.add(codesManagementSection); // Add section to editor
 
         // Initial visibility
