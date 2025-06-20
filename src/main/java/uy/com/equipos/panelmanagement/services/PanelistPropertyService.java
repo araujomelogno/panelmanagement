@@ -22,7 +22,7 @@ public class PanelistPropertyService {
     }
 
     public Optional<PanelistProperty> get(Long id) {
-        return repository.findById(id);
+        return repository.findByIdFetchingCodes(id);
     }
 
     public PanelistProperty save(PanelistProperty entity) {
