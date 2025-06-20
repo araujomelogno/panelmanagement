@@ -230,11 +230,11 @@ public class PropertiesView extends Div implements BeforeEnterObserver {
         codesManagementSection.setClassName("codes-management-section");
         codesManagementSection.setPadding(false);
         codesManagementSection.setSpacing(true); // Add some space between elements
+        codesManagementSection.setSizeFull(); // Allow codesManagementSection to fill available space
 
         codesGrid = new Grid<>(PanelistPropertyCode.class, false);
         codesGrid.setClassName("codes-grid");
-        codesGrid.addColumn(PanelistPropertyCode::getCode).setHeader("Código").setAutoWidth(true);
-        codesGrid.addColumn(PanelistPropertyCode::getDescription).setHeader("Descripción").setAutoWidth(true);
+        //codesGrid.setHeight("100%"); // Allow codesGrid to take full height within its container
         codesGrid.addComponentColumn(code -> new Button(VaadinIcon.TRASH.create(), click -> {
             PanelistProperty property = binder.getBean();
             if (property != null) {
@@ -242,6 +242,8 @@ public class PropertiesView extends Div implements BeforeEnterObserver {
                 codesGrid.setItems(property.getCodes()); // Refresh grid
             }
         })).setHeader("Acciones").setAutoWidth(true);
+        codesGrid.addColumn(PanelistPropertyCode::getCode).setHeader("Código").setAutoWidth(true);
+        codesGrid.addColumn(PanelistPropertyCode::getDescription).setHeader("Descripción").setAutoWidth(true);
         codesGrid.addThemeVariants(GridVariant.LUMO_COMPACT, GridVariant.LUMO_ROW_STRIPES);
 
 
@@ -250,11 +252,13 @@ public class PropertiesView extends Div implements BeforeEnterObserver {
         addCodeButton = new Button("Añadir Código", VaadinIcon.PLUS.create(), event -> addCodeAction());
         addCodeButton.addThemeVariants(ButtonVariant.LUMO_SMALL);
 
-        HorizontalLayout newCodeLayout = new HorizontalLayout(newCodeValueField, newCodeDescriptionField, addCodeButton);
-        newCodeLayout.setAlignItems(Alignment.BASELINE);
-        newCodeLayout.setSpacing(true);
+        // Changed to VerticalLayout, components are added in the desired order.
+        VerticalLayout newCodeLayout = new VerticalLayout(newCodeValueField, newCodeDescriptionField, addCodeButton);
+        codesGrid.setMaxHeight("240px");
         
-        codesManagementSection.add(new H2("Códigos"), codesGrid, newCodeLayout);
+        // Corrected order of components in codesManagementSection
+        codesManagementSection.add(newCodeLayout, codesGrid);
+        
         editorDiv.add(codesManagementSection); // Add section to editor
 
         // Initial visibility
@@ -298,7 +302,7 @@ public class PropertiesView extends Div implements BeforeEnterObserver {
     private void addCodeAction() {
         PanelistProperty currentProperty = binder.getBean();
 
-        if (currentProperty == null || currentProperty.getId() == null) {
+        if (currentProperty == null) {
             Notification.show("Por favor, seleccione o guarde la propiedad principal antes de añadir códigos.", 3000, Notification.Position.MIDDLE);
             return;
         }
