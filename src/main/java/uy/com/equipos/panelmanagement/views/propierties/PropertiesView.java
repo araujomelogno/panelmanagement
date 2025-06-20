@@ -303,7 +303,7 @@ public class PropertiesView extends Div implements BeforeEnterObserver {
         PanelistProperty currentProperty = binder.getBean();
 
         if (currentProperty == null) {
-            Notification.show("Por favor, seleccione o guarde la propiedad principal antes de añadir códigos.", 3000, Notification.Position.MIDDLE);
+            Notification.show("Por favor, seleccione o guarde la propiedad principal antes de añadir códigos. ", 3000, Notification.Position.MIDDLE);
             return;
         }
 
@@ -313,7 +313,7 @@ public class PropertiesView extends Div implements BeforeEnterObserver {
             newCodeValueField.focus(); // Optional: set focus back to the field
             return;
         }
-
+ 
         PanelistPropertyCode newCode = new PanelistPropertyCode();
         newCode.setCode(codeValue.trim());
         newCode.setDescription(newCodeDescriptionField.getValue() != null ? newCodeDescriptionField.getValue().trim() : null); // Trim description too
