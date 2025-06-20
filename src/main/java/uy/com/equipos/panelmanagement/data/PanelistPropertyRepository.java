@@ -8,8 +8,8 @@ import java.util.Optional; // Added import
 public interface PanelistPropertyRepository
         extends
             JpaRepository<PanelistProperty, Long>,
-            JpaSpecificationExecutor<PanelistProperty> {
-
+            JpaSpecificationExecutor<PanelistProperty> { 
+    @Override
     @EntityGraph(attributePaths = {"codes"})
-    Optional<PanelistProperty> findByIdFetchingCodes(Long id);
+    Optional<PanelistProperty> findById(Long id); 
 }
