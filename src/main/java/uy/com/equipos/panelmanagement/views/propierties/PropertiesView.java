@@ -189,22 +189,45 @@ public class PropertiesView extends Div implements BeforeEnterObserver {
 
     @Override
     public void beforeEnter(BeforeEnterEvent event) {
-        Optional<Long> panelistPropertyId = event.getRouteParameters().get(PANELISTPROPERTY_ID).map(Long::parseLong);
-        if (panelistPropertyId.isPresent()) {
-            Optional<PanelistProperty> panelistPropertyFromBackend = panelistPropertyService.get(panelistPropertyId.get());
+        Optional<Long> panelistPropertyIdOpt = event.getRouteParameters().get(PANELISTPROPERTY_ID).map(Long::parseLong);
+        if (panelistPropertyIdOpt.isPresent()) {
+            Optional<PanelistProperty> panelistPropertyFromBackend = panelistPropertyService.get(panelistPropertyIdOpt.get());
             if (panelistPropertyFromBackend.isPresent()) {
                 populateForm(panelistPropertyFromBackend.get());
-                editorLayoutDiv.setVisible(true);
+                if (editorLayoutDiv != null) { // Ensure editorLayoutDiv is not null
+                    editorLayoutDiv.setVisible(true);
+                }
             } else {
-                Notification.show(String.format("La propiedad de panelista solicitada no fue encontrada, ID = %s", panelistPropertyId.get()), 3000, Notification.Position.BOTTOM_START);
+                Notification.show(
+                        String.format("La propiedad de panelista solicitada no fue encontrada, ID = %s", panelistPropertyIdOpt.get()),
+                        3000, Notification.Position.BOTTOM_START);
                 refreshGrid();
-                if (editorLayoutDiv != null) {
+                if (editorLayoutDiv != null) { // Ensure editorLayoutDiv is not null
                     editorLayoutDiv.setVisible(false);
                 }
                 event.forwardTo(PropertiesView.class);
             }
         } else {
-            clearForm();
+            // Navigating to base view without an ID (e.g., fresh load or after clearing selection).
+            // Only clear the form if it's not already populated with a *new, unsaved* entity
+            // that the user might be actively creating.
+            if (this.panelistProperty == null || (this.panelistProperty != null && this.panelistProperty.getId() != null)) {
+                // Condition:
+                // 1. this.panelistProperty is null (form is already conceptually empty or needs reset).
+                // OR
+                // 2. this.panelistProperty is not null BUT it has an ID (it's an existing, saved property;
+                //    if we're navigating to the base view, it implies we should clear this existing property
+                //    and start fresh or let the grid selection handle repopulation).
+                clearForm();
+            }
+            // If this.panelistProperty != null AND this.panelistProperty.getId() == null,
+            // it implies we are in the process of creating a new property (e.g., "Nueva Propiedad"
+            // was just clicked and set this up). In this specific scenario, we should *not* call clearForm(),
+            // as that would wipe the new entity being created. The form is already in the desired state.
+            // Also, ensure the editor is visible if we are editing a new, unsaved property.
+            else if (this.panelistProperty != null && this.panelistProperty.getId() == null && editorLayoutDiv != null) {
+                 editorLayoutDiv.setVisible(true); // Ensure editor is visible for the new property
+            }
         }
     }
 
