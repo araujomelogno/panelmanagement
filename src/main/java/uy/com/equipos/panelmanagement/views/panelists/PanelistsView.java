@@ -469,7 +469,7 @@ public class PanelistsView extends Div implements BeforeEnterObserver {
         dataProvider.addFilter(panelistProperty -> {
             String typeSearch = typeFilter.getValue().trim().toLowerCase();
             if (typeSearch.isEmpty()) return true;
-            String propertyType = panelistProperty.getType();
+            String propertyType = panelistProperty.getType().toString();
             return propertyType != null && propertyType.toLowerCase().contains(typeSearch);
         });
         dataProvider.addFilter(panelistProperty -> {

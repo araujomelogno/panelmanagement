@@ -97,7 +97,7 @@ public class PropertiesView extends Div implements BeforeEnterObserver {
 
         nuevaPropiedadButton = new Button("Nueva Propiedad");
         nuevaPropiedadButton.getStyle().set("margin-left", "18px");
-
+        
         VerticalLayout mainLayout = new VerticalLayout(nuevaPropiedadButton, splitLayout);
         mainLayout.setSizeFull();
         mainLayout.setPadding(false);
@@ -134,7 +134,7 @@ public class PropertiesView extends Div implements BeforeEnterObserver {
             return panelistPropertyService.list(VaadinSpringDataHelpers.toSpringPageRequest(query), nameVal, typeVal)
                     .stream();
         });
-
+        
         grid.asSingleSelect().addValueChangeListener(event -> {
             if (event.getValue() != null) {
                 this.creatingNew = false; // Reset flag
@@ -185,7 +185,7 @@ public class PropertiesView extends Div implements BeforeEnterObserver {
         });
         save.addClickShortcut(Key.ENTER);
     }
-
+    
     private void refreshGridData() {
         grid.getDataProvider().refreshAll();
     }
@@ -259,12 +259,13 @@ public class PropertiesView extends Div implements BeforeEnterObserver {
         HorizontalLayout newCodeLayout = new HorizontalLayout(newCodeValueField, newCodeDescriptionField, addCodeButton);
         newCodeLayout.setAlignItems(Alignment.BASELINE);
         newCodeLayout.setSpacing(true);
-
+        
         codesManagementSection.add(new H2("Códigos"), codesGrid, newCodeLayout);
         editorDiv.add(codesManagementSection);
         codesManagementSection.setVisible(false); // Initially hidden
 
         type.addValueChangeListener(event -> {
+
             PropertyType selectedType = event.getValue();
             PanelistProperty currentBeanToConsider = this.panelistProperty; // Use instance variable
 
@@ -292,12 +293,13 @@ public class PropertiesView extends Div implements BeforeEnterObserver {
                         currentBeanToConsider.setCodes(new ArrayList<>());
                     }
                     codesGrid.setItems(currentBeanToConsider.getCodes());
+
                 } else {
-                    codesGrid.setItems(new ArrayList<>());
+                    codesGrid.setItems(new ArrayList<>()); // Clear grid if not CODIGO or no bean
                 }
             }
         });
-
+        
         createButtonLayout(editorLayoutDiv);
         splitLayout.addToSecondary(editorLayoutDiv);
     }
@@ -330,7 +332,7 @@ public class PropertiesView extends Div implements BeforeEnterObserver {
         if (PropertyType.CODIGO.equals(currentProperty.getType())) { // Check type from currentProperty
              codesGrid.setItems(currentProperty.getCodes());
         }
-
+       
         newCodeValueField.clear();
         newCodeDescriptionField.clear();
         newCodeValueField.focus();
@@ -342,8 +344,10 @@ public class PropertiesView extends Div implements BeforeEnterObserver {
         cancel.addThemeVariants(ButtonVariant.LUMO_TERTIARY);
         save.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
         buttonLayout.add(save, deleteButton, cancel);
-        buttonLayout.setJustifyContentMode(com.vaadin.flow.component.orderedlayout.FlexComponent.JustifyContentMode.END);
-        buttonLayout.setWidthFull();
+
+        buttonLayout.setJustifyContentMode(com.vaadin.flow.component.orderedlayout.FlexComponent.JustifyContentMode.END); // Align buttons to the right
+        buttonLayout.setWidthFull(); 
+
         editorLayoutDiv.add(buttonLayout);
     }
 
@@ -375,6 +379,7 @@ public class PropertiesView extends Div implements BeforeEnterObserver {
             deleteButton.setEnabled(value != null && value.getId() != null);
         }
 
+
         boolean isPropertyAvailable = (this.panelistProperty != null);
         PropertyType currentType = isPropertyAvailable ? this.panelistProperty.getType() : null;
         boolean isTypeCodigo = PropertyType.CODIGO.equals(currentType);
@@ -387,6 +392,7 @@ public class PropertiesView extends Div implements BeforeEnterObserver {
         if (newCodeValueField != null) newCodeValueField.setEnabled(enableCodeControls);
         if (newCodeDescriptionField != null) newCodeDescriptionField.setEnabled(enableCodeControls);
         if (addCodeButton != null) addCodeButton.setEnabled(enableCodeControls);
+
 
         if (codesGrid != null) {
             if (showCodesSection && isPropertyAvailable) {
@@ -431,7 +437,7 @@ public class PropertiesView extends Div implements BeforeEnterObserver {
         ConfirmDialog dialog = new ConfirmDialog();
         dialog.setHeader("Confirmar Eliminación");
         dialog.setText("¿Está seguro de que desea eliminar la propiedad '" + this.panelistProperty.getName() + "'?");
-
+        
         dialog.setConfirmText("Eliminar");
         dialog.setConfirmButtonTheme("error primary");
         dialog.setCancelText("Cancelar");

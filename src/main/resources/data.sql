@@ -707,7 +707,7 @@ insert into app_user(version, id,name,password,email) values (1, 100,'viipo','vi
 -- Convert existing PanelistProperty types to new Enum string values
 UPDATE PanelistProperty SET type = 'TEXTO' WHERE type = 'Texto';
 UPDATE PanelistProperty SET type = 'FECHA' WHERE type = 'Fecha';
-UPDATE PanelistProperty SET type = 'NUMERO' WHERE type = 'Número'; -- Note the accent
+UPDATE PanelistProperty SET type = 'NUMERO' WHERE type = 'Número';
 UPDATE PanelistProperty SET type = 'CODIGO' WHERE type = 'Codigo';
 
 -- Note: If the PanelistPropertyCode table or PanelistProperty.codes column
