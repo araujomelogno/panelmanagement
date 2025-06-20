@@ -236,7 +236,7 @@ public class PropertiesView extends Div implements BeforeEnterObserver {
         codesGrid.setClassName("codes-grid");
         //codesGrid.setHeight("100%"); // Allow codesGrid to take full height within its container
         codesGrid.addComponentColumn(code -> new Button(VaadinIcon.TRASH.create(), click -> {
-            PanelistProperty property = binder.getBean();
+            PanelistProperty property = this.panelistProperty;
             if (property != null) {
                 property.removeCode(code); // Use helper method
                 codesGrid.setItems(property.getCodes()); // Refresh grid
