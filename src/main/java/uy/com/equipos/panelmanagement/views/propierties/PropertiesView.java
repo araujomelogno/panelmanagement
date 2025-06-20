@@ -307,7 +307,7 @@ public class PropertiesView extends Div implements BeforeEnterObserver {
             return;
         }
 
-        String codeValue = newCodeValueField.getValue();
+        String codeValue = newCodeValueField.getValue(); 
         if (codeValue == null || codeValue.trim().isEmpty()) {
             Notification.show("El valor del código no puede estar vacío.", 3000, Notification.Position.MIDDLE);
             newCodeValueField.focus(); // Optional: set focus back to the field
