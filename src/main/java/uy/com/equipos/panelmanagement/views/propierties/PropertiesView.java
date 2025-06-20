@@ -296,7 +296,7 @@ public class PropertiesView extends Div implements BeforeEnterObserver {
     }
 
     private void addCodeAction() {
-        PanelistProperty currentProperty = binder.getBean();
+        PanelistProperty currentProperty = this.panelistProperty;
 
         if (currentProperty == null) {
             Notification.show("Por favor, seleccione o guarde la propiedad principal antes de añadir códigos.", 3000, Notification.Position.MIDDLE);
