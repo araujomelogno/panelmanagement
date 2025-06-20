@@ -4,7 +4,7 @@ import com.vaadin.flow.component.Key;
 import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
-import com.vaadin.flow.component.combobox.ComboBox; // Added import
+import com.vaadin.flow.component.combobox.ComboBox;
 import com.vaadin.flow.component.formlayout.FormLayout;
 import com.vaadin.flow.component.grid.Grid;
 import com.vaadin.flow.component.grid.GridVariant;
@@ -16,10 +16,10 @@ import com.vaadin.flow.component.notification.Notification;
 import com.vaadin.flow.component.notification.Notification.Position;
 import com.vaadin.flow.component.notification.NotificationVariant;
 import com.vaadin.flow.component.orderedlayout.FlexComponent.Alignment;
-import com.vaadin.flow.component.orderedlayout.HorizontalLayout; // Added import
+import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.splitlayout.SplitLayout;
-import com.vaadin.flow.component.textfield.TextField; // Added import (already present but good to confirm)
+import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.data.binder.BeanValidationBinder;
 import com.vaadin.flow.data.binder.ValidationException;
 import com.vaadin.flow.component.confirmdialog.ConfirmDialog;
@@ -32,15 +32,15 @@ import com.vaadin.flow.router.Route;
 import com.vaadin.flow.spring.data.VaadinSpringDataHelpers;
 import jakarta.annotation.security.PermitAll;
 
-import java.util.ArrayList; // Added import
-import java.util.List; // Added import
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Optional;
 import org.springframework.orm.ObjectOptimisticLockingFailureException;
 import org.vaadin.lineawesome.LineAwesomeIconUrl;
 
 import uy.com.equipos.panelmanagement.data.PanelistProperty;
-import uy.com.equipos.panelmanagement.data.PanelistPropertyCode; // Added import
-import uy.com.equipos.panelmanagement.data.PropertyType; // Added import
+import uy.com.equipos.panelmanagement.data.PanelistPropertyCode;
+import uy.com.equipos.panelmanagement.data.PropertyType;
 import uy.com.equipos.panelmanagement.services.PanelistPropertyService;
 
 @PageTitle("Propiedades de panelistas")
@@ -56,18 +56,16 @@ public class PropertiesView extends Div implements BeforeEnterObserver {
     private Div editorLayoutDiv;
 
     private TextField nameFilter = new TextField();
-    private ComboBox<PropertyType> typeFilterCombo = new ComboBox<>(); // Changed for consistency if filtering by enum
+    private ComboBox<PropertyType> typeFilterCombo = new ComboBox<>();
 
     private TextField name;
-    // private TextField type; // Replaced by ComboBox
-    private ComboBox<PropertyType> type; // New ComboBox for property type
+    private ComboBox<PropertyType> type;
 
-    // Fields for managing codes
     private Grid<PanelistPropertyCode> codesGrid;
     private TextField newCodeValueField;
     private TextField newCodeDescriptionField;
     private Button addCodeButton;
-    private VerticalLayout codesManagementSection; // Changed to VerticalLayout for better structure
+    private VerticalLayout codesManagementSection;
 
     private final Button cancel = new Button("Cancelar");
     private final Button save = new Button("Guardar");
@@ -76,7 +74,8 @@ public class PropertiesView extends Div implements BeforeEnterObserver {
 
     private final BeanValidationBinder<PanelistProperty> binder;
 
-    private PanelistProperty panelistProperty;
+    private PanelistProperty panelistProperty; // Instance variable to hold the currently edited property
+    private boolean creatingNew = false; // Flag to indicate if a new property is being created
 
     private final PanelistPropertyService panelistPropertyService;
 
@@ -89,7 +88,7 @@ public class PropertiesView extends Div implements BeforeEnterObserver {
         deleteButton.addClickListener(e -> onDeleteClicked());
 
         grid.addColumn(PanelistProperty::getName).setHeader("Nombre").setKey("name").setAutoWidth(true);
-        grid.addColumn(PanelistProperty::getType).setHeader("Tipo").setKey("type").setAutoWidth(true); // This will now display enum toString
+        grid.addColumn(PanelistProperty::getType).setHeader("Tipo").setKey("type").setAutoWidth(true);
         grid.addThemeVariants(GridVariant.LUMO_NO_BORDER);
 
         SplitLayout splitLayout = new SplitLayout();
@@ -111,7 +110,9 @@ public class PropertiesView extends Div implements BeforeEnterObserver {
 
         nuevaPropiedadButton.addClickListener(click -> {
             grid.asSingleSelect().clear();
-            populateForm(new PanelistProperty());
+            this.panelistProperty = new PanelistProperty(); // Use the class member
+            this.creatingNew = true; // Set flag
+            populateForm(this.panelistProperty);
             if (editorLayoutDiv != null) {
                 editorLayoutDiv.setVisible(true);
             }
@@ -124,48 +125,51 @@ public class PropertiesView extends Div implements BeforeEnterObserver {
         typeFilterCombo.setPlaceholder("Filtrar por Tipo");
         typeFilterCombo.setItems(PropertyType.values());
 
-
         nameFilter.addValueChangeListener(e -> refreshGridData());
         typeFilterCombo.addValueChangeListener(e -> refreshGridData());
 
-
         grid.setItems(query -> {
             String nameVal = nameFilter.getValue();
-            PropertyType typeVal = typeFilterCombo.getValue(); // Get value from ComboBox
-
-            // Pass PropertyType to service method
+            PropertyType typeVal = typeFilterCombo.getValue();
             return panelistPropertyService.list(VaadinSpringDataHelpers.toSpringPageRequest(query), nameVal, typeVal)
                     .stream();
         });
 
         grid.asSingleSelect().addValueChangeListener(event -> {
             if (event.getValue() != null) {
+                this.creatingNew = false; // Reset flag
+                // When an item is selected from the grid, populateForm will use this selected item.
+                // this.panelistProperty will be updated in populateForm.
+                populateForm(event.getValue()); // Ensure populateForm is called to set this.panelistProperty
                 editorLayoutDiv.setVisible(true);
                 UI.getCurrent().navigate(String.format(PANELISTPROPERTY_EDIT_ROUTE_TEMPLATE, event.getValue().getId()));
             } else {
+                this.creatingNew = false; // Reset flag
                 clearForm();
                 UI.getCurrent().navigate(PropertiesView.class);
             }
         });
 
         binder = new BeanValidationBinder<>(PanelistProperty.class);
-        // type field is now a ComboBox
         binder.forField(type).asRequired("Tipo es requerido").bind(PanelistProperty::getType, PanelistProperty::setType);
-        binder.bindInstanceFields(this); // Binds 'name' automatically
+        binder.bindInstanceFields(this);
 
         cancel.addClickListener(e -> {
             clearForm();
             refreshGrid();
+            this.creatingNew = false; // Reset flag
         });
 
         save.addClickListener(e -> {
             try {
-                if (this.panelistProperty == null) {
+                if (this.panelistProperty == null) { // Should ideally not happen if logic is correct
                     this.panelistProperty = new PanelistProperty();
                 }
-                // Codes are managed directly in the list of panelistProperty
                 binder.writeBean(this.panelistProperty);
-                panelistPropertyService.save(this.panelistProperty);
+                PanelistProperty savedProperty = panelistPropertyService.save(this.panelistProperty);
+                this.creatingNew = false; // Reset flag
+                // After saving, this.panelistProperty should ideally be the savedProperty or null if clearing form.
+                // The current clearForm() calls populateForm(null), which sets this.panelistProperty to null.
                 clearForm();
                 refreshGrid();
                 Notification.show("Datos actualizados");
@@ -186,11 +190,11 @@ public class PropertiesView extends Div implements BeforeEnterObserver {
         grid.getDataProvider().refreshAll();
     }
 
-
     @Override
     public void beforeEnter(BeforeEnterEvent event) {
         Optional<Long> panelistPropertyId = event.getRouteParameters().get(PANELISTPROPERTY_ID).map(Long::parseLong);
         if (panelistPropertyId.isPresent()) {
+            this.creatingNew = false; // Editing an existing property
             Optional<PanelistProperty> panelistPropertyFromBackend = panelistPropertyService.get(panelistPropertyId.get());
             if (panelistPropertyFromBackend.isPresent()) {
                 populateForm(panelistPropertyFromBackend.get());
@@ -198,13 +202,18 @@ public class PropertiesView extends Div implements BeforeEnterObserver {
             } else {
                 Notification.show(String.format("La propiedad de panelista solicitada no fue encontrada, ID = %s", panelistPropertyId.get()), 3000, Notification.Position.BOTTOM_START);
                 refreshGrid();
-                if (editorLayoutDiv != null) {
-                    editorLayoutDiv.setVisible(false);
-                }
+                if (editorLayoutDiv != null) editorLayoutDiv.setVisible(false);
                 event.forwardTo(PropertiesView.class);
             }
-        } else {
-            clearForm();
+        } else { // No ID in URL
+            // If creatingNew is true, it means "Nueva Propiedad" button was clicked.
+            // The form is already set up by its click listener (this.panelistProperty = new PanelistProperty(); populateForm(...)).
+            // So, do not clear the form if creatingNew is true.
+            if (!this.creatingNew) {
+                clearForm(); // Clears this.panelistProperty and hides editor
+                 if (editorLayoutDiv != null) editorLayoutDiv.setVisible(false);
+            }
+            // If creatingNew is true, editor should be visible and form populated with a new bean.
         }
     }
 
@@ -220,34 +229,31 @@ public class PropertiesView extends Div implements BeforeEnterObserver {
         name = new TextField("Nombre");
         type = new ComboBox<>("Tipo");
         type.setItems(PropertyType.values());
-        // type.setItemLabelGenerator(PropertyType::name); // Or a more user-friendly representation
 
         formLayout.add(name, type);
         editorDiv.add(formLayout);
 
-        // Initialize codes management components
         codesManagementSection = new VerticalLayout();
         codesManagementSection.setClassName("codes-management-section");
         codesManagementSection.setPadding(false);
-        codesManagementSection.setSpacing(true); // Add some space between elements
+        codesManagementSection.setSpacing(true);
 
         codesGrid = new Grid<>(PanelistPropertyCode.class, false);
         codesGrid.setClassName("codes-grid");
         codesGrid.addColumn(PanelistPropertyCode::getCode).setHeader("Código").setAutoWidth(true);
         codesGrid.addColumn(PanelistPropertyCode::getDescription).setHeader("Descripción").setAutoWidth(true);
         codesGrid.addComponentColumn(code -> new Button(VaadinIcon.TRASH.create(), click -> {
-            PanelistProperty property = binder.getBean();
-            if (property != null) {
-                property.removeCode(code); // Use helper method
-                codesGrid.setItems(property.getCodes()); // Refresh grid
+            // Use this.panelistProperty as the source of truth
+            if (this.panelistProperty != null) {
+                this.panelistProperty.removeCode(code);
+                codesGrid.setItems(this.panelistProperty.getCodes());
             }
         })).setHeader("Acciones").setAutoWidth(true);
         codesGrid.addThemeVariants(GridVariant.LUMO_COMPACT, GridVariant.LUMO_ROW_STRIPES);
 
-
         newCodeValueField = new TextField("Valor del Código");
         newCodeDescriptionField = new TextField("Descripción del Código");
-        addCodeButton = new Button("Añadir Código", VaadinIcon.PLUS.create(), event -> addCodeAction());
+        addCodeButton = new Button("Añadir Código", VaadinIcon.PLUS.create(), e -> addCodeAction());
         addCodeButton.addThemeVariants(ButtonVariant.LUMO_SMALL);
 
         HorizontalLayout newCodeLayout = new HorizontalLayout(newCodeValueField, newCodeDescriptionField, addCodeButton);
@@ -255,38 +261,39 @@ public class PropertiesView extends Div implements BeforeEnterObserver {
         newCodeLayout.setSpacing(true);
 
         codesManagementSection.add(new H2("Códigos"), codesGrid, newCodeLayout);
-        editorDiv.add(codesManagementSection); // Add section to editor
+        editorDiv.add(codesManagementSection);
+        codesManagementSection.setVisible(false); // Initially hidden
 
-        // Initial visibility
-        codesManagementSection.setVisible(false);
-
-        // Event handling for type ComboBox
         type.addValueChangeListener(event -> {
-            PropertyType selectedType = event.getValue(); // Use the event's value directly
-            PanelistProperty currentBean = binder.getBean();
+            PropertyType selectedType = event.getValue();
+            PanelistProperty currentBeanToConsider = this.panelistProperty; // Use instance variable
 
-            boolean isPropertyBound = (currentBean != null);
+            // Update the type on our working bean instance directly if it's bound
+            if (currentBeanToConsider != null) {
+                 // This ensures that if type is changed for a new entity, this.panelistProperty has the correct type
+                currentBeanToConsider.setType(selectedType);
+            }
+
+            boolean isPropertyAvailable = (currentBeanToConsider != null);
             boolean isTypeCodigo = PropertyType.CODIGO.equals(selectedType);
 
-            boolean enableCodeControls = isPropertyBound && isTypeCodigo;
-            boolean showCodesSection = isTypeCodigo; // Section visibility depends only on type being CODIGO
+            boolean enableCodeControls = isPropertyAvailable && isTypeCodigo;
+            boolean showCodesSection = isTypeCodigo; // Section visibility only depends on type
 
             codesManagementSection.setVisible(showCodesSection);
 
-            // Enable/disable individual controls
             if (newCodeValueField != null) newCodeValueField.setEnabled(enableCodeControls);
             if (newCodeDescriptionField != null) newCodeDescriptionField.setEnabled(enableCodeControls);
             if (addCodeButton != null) addCodeButton.setEnabled(enableCodeControls);
 
-            // Grid visibility is part of codesManagementSection, but items depend on bean
             if (codesGrid != null) {
-                if (showCodesSection && isPropertyBound) { // Show grid content only if section visible AND bean bound
-                    if (currentBean.getCodes() == null) {
-                        currentBean.setCodes(new ArrayList<>());
+                if (showCodesSection && isPropertyAvailable) {
+                    if (currentBeanToConsider.getCodes() == null) {
+                        currentBeanToConsider.setCodes(new ArrayList<>());
                     }
-                    codesGrid.setItems(currentBean.getCodes());
+                    codesGrid.setItems(currentBeanToConsider.getCodes());
                 } else {
-                    codesGrid.setItems(new ArrayList<>()); // Clear grid if not CODIGO or no bean
+                    codesGrid.setItems(new ArrayList<>());
                 }
             }
         });
@@ -296,7 +303,8 @@ public class PropertiesView extends Div implements BeforeEnterObserver {
     }
 
     private void addCodeAction() {
-        PanelistProperty currentProperty = binder.getBean();
+        // Use this.panelistProperty as the source of truth
+        PanelistProperty currentProperty = this.panelistProperty;
 
         if (currentProperty == null) {
             Notification.show("Por favor, seleccione o guarde la propiedad principal antes de añadir códigos.", 3000, Notification.Position.MIDDLE);
@@ -306,28 +314,26 @@ public class PropertiesView extends Div implements BeforeEnterObserver {
         String codeValue = newCodeValueField.getValue();
         if (codeValue == null || codeValue.trim().isEmpty()) {
             Notification.show("El valor del código no puede estar vacío.", 3000, Notification.Position.MIDDLE);
-            newCodeValueField.focus(); // Optional: set focus back to the field
+            newCodeValueField.focus();
             return;
         }
 
         PanelistPropertyCode newCode = new PanelistPropertyCode();
         newCode.setCode(codeValue.trim());
-        newCode.setDescription(newCodeDescriptionField.getValue() != null ? newCodeDescriptionField.getValue().trim() : null); // Trim description too
+        newCode.setDescription(newCodeDescriptionField.getValue() != null ? newCodeDescriptionField.getValue().trim() : null);
 
-        // Ensure codes list is initialized - addCode helper should handle this, but defensive check is fine
         if (currentProperty.getCodes() == null) {
             currentProperty.setCodes(new ArrayList<>());
         }
-        currentProperty.addCode(newCode); // Uses the helper method
+        currentProperty.addCode(newCode);
 
-        // Refresh grid only if it's visible (i.e., type is CODIGO)
-        if (PropertyType.CODIGO.equals(type.getValue())) {
+        if (PropertyType.CODIGO.equals(currentProperty.getType())) { // Check type from currentProperty
              codesGrid.setItems(currentProperty.getCodes());
         }
 
         newCodeValueField.clear();
         newCodeDescriptionField.clear();
-        newCodeValueField.focus(); // Optional: set focus for next entry
+        newCodeValueField.focus();
     }
 
     private void createButtonLayout(Div editorLayoutDiv) {
@@ -336,7 +342,7 @@ public class PropertiesView extends Div implements BeforeEnterObserver {
         cancel.addThemeVariants(ButtonVariant.LUMO_TERTIARY);
         save.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
         buttonLayout.add(save, deleteButton, cancel);
-        buttonLayout.setJustifyContentMode(com.vaadin.flow.component.orderedlayout.FlexComponent.JustifyContentMode.END); // Align buttons to the right
+        buttonLayout.setJustifyContentMode(com.vaadin.flow.component.orderedlayout.FlexComponent.JustifyContentMode.END);
         buttonLayout.setWidthFull();
         editorLayoutDiv.add(buttonLayout);
     }
@@ -349,8 +355,7 @@ public class PropertiesView extends Div implements BeforeEnterObserver {
 
         HeaderRow headerRow = grid.appendHeaderRow();
         headerRow.getCell(grid.getColumnByKey("name")).setComponent(nameFilter);
-        // headerRow.getCell(grid.getColumnByKey("type")).setComponent(typeFilter); // Old text filter
-        headerRow.getCell(grid.getColumnByKey("type")).setComponent(typeFilterCombo); // New combo filter
+        headerRow.getCell(grid.getColumnByKey("type")).setComponent(typeFilterCombo);
     }
 
     private void refreshGrid() {
@@ -359,68 +364,65 @@ public class PropertiesView extends Div implements BeforeEnterObserver {
     }
 
     private void populateForm(PanelistProperty value) {
-        this.panelistProperty = value;
-        binder.readBean(this.panelistProperty);
+        this.panelistProperty = value; // Set the instance variable
+        // If value is null (e.g. when clearing form), this.panelistProperty becomes null.
+        // If value is a new PanelistProperty(), this.panelistProperty is that new instance.
+        // If value is an existing entity, this.panelistProperty is that existing instance.
+
+        binder.readBean(this.panelistProperty); // Bind the form to the current instance variable
 
         if (deleteButton != null) {
             deleteButton.setEnabled(value != null && value.getId() != null);
         }
 
-        // Handle visibility and content of codes section
-        boolean isExistingProperty = value != null && value.getId() != null; // Existing if ID is present
-        boolean isNewUnsavedProperty = value != null && value.getId() == null; // New but not yet saved
+        boolean isPropertyAvailable = (this.panelistProperty != null);
+        PropertyType currentType = isPropertyAvailable ? this.panelistProperty.getType() : null;
+        boolean isTypeCodigo = PropertyType.CODIGO.equals(currentType);
 
-        if (value != null) {
-            boolean isCodigo = PropertyType.CODIGO.equals(value.getType());
-            codesManagementSection.setVisible(isCodigo);
+        boolean enableCodeControls = isPropertyAvailable && isTypeCodigo;
+        boolean showCodesSection = isTypeCodigo; // Section visibility only depends on type
 
-            // Enable controls only if property type is CODIGO and property is not null (selected or new)
-            boolean enableCodeControls = isCodigo && (value != null);
-            newCodeValueField.setEnabled(enableCodeControls);
-            newCodeDescriptionField.setEnabled(enableCodeControls);
-            addCodeButton.setEnabled(enableCodeControls);
-            // codesGrid.setEnabled(enableCodeControls); // Grid itself might not need to be disabled, just its content managed
+        codesManagementSection.setVisible(showCodesSection);
 
-            if (isCodigo) {
-                codesGrid.setItems(value.getCodes() != null ? value.getCodes() : new ArrayList<>());
+        if (newCodeValueField != null) newCodeValueField.setEnabled(enableCodeControls);
+        if (newCodeDescriptionField != null) newCodeDescriptionField.setEnabled(enableCodeControls);
+        if (addCodeButton != null) addCodeButton.setEnabled(enableCodeControls);
+
+        if (codesGrid != null) {
+            if (showCodesSection && isPropertyAvailable) {
+                codesGrid.setItems(this.panelistProperty.getCodes() != null ? this.panelistProperty.getCodes() : new ArrayList<>());
             } else {
                 codesGrid.setItems(new ArrayList<>());
             }
-        } else { // Value is null (form is being cleared)
-            codesManagementSection.setVisible(false);
-            codesGrid.setItems(new ArrayList<>());
-            newCodeValueField.setEnabled(false);
-            newCodeDescriptionField.setEnabled(false);
-            addCodeButton.setEnabled(false);
-            // codesGrid.setEnabled(false);
         }
     }
 
     private void clearForm() {
-        populateForm(null); // This will also hide codesManagementSection and clear grid
+        populateForm(null); // This sets this.panelistProperty to null and updates binder and UI state
+        // this.creatingNew = false; // Already handled by cancel and grid selection listeners
         if (editorLayoutDiv != null) {
             editorLayoutDiv.setVisible(false);
         }
         if (deleteButton != null) {
             deleteButton.setEnabled(false);
         }
-        // Explicitly ensure type combo is cleared and code fields too
-        if (type != null) {
-            type.clear(); // This will trigger its value change listener which should handle disabling code fields
+        if (type != null) { // type is a form field
+            type.clear(); // This should trigger its listener, which will use the now-null this.panelistProperty
         }
-        // The populateForm(null) call already handles hiding the section and clearing the grid.
-        // The type.clear() above, through its listener, should ensure controls are disabled.
-        // However, an explicit disable here is safer if the listener logic changes or has complex conditions.
-        newCodeValueField.setEnabled(false);
-        newCodeDescriptionField.setEnabled(false);
-        addCodeButton.setEnabled(false);
-        // codesGrid.setEnabled(false); // If grid itself needs disabling
-
-        if (newCodeValueField != null) newCodeValueField.clear(); // Still good to clear values
-        if (newCodeDescriptionField != null) newCodeDescriptionField.clear();
+        // Redundant calls to setEnabled(false) if populateForm(null) does its job, but safe.
+        if (newCodeValueField != null) {
+            newCodeValueField.clear();
+            newCodeValueField.setEnabled(false);
+        }
+        if (newCodeDescriptionField != null) {
+            newCodeDescriptionField.clear();
+            newCodeDescriptionField.setEnabled(false);
+        }
+        if (addCodeButton != null) addCodeButton.setEnabled(false);
     }
 
     private void onDeleteClicked() {
+        // Use this.panelistProperty
         if (this.panelistProperty == null || this.panelistProperty.getId() == null) {
             Notification.show("No hay propiedad seleccionada para eliminar.", 3000, Notification.Position.MIDDLE);
             return;
@@ -437,6 +439,7 @@ public class PropertiesView extends Div implements BeforeEnterObserver {
         dialog.addConfirmListener(event -> {
             try {
                 panelistPropertyService.delete(this.panelistProperty.getId());
+                this.creatingNew = false; // Reset flag
                 clearForm();
                 refreshGrid();
                 Notification.show("Propiedad eliminada correctamente.", 3000, Notification.Position.BOTTOM_START);
