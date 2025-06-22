@@ -1,9 +1,11 @@
 package uy.com.equipos.panelmanagement.views.panelists;
 
+import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.Key; // Added for keyboard shortcut
 import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
+import com.vaadin.flow.component.combobox.ComboBox;
 import com.vaadin.flow.component.datepicker.DatePicker;
 import com.vaadin.flow.component.dialog.Dialog;
 import com.vaadin.flow.component.formlayout.FormLayout;
@@ -36,6 +38,7 @@ import com.vaadin.flow.router.Route;
 import com.vaadin.flow.spring.data.VaadinSpringDataHelpers;
 import jakarta.annotation.security.PermitAll;
 import java.time.LocalDate;
+import java.time.format.DateTimeParseException;
 import java.util.HashMap; // Added
 import java.util.HashSet;
 import java.util.List; // Make sure this is present
@@ -48,7 +51,10 @@ import org.springframework.orm.ObjectOptimisticLockingFailureException;
 import org.vaadin.lineawesome.LineAwesomeIconUrl;
 import uy.com.equipos.panelmanagement.data.Panelist;
 import uy.com.equipos.panelmanagement.data.PanelistProperty;
+import uy.com.equipos.panelmanagement.data.PanelistPropertyCode;
+import uy.com.equipos.panelmanagement.data.PanelistPropertyCodeRepository;
 import uy.com.equipos.panelmanagement.data.PanelistPropertyValue; // Added
+import uy.com.equipos.panelmanagement.data.PropertyType;
 import uy.com.equipos.panelmanagement.services.PanelistPropertyService;
 import uy.com.equipos.panelmanagement.services.PanelistPropertyValueService;
 import uy.com.equipos.panelmanagement.services.PanelistService;
@@ -99,12 +105,14 @@ public class PanelistsView extends Div implements BeforeEnterObserver {
 	private final PanelistService panelistService;
 	private final PanelistPropertyService panelistPropertyService; // Re-added
     private final PanelistPropertyValueService panelistPropertyValueService; // Added new
+    private final PanelistPropertyCodeRepository panelistPropertyCodeRepository;
     private Dialog gestionarPropiedadesDialog; // Add new
 
-	public PanelistsView(PanelistService panelistService, PanelistPropertyService panelistPropertyService, PanelistPropertyValueService panelistPropertyValueService) {
+	public PanelistsView(PanelistService panelistService, PanelistPropertyService panelistPropertyService, PanelistPropertyValueService panelistPropertyValueService, PanelistPropertyCodeRepository panelistPropertyCodeRepository) {
 		this.panelistService = panelistService;
 		this.panelistPropertyService = panelistPropertyService; // Re-added
         this.panelistPropertyValueService = panelistPropertyValueService; // Added new
+        this.panelistPropertyCodeRepository = panelistPropertyCodeRepository;
 		addClassNames("panelists-view");
 
 		// Initialize deleteButton EARLIER
@@ -405,7 +413,7 @@ public class PanelistsView extends Div implements BeforeEnterObserver {
         propertiesGrid.setDataProvider(dataProvider);
 
         // Map to hold TextFields for each PanelistProperty ID
-        final Map<Long, TextField> propertyValueFields = new HashMap<>();
+        final Map<Long, Component> propertyValueFields = new HashMap<>();
 
         // Load existing values for the current panelist
         final Map<PanelistProperty, String> existingValuesMap = new HashMap<>(); // Made final
@@ -421,14 +429,57 @@ public class PanelistsView extends Div implements BeforeEnterObserver {
         Grid.Column<PanelistProperty> typeColumn = propertiesGrid.addColumn(PanelistProperty::getType).setHeader("Tipo").setKey("type").setFlexGrow(1);
 
         Grid.Column<PanelistProperty> valueColumn = propertiesGrid.addComponentColumn(panelistProperty -> {
-            TextField valueField = new TextField();
-            valueField.setPlaceholder("Valor...");
+            PropertyType type = panelistProperty.getType();
             String existingValue = existingValuesMap.get(panelistProperty);
-            if (existingValue != null) {
-                valueField.setValue(existingValue);
+            Component editorComponent;
+
+            switch (type) {
+                case FECHA:
+                    DatePicker datePicker = new DatePicker();
+                    datePicker.setPlaceholder("Seleccione fecha...");
+                    if (existingValue != null && !existingValue.isEmpty()) {
+                        try {
+                            datePicker.setValue(LocalDate.parse(existingValue));
+                        } catch (DateTimeParseException e) {
+                            // Handle or log parsing error, maybe set to null
+                            datePicker.setValue(null);
+                        }
+                    }
+                    editorComponent = datePicker;
+                    break;
+                case NUMERO:
+                    TextField numeroField = new TextField();
+                    numeroField.setPlaceholder("Valor numérico...");
+                    // Basic numeric validation (optional, can be enhanced with patterns)
+                    // numeroField.setPattern("[0-9]*");
+                    if (existingValue != null) {
+                        numeroField.setValue(existingValue);
+                    }
+                    editorComponent = numeroField;
+                    break;
+                case CODIGO:
+                    ComboBox<String> comboBox = new ComboBox<>();
+                    comboBox.setPlaceholder("Seleccione código...");
+                    List<PanelistPropertyCode> codes = panelistPropertyCodeRepository.findByPanelistProperty(panelistProperty);
+                    List<String> codeValues = codes.stream().map(PanelistPropertyCode::getCode).collect(Collectors.toList());
+                    comboBox.setItems(codeValues);
+                    if (existingValue != null) {
+                        comboBox.setValue(existingValue);
+                    }
+                    editorComponent = comboBox;
+                    break;
+                case TEXTO:
+                default:
+                    TextField textField = new TextField();
+                    textField.setPlaceholder("Valor...");
+                    if (existingValue != null) {
+                        textField.setValue(existingValue);
+                    }
+                    editorComponent = textField;
+                    break;
             }
-            propertyValueFields.put(panelistProperty.getId(), valueField);
-            return valueField;
+            propertyValueFields.put(panelistProperty.getId(), editorComponent);
+            return editorComponent;
         }).setHeader("Valor").setKey("valor").setFlexGrow(2);
 
         // propertiesGrid.setItems(allProperties); // DataProvider is used now
@@ -495,8 +546,19 @@ public class PanelistsView extends Div implements BeforeEnterObserver {
 
             for (PanelistProperty prop : allProperties) {
                 Checkbox checkbox = propertyCheckboxes.get(prop);
-                TextField valueField = propertyValueFields.get(prop.getId()); // Keyed by PanelistProperty.getId()
-                String newValue = (valueField != null && valueField.getValue() != null) ? valueField.getValue() : "";
+                Component valueComponent = propertyValueFields.get(prop.getId());
+                String newValue = "";
+
+                if (valueComponent instanceof TextField) {
+                    newValue = ((TextField) valueComponent).getValue();
+                } else if (valueComponent instanceof DatePicker) {
+                    LocalDate dateValue = ((DatePicker) valueComponent).getValue();
+                    newValue = (dateValue != null) ? dateValue.toString() : "";
+                } else if (valueComponent instanceof ComboBox) {
+                    newValue = (String) ((ComboBox<?>) valueComponent).getValue(); // Cast to ComboBox<?> before getValue
+                }
+                newValue = (newValue != null) ? newValue : "";
+
 
                 if (checkbox != null && checkbox.getValue()) { // Checkbox is CHECKED
                     Optional<PanelistPropertyValue> ppvOpt = panelistPropertyValueService.findByPanelistAndPanelistProperty(this.panelist, prop);
