@@ -416,8 +416,8 @@ public class PanelistsView extends Div implements BeforeEnterObserver {
 				+ (currentPanelistForPanelsDialog != null
 						? currentPanelistForPanelsDialog.getFirstName() + " " + currentPanelistForPanelsDialog.getLastName()
 						: ""));
-		viewPanelsDialog.setWidth("600px");
-		viewPanelsDialog.setHeight("400px");
+		viewPanelsDialog.setWidth("1200px");
+		viewPanelsDialog.setHeight("600px");
 
 		// Initialize the field to track changes locally for this dialog instance
         modifiedPanelsInDialog = new HashSet<>();
@@ -430,13 +430,9 @@ public class PanelistsView extends Div implements BeforeEnterObserver {
         List<Panel> allPanelsList = panelService.findAll();
         ListDataProvider<Panel> allPanelsDataProvider = new ListDataProvider<>(allPanelsList);
         participatingPanelsGrid.setDataProvider(allPanelsDataProvider);
-
-        // Define columns before adding header row for filters
-        Grid.Column<Panel> nameColumn = participatingPanelsGrid.addColumn(Panel::getName).setHeader("Nombre").setKey("name").setAutoWidth(true);
-        Grid.Column<Panel> createdColumn = participatingPanelsGrid.addColumn(Panel::getCreated).setHeader("Creado").setKey("created").setAutoWidth(true);
-        Grid.Column<Panel> activeColumn = participatingPanelsGrid.addColumn(Panel::isActive).setHeader("Activo").setKey("active").setAutoWidth(true);
-
         // Add Checkbox column for participation (must be configured after data columns for header row)
+        
+
         Grid.Column<Panel> participationColumn = participatingPanelsGrid.addComponentColumn(panel -> {
             Checkbox checkbox = new Checkbox();
             if (currentPanelistForPanelsDialog != null && currentPanelistForPanelsDialog.getPanels() != null) {
@@ -457,6 +453,12 @@ public class PanelistsView extends Div implements BeforeEnterObserver {
             });
             return checkbox;
         }).setHeader("Participa").setWidth("100px").setFlexGrow(0);
+        // Define columns before adding header row for filters
+
+        Grid.Column<Panel> nameColumn = participatingPanelsGrid.addColumn(Panel::getName).setHeader("Nombre").setKey("name").setAutoWidth(true);
+        Grid.Column<Panel> createdColumn = participatingPanelsGrid.addColumn(Panel::getCreated).setHeader("Creado").setKey("created").setAutoWidth(true);
+        Grid.Column<Panel> activeColumn = participatingPanelsGrid.addColumn(Panel::isActive).setHeader("Activo").setKey("active").setAutoWidth(true);
+
 
         // Add filter row
         HeaderRow filterRow = participatingPanelsGrid.appendHeaderRow();
