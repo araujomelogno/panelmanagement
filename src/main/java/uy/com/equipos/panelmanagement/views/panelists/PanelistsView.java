@@ -11,6 +11,8 @@ import com.vaadin.flow.component.dialog.Dialog;
 import com.vaadin.flow.component.formlayout.FormLayout;
 import com.vaadin.flow.component.grid.Grid; // Already present, but good to confirm
 import com.vaadin.flow.component.grid.GridVariant;
+import com.vaadin.flow.component.icon.Icon;
+import com.vaadin.flow.component.icon.VaadinIcon;
 // import com.vaadin.flow.component.grid.HeaderRow; // Will be used for filter row
 import com.vaadin.flow.component.checkbox.Checkbox; // Added for checkbox column
 import com.vaadin.flow.component.html.Div;
@@ -39,6 +41,7 @@ import com.vaadin.flow.spring.data.VaadinSpringDataHelpers;
 import jakarta.annotation.security.PermitAll;
 import java.time.LocalDate;
 import java.time.format.DateTimeParseException;
+import java.util.ArrayList;
 import java.util.HashMap; // Added
 import java.util.HashSet;
 import java.util.List; // Make sure this is present
@@ -49,6 +52,7 @@ import java.util.stream.Collectors; // Added/Uncommented
 import java.util.Collections; // Added for Collections.emptySet()
 import org.springframework.orm.ObjectOptimisticLockingFailureException;
 import org.vaadin.lineawesome.LineAwesomeIconUrl;
+import uy.com.equipos.panelmanagement.data.Panel;
 import uy.com.equipos.panelmanagement.data.Panelist;
 import uy.com.equipos.panelmanagement.data.PanelistProperty;
 import uy.com.equipos.panelmanagement.data.PanelistPropertyCode;
@@ -97,6 +101,10 @@ public class PanelistsView extends Div implements BeforeEnterObserver {
 	private Button deleteButton; // Add this with other button declarations
 	private Button nuevoPanelistaButton;
 	// private Button gestionarPropiedadesButton; // Removed duplicate declaration
+	private Button viewParticipatingPanelsButton;
+	private Dialog viewPanelsDialog;
+	private Grid<Panel> participatingPanelsGrid;
+	private Panelist currentPanelistForPanelsDialog;
 
 	private final BeanValidationBinder<Panelist> binder;
 
@@ -119,6 +127,16 @@ public class PanelistsView extends Div implements BeforeEnterObserver {
 		deleteButton = new Button("Eliminar");
 		deleteButton.addThemeVariants(ButtonVariant.LUMO_ERROR, ButtonVariant.LUMO_PRIMARY);
 		deleteButton.addClickListener(e -> onDeleteClicked());
+
+		viewParticipatingPanelsButton = new Button("Ver paneles en los que participa");
+		viewParticipatingPanelsButton.addClickListener(e -> {
+			if (this.panelist != null && this.panelist.getId() != null) {
+				this.currentPanelistForPanelsDialog = this.panelist;
+				createOrOpenViewPanelsDialog();
+			} else {
+				Notification.show("Seleccione un panelista para ver sus paneles.", 3000, Notification.Position.MIDDLE);
+			}
+		});
 
 		// Configurar columnas del Grid PRIMERO
 		grid.addColumn(Panelist::getFirstName).setHeader("Nombre").setKey("firstName").setAutoWidth(true);
@@ -319,7 +337,7 @@ public class PanelistsView extends Div implements BeforeEnterObserver {
 			}
 		});
 		formLayout.add(firstName, lastName, email, phone, lastContacted, lastInterviewed); // Removed dateOfBirth, occupation
-		formLayout.add(gestionarPropiedadesButton); // Added button here
+		formLayout.add(gestionarPropiedadesButton, viewParticipatingPanelsButton); // Added buttons here
 
 		editorDiv.add(formLayout);
 		createButtonLayout(editorLayoutDiv);
@@ -374,6 +392,84 @@ public class PanelistsView extends Div implements BeforeEnterObserver {
 		// } // Removed
 		// } // Removed
 		// END: Populate properties field - Removed
+		if (viewParticipatingPanelsButton != null) {
+			viewParticipatingPanelsButton.setEnabled(value != null && value.getId() != null);
+		}
+	}
+
+	private void createOrOpenViewPanelsDialog() {
+		viewPanelsDialog = new Dialog();
+		viewPanelsDialog.setHeaderTitle("Paneles en los que participa: "
+				+ (currentPanelistForPanelsDialog != null
+						? currentPanelistForPanelsDialog.getFirstName() + " " + currentPanelistForPanelsDialog.getLastName()
+						: ""));
+		viewPanelsDialog.setWidth("600px");
+		viewPanelsDialog.setHeight("400px");
+
+		participatingPanelsGrid = new Grid<>(Panel.class, false);
+		participatingPanelsGrid.addColumn(Panel::getName).setHeader("Nombre").setAutoWidth(true);
+		participatingPanelsGrid.addColumn(Panel::getCreated).setHeader("Creado").setAutoWidth(true);
+		participatingPanelsGrid.addColumn(Panel::isActive).setHeader("Activo").setAutoWidth(true);
+
+		participatingPanelsGrid.addComponentColumn(panel -> {
+			Button deletePanelButton = new Button(new Icon(VaadinIcon.TRASH));
+			deletePanelButton.addThemeVariants(ButtonVariant.LUMO_ERROR, ButtonVariant.LUMO_ICON, ButtonVariant.LUMO_SMALL);
+			deletePanelButton.getElement().setAttribute("aria-label", "Eliminar participación en panel " + panel.getName());
+			deletePanelButton.addClickListener(click -> {
+				confirmRemovePanelFromPanelist(panel);
+			});
+			return deletePanelButton;
+		}).setHeader("Eliminar").setWidth("100px").setFlexGrow(0);
+
+		if (currentPanelistForPanelsDialog != null && currentPanelistForPanelsDialog.getPanels() != null) {
+			participatingPanelsGrid.setItems(new ArrayList<>(currentPanelistForPanelsDialog.getPanels()));
+		} else {
+			participatingPanelsGrid.setItems(Collections.emptyList());
+		}
+
+		viewPanelsDialog.add(participatingPanelsGrid);
+
+		Button closeDialogButton = new Button("Cerrar", e -> viewPanelsDialog.close());
+		viewPanelsDialog.getFooter().add(closeDialogButton);
+
+		viewPanelsDialog.open();
+	}
+
+	private void confirmRemovePanelFromPanelist(Panel panelToRemove) {
+		ConfirmDialog dialog = new ConfirmDialog();
+		dialog.setHeader("Confirmar Eliminación");
+		dialog.setText("Está seguro de que desea eliminar la participación de '"
+				+ currentPanelistForPanelsDialog.getFirstName() + " " + currentPanelistForPanelsDialog.getLastName()
+				+ "' en el panel '" + panelToRemove.getName() + "'?");
+
+		dialog.setConfirmText("Eliminar");
+		dialog.setConfirmButtonTheme("error primary");
+		dialog.setCancelText("Cancelar");
+
+		dialog.addConfirmListener(event -> {
+			// TODO: Call panelistService.removePanelFromPanelist(currentPanelistForPanelsDialog.getId(), panelToRemove.getId());
+			// This service method will be created in a later step.
+			// For now, we directly modify the collection and save the panelist.
+
+			if (currentPanelistForPanelsDialog != null && currentPanelistForPanelsDialog.getPanels() != null) {
+				currentPanelistForPanelsDialog.getPanels().remove(panelToRemove);
+				try {
+					panelistService.save(currentPanelistForPanelsDialog); // Persist the change
+					if (participatingPanelsGrid != null) { // Refresh grid
+						participatingPanelsGrid.setItems(new ArrayList<>(currentPanelistForPanelsDialog.getPanels()));
+					}
+					Notification.show("Participación en panel eliminada.", 3000, Notification.Position.BOTTOM_START);
+				} catch (ObjectOptimisticLockingFailureException exception) {
+					Notification n = Notification.show(
+							"Error al actualizar los datos. Otro usuario modificó el registro.");
+					n.setPosition(Notification.Position.MIDDLE);
+					n.addThemeVariants(NotificationVariant.LUMO_ERROR);
+				} catch (Exception e) {
+					Notification.show("Error al eliminar participación: " + e.getMessage(), 5000, Notification.Position.MIDDLE);
+				}
+			}
+		});
+		dialog.open();
 	}
 
 	private void createGestionarPropiedadesDialog() {
@@ -610,6 +706,9 @@ public class PanelistsView extends Div implements BeforeEnterObserver {
 		}
 		if (deleteButton != null) {
 			deleteButton.setEnabled(false);
+		}
+		if (viewParticipatingPanelsButton != null) {
+			viewParticipatingPanelsButton.setEnabled(false);
 		}
 		// Explicitly clear propertiesField, ensure it's initialized - Removed
 		// if (propertiesField != null) { // Removed

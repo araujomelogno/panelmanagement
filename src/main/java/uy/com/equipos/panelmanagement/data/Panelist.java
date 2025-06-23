@@ -3,6 +3,9 @@ package uy.com.equipos.panelmanagement.data;
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.JoinTable;
+import jakarta.persistence.ManyToMany;
 // import jakarta.persistence.JoinColumn; // Not strictly needed by Panelist's own fields now
 // import jakarta.persistence.JoinTable; // Removed
 import jakarta.persistence.OneToMany;
@@ -57,5 +60,21 @@ public class Panelist extends AbstractEntity {
 
     public void setPropertyValues(Set<PanelistPropertyValue> propertyValues) {
         this.propertyValues = propertyValues;
+    }
+
+    @ManyToMany(fetch = FetchType.EAGER)
+    @JoinTable(
+            name = "panelist_panel",
+            joinColumns = @JoinColumn(name = "panelist_id"),
+            inverseJoinColumns = @JoinColumn(name = "panel_id")
+    )
+    private Set<Panel> panels = new HashSet<>();
+
+    public Set<Panel> getPanels() {
+        return panels;
+    }
+
+    public void setPanels(Set<Panel> panels) {
+        this.panels = panels;
     }
 }
