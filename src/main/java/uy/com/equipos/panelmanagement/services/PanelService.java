@@ -62,4 +62,8 @@ public class PanelService {
         return (int) repository.count();
     }
 
+    public List<Panel> findAll() {
+        return repository.findAll();
+    }
+
 }
