@@ -50,6 +50,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors; // Added/Uncommented
 import java.util.Collections; // Added for Collections.emptySet()
+import org.apache.commons.lang3.StringUtils; // Added for filtering
 import org.springframework.orm.ObjectOptimisticLockingFailureException;
 import org.vaadin.lineawesome.LineAwesomeIconUrl;
 import uy.com.equipos.panelmanagement.data.Panel;
@@ -59,6 +60,7 @@ import uy.com.equipos.panelmanagement.data.PanelistPropertyCode;
 import uy.com.equipos.panelmanagement.data.PanelistPropertyCodeRepository;
 import uy.com.equipos.panelmanagement.data.PanelistPropertyValue; // Added
 import uy.com.equipos.panelmanagement.data.PropertyType;
+import uy.com.equipos.panelmanagement.services.PanelService; // Added
 import uy.com.equipos.panelmanagement.services.PanelistPropertyService;
 import uy.com.equipos.panelmanagement.services.PanelistPropertyValueService;
 import uy.com.equipos.panelmanagement.services.PanelistService;
@@ -102,9 +104,17 @@ public class PanelistsView extends Div implements BeforeEnterObserver {
 	private Button nuevoPanelistaButton;
 	// private Button gestionarPropiedadesButton; // Removed duplicate declaration
 	private Button viewParticipatingPanelsButton;
-	private Dialog viewPanelsDialog;
-	private Grid<Panel> participatingPanelsGrid;
-	private Panelist currentPanelistForPanelsDialog;
+	Dialog viewPanelsDialog; // Package-private for testing
+	Grid<Panel> participatingPanelsGrid; // Package-private for testing
+	Panelist currentPanelistForPanelsDialog; // Package-private for testing
+	Set<Panel> modifiedPanelsInDialog; // Package-private for testing, holds state for the dialog
+    // Fields for testing dialog buttons and filters
+    Button savePanelsButtonDialog; // Package-private for testing
+    Button cancelPanelsButtonDialog; // Package-private for testing
+    TextField namePanelFilterDialog; // Package-private for testing
+    TextField createdPanelFilterDialog; // Package-private for testing
+    ComboBox<String> activePanelFilterDialog; // Package-private for testing
+
 
 	private final BeanValidationBinder<Panelist> binder;
 
@@ -114,13 +124,15 @@ public class PanelistsView extends Div implements BeforeEnterObserver {
 	private final PanelistPropertyService panelistPropertyService; // Re-added
     private final PanelistPropertyValueService panelistPropertyValueService; // Added new
     private final PanelistPropertyCodeRepository panelistPropertyCodeRepository;
+    private final PanelService panelService; // Added
     private Dialog gestionarPropiedadesDialog; // Add new
 
-	public PanelistsView(PanelistService panelistService, PanelistPropertyService panelistPropertyService, PanelistPropertyValueService panelistPropertyValueService, PanelistPropertyCodeRepository panelistPropertyCodeRepository) {
+	public PanelistsView(PanelistService panelistService, PanelistPropertyService panelistPropertyService, PanelistPropertyValueService panelistPropertyValueService, PanelistPropertyCodeRepository panelistPropertyCodeRepository, PanelService panelService) { // Added panelService
 		this.panelistService = panelistService;
 		this.panelistPropertyService = panelistPropertyService; // Re-added
         this.panelistPropertyValueService = panelistPropertyValueService; // Added new
         this.panelistPropertyCodeRepository = panelistPropertyCodeRepository;
+        this.panelService = panelService; // Added
 		addClassNames("panelists-view");
 
 		// Initialize deleteButton EARLIER
@@ -397,7 +409,8 @@ public class PanelistsView extends Div implements BeforeEnterObserver {
 		}
 	}
 
-	private void createOrOpenViewPanelsDialog() {
+	// Changed to package-private for testing
+	void createOrOpenViewPanelsDialog() {
 		viewPanelsDialog = new Dialog();
 		viewPanelsDialog.setHeaderTitle("Paneles en los que participa: "
 				+ (currentPanelistForPanelsDialog != null
@@ -406,31 +419,151 @@ public class PanelistsView extends Div implements BeforeEnterObserver {
 		viewPanelsDialog.setWidth("600px");
 		viewPanelsDialog.setHeight("400px");
 
+		// Initialize the field to track changes locally for this dialog instance
+        modifiedPanelsInDialog = new HashSet<>();
+        if (currentPanelistForPanelsDialog != null && currentPanelistForPanelsDialog.getPanels() != null) {
+            modifiedPanelsInDialog.addAll(currentPanelistForPanelsDialog.getPanels());
+        }
+
 		participatingPanelsGrid = new Grid<>(Panel.class, false);
-		participatingPanelsGrid.addColumn(Panel::getName).setHeader("Nombre").setAutoWidth(true);
-		participatingPanelsGrid.addColumn(Panel::getCreated).setHeader("Creado").setAutoWidth(true);
-		participatingPanelsGrid.addColumn(Panel::isActive).setHeader("Activo").setAutoWidth(true);
+        // Fetch all panels and set them up with a ListDataProvider
+        List<Panel> allPanelsList = panelService.findAll();
+        ListDataProvider<Panel> allPanelsDataProvider = new ListDataProvider<>(allPanelsList);
+        participatingPanelsGrid.setDataProvider(allPanelsDataProvider);
 
-		participatingPanelsGrid.addComponentColumn(panel -> {
-			Button deletePanelButton = new Button(new Icon(VaadinIcon.TRASH));
-			deletePanelButton.addThemeVariants(ButtonVariant.LUMO_ERROR, ButtonVariant.LUMO_ICON, ButtonVariant.LUMO_SMALL);
-			deletePanelButton.getElement().setAttribute("aria-label", "Eliminar participación en panel " + panel.getName());
-			deletePanelButton.addClickListener(click -> {
-				confirmRemovePanelFromPanelist(panel);
-			});
-			return deletePanelButton;
-		}).setHeader("Eliminar").setWidth("100px").setFlexGrow(0);
+        // Define columns before adding header row for filters
+        Grid.Column<Panel> nameColumn = participatingPanelsGrid.addColumn(Panel::getName).setHeader("Nombre").setKey("name").setAutoWidth(true);
+        Grid.Column<Panel> createdColumn = participatingPanelsGrid.addColumn(Panel::getCreated).setHeader("Creado").setKey("created").setAutoWidth(true);
+        Grid.Column<Panel> activeColumn = participatingPanelsGrid.addColumn(Panel::isActive).setHeader("Activo").setKey("active").setAutoWidth(true);
 
-		if (currentPanelistForPanelsDialog != null && currentPanelistForPanelsDialog.getPanels() != null) {
-			participatingPanelsGrid.setItems(new ArrayList<>(currentPanelistForPanelsDialog.getPanels()));
-		} else {
-			participatingPanelsGrid.setItems(Collections.emptyList());
-		}
+        // Add Checkbox column for participation (must be configured after data columns for header row)
+        Grid.Column<Panel> participationColumn = participatingPanelsGrid.addComponentColumn(panel -> {
+            Checkbox checkbox = new Checkbox();
+            if (currentPanelistForPanelsDialog != null && currentPanelistForPanelsDialog.getPanels() != null) {
+                checkbox.setValue(currentPanelistForPanelsDialog.getPanels().contains(panel));
+            } else {
+                checkbox.setValue(false);
+            }
+            checkbox.addValueChangeListener(event -> {
+                if (currentPanelistForPanelsDialog != null) {
+                    if (event.getValue()) {
+                        modifiedPanelsInDialog.add(panel);
+                        Notification.show(currentPanelistForPanelsDialog.getFirstName() + " participará en " + panel.getName() + " (cambios pendientes)", 2000, Position.BOTTOM_START);
+                    } else {
+                        modifiedPanelsInDialog.remove(panel);
+                        Notification.show(currentPanelistForPanelsDialog.getFirstName() + " no participará en " + panel.getName() + " (cambios pendientes)", 2000, Position.BOTTOM_START);
+                    }
+                }
+            });
+            return checkbox;
+        }).setHeader("Participa").setWidth("100px").setFlexGrow(0);
+
+        // Add filter row
+        HeaderRow filterRow = participatingPanelsGrid.appendHeaderRow();
+
+        // Name filter
+        TextField nameFilterField = new TextField();
+        nameFilterField.setPlaceholder("Filtrar");
+        nameFilterField.setWidthFull();
+        nameFilterField.addValueChangeListener(event -> allPanelsDataProvider.addFilter(
+            panel -> StringUtils.containsIgnoreCase(panel.getName(), nameFilterField.getValue())
+        ));
+        filterRow.getCell(nameColumn).setComponent(nameFilterField);
+
+        // Created filter
+        TextField createdFilterField = new TextField();
+        createdFilterField.setPlaceholder("Filtrar");
+        createdFilterField.setWidthFull();
+        createdFilterField.addValueChangeListener(event -> allPanelsDataProvider.addFilter(
+            panel -> panel.getCreated() != null && StringUtils.containsIgnoreCase(panel.getCreated().toString(), createdFilterField.getValue())
+        ));
+        filterRow.getCell(createdColumn).setComponent(createdFilterField);
+
+        // Active filter
+        ComboBox<String> activeFilterField = new ComboBox<>();
+        activeFilterField.setItems("Todos", "Sí", "No");
+        activeFilterField.setPlaceholder("Filtrar");
+        activeFilterField.setWidthFull();
+        activeFilterField.addValueChangeListener(event -> {
+            String value = activeFilterField.getValue();
+            allPanelsDataProvider.setFilter(panel -> { // Using setFilter to replace previous active filter
+                if (value == null || "Todos".equals(value)) {
+                    return true;
+                }
+                boolean isActiveSearch = "Sí".equals(value);
+                return panel.isActive() == isActiveSearch;
+            });
+             // Need to re-apply other filters if setFilter clears them.
+             // A better approach is a combined filter. Let's refine this.
+        });
+        // Temporary: For simplicity, this will overwrite other filters. Will be improved.
+        // filterRow.getCell(activeColumn).setComponent(activeFilterField);
+
+
+        // Combined filter approach
+        namePanelFilterDialog = new TextField();
+        namePanelFilterDialog.setPlaceholder("Nombre...");
+        namePanelFilterDialog.setWidthFull();
+        namePanelFilterDialog.addValueChangeListener(e -> allPanelsDataProvider.refreshAll());
+        filterRow.getCell(nameColumn).setComponent(namePanelFilterDialog);
+
+        createdPanelFilterDialog = new TextField();
+        createdPanelFilterDialog.setPlaceholder("Fecha...");
+        createdPanelFilterDialog.setWidthFull();
+        createdPanelFilterDialog.addValueChangeListener(e -> allPanelsDataProvider.refreshAll());
+        filterRow.getCell(createdColumn).setComponent(createdPanelFilterDialog);
+
+        activePanelFilterDialog = new ComboBox<>();
+        activePanelFilterDialog.setItems("Todos", "Sí", "No");
+        activePanelFilterDialog.setValue("Todos");
+        activePanelFilterDialog.setWidthFull();
+        activePanelFilterDialog.addValueChangeListener(e -> allPanelsDataProvider.refreshAll());
+        filterRow.getCell(activeColumn).setComponent(activePanelFilterDialog);
+
+        // No filter for participation column's header
+        // filterRow.getCell(participationColumn).setComponent(new Div()); // Or leave empty
+
+        allPanelsDataProvider.setFilter(panel -> {
+            boolean nameMatch = StringUtils.containsIgnoreCase(panel.getName(), namePanelFilterDialog.getValue());
+            boolean createdMatch = panel.getCreated() != null && StringUtils.containsIgnoreCase(panel.getCreated().toString(), createdPanelFilterDialog.getValue());
+
+            String activeFilterValue = activePanelFilterDialog.getValue();
+            boolean activeMatch = true;
+            if (activeFilterValue != null && !"Todos".equals(activeFilterValue)) {
+                boolean isActiveSearch = "Sí".equals(activeFilterValue);
+                activeMatch = panel.isActive() == isActiveSearch;
+            }
+            return nameMatch && createdMatch && activeMatch;
+        });
 
 		viewPanelsDialog.add(participatingPanelsGrid);
 
-		Button closeDialogButton = new Button("Cerrar", e -> viewPanelsDialog.close());
-		viewPanelsDialog.getFooter().add(closeDialogButton);
+        savePanelsButtonDialog = new Button("Guardar");
+        savePanelsButtonDialog.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
+        savePanelsButtonDialog.addClickListener(e -> {
+            if (currentPanelistForPanelsDialog != null) {
+                try {
+                    currentPanelistForPanelsDialog.setPanels(modifiedPanelsInDialog);
+                    panelistService.save(currentPanelistForPanelsDialog);
+                    Notification.show("Cambios en paneles guardados exitosamente.", 3000, Position.BOTTOM_START);
+                    viewPanelsDialog.close();
+                    refreshGrid(); // Refresh main grid to reflect potential changes if needed elsewhere
+                } catch (ObjectOptimisticLockingFailureException exception) {
+                    Notification n = Notification.show(
+                            "Error al guardar los cambios. Otro usuario modificó el registro.");
+                    n.setPosition(Position.MIDDLE);
+                    n.addThemeVariants(NotificationVariant.LUMO_ERROR);
+                } catch (Exception ex) {
+                    Notification.show("Error al guardar cambios en paneles: " + ex.getMessage(), 5000, Position.MIDDLE)
+                            .addThemeVariants(NotificationVariant.LUMO_ERROR);
+                }
+            }
+        });
+
+        cancelPanelsButtonDialog = new Button("Cancelar", e -> viewPanelsDialog.close());
+        cancelPanelsButtonDialog.addThemeVariants(ButtonVariant.LUMO_TERTIARY);
+
+        viewPanelsDialog.getFooter().add(cancelPanelsButtonDialog, savePanelsButtonDialog); // Order: Cancel, Save
 
 		viewPanelsDialog.open();
 	}
