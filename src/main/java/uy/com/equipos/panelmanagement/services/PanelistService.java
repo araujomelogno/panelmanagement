@@ -10,7 +10,9 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import jakarta.persistence.EntityNotFoundException;
 import jakarta.persistence.criteria.Predicate;
+import uy.com.equipos.panelmanagement.data.Panel;
 import uy.com.equipos.panelmanagement.data.Panelist;
 import uy.com.equipos.panelmanagement.data.PanelistRepository;
 
@@ -79,4 +81,39 @@ public class PanelistService {
         return (int) repository.count();
     }
 
+    @Transactional
+    public void removePanelFromPanelist(Long panelistId, Long panelId) {
+        Optional<Panelist> panelistOpt = repository.findById(panelistId);
+        if (panelistOpt.isPresent()) {
+            Panelist panelist = panelistOpt.get();
+            // Initialize panels collection if it's LAZY and not already fetched.
+            // Since it's EAGER in Panelist.java, this explicit initialization might not be strictly necessary
+            // but doesn't harm and ensures the collection is loaded if fetching strategy changes.
+            Hibernate.initialize(panelist.getPanels());
+
+            Optional<Panel> panelToRemoveOpt = panelist.getPanels().stream()
+                    .filter(panel -> panel.getId().equals(panelId))
+                    .findFirst();
+
+            if (panelToRemoveOpt.isPresent()) {
+                panelist.getPanels().remove(panelToRemoveOpt.get());
+                // No explicit call to panelRepository is needed here for the Panel side
+                // as Panelist is the owning side. Changes to panelist.getPanels()
+                // will be persisted when the transaction commits after this method.
+                // repository.save(panelist); // This save is implicit due to @Transactional
+                                         // if the entity is managed and dirty.
+                                         // However, to be absolutely explicit, especially if not relying
+                                         // solely on dirty checking or if outside a transaction elsewhere,
+                                         // an explicit save is safer. Given @Transactional, it should persist.
+            } else {
+                // Optionally, throw an exception or log if the panel is not associated
+                // System.out.println("Panel with ID " + panelId + " not found in panelist's panels.");
+                 throw new EntityNotFoundException("Panel with ID " + panelId + " not found in panelist's associated panels.");
+            }
+        } else {
+            // Optionally, throw an exception or log if the panelist is not found
+            // System.out.println("Panelist with ID " + panelistId + " not found.");
+            throw new EntityNotFoundException("Panelist with ID " + panelistId + " not found.");
+        }
+    }
 }

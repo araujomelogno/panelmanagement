@@ -1,7 +1,11 @@
 package uy.com.equipos.panelmanagement.data;
 
 import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
+import jakarta.persistence.ManyToMany;
 import java.time.LocalDate;
+import java.util.HashSet;
+import java.util.Set;
 
 @Entity
 public class Panel extends AbstractEntity {
@@ -29,4 +33,14 @@ public class Panel extends AbstractEntity {
         this.active = active;
     }
 
+    @ManyToMany(mappedBy = "panels", fetch = FetchType.LAZY)
+    private Set<Panelist> panelists = new HashSet<>();
+
+    public Set<Panelist> getPanelists() {
+        return panelists;
+    }
+
+    public void setPanelists(Set<Panelist> panelists) {
+        this.panelists = panelists;
+    }
 }
