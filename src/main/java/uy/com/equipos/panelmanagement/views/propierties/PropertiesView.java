@@ -266,32 +266,34 @@ public class PropertiesView extends Div implements BeforeEnterObserver {
 
         // Event handling for type ComboBox
         type.addValueChangeListener(event -> {
-            PropertyType selectedType = event.getValue(); // Use the event's value directly
-            PanelistProperty currentBean = binder.getBean();
-
-            boolean isPropertyBound = (currentBean != null);
+            PropertyType selectedType = event.getValue();
             boolean isTypeCodigo = PropertyType.CODIGO.equals(selectedType);
 
-            boolean enableCodeControls = isPropertyBound && isTypeCodigo;
-            boolean showCodesSection = isTypeCodigo; // Section visibility depends only on type being CODIGO
+            codesManagementSection.setVisible(isTypeCodigo);
 
-            codesManagementSection.setVisible(showCodesSection);
-            
-            // Enable/disable individual controls
+            // Enable controls if the type is CODIGO.
+            // Assumes that if the user is interacting, this.panelistProperty is (or will be) set.
+            boolean enableCodeControls = isTypeCodigo;
+
             if (newCodeValueField != null) newCodeValueField.setEnabled(enableCodeControls);
             if (newCodeDescriptionField != null) newCodeDescriptionField.setEnabled(enableCodeControls);
             if (addCodeButton != null) addCodeButton.setEnabled(enableCodeControls);
-            
-            // Grid visibility is part of codesManagementSection, but items depend on bean
-            if (codesGrid != null) {
-                if (showCodesSection && isPropertyBound) { // Show grid content only if section visible AND bean bound
-                    if (currentBean.getCodes() == null) {
-                        currentBean.setCodes(new ArrayList<>());
+
+            if (this.panelistProperty != null) {
+                // The ComboBox 'type' is bound, so this.panelistProperty.setType()
+                // should be handled by the binder when binder.writeBean() is called.
+                // Or, if the binding is two-way and updates on value change, it's already set.
+                if (isTypeCodigo) {
+                    if (this.panelistProperty.getCodes() == null) {
+                        this.panelistProperty.setCodes(new ArrayList<>());
                     }
-                    codesGrid.setItems(currentBean.getCodes());
+                    codesGrid.setItems(this.panelistProperty.getCodes());
                 } else {
-                    codesGrid.setItems(new ArrayList<>()); // Clear grid if not CODIGO or no bean
+                    codesGrid.setItems(new ArrayList<>());
                 }
+            } else {
+                // If this.panelistProperty is null, there are no codes to show.
+                codesGrid.setItems(new ArrayList<>());
             }
         });
         
@@ -378,12 +380,11 @@ public class PropertiesView extends Div implements BeforeEnterObserver {
             boolean isCodigo = PropertyType.CODIGO.equals(value.getType());
             codesManagementSection.setVisible(isCodigo);
             
-            // Enable controls only if property type is CODIGO and property is not null (selected or new)
-            boolean enableCodeControls = isCodigo && (value != null); 
+            // Enable controls if the type is CODIGO. (value is confirmed not null here)
+            boolean enableCodeControls = isCodigo;
             newCodeValueField.setEnabled(enableCodeControls);
             newCodeDescriptionField.setEnabled(enableCodeControls);
             addCodeButton.setEnabled(enableCodeControls);
-            // codesGrid.setEnabled(enableCodeControls); // Grid itself might not need to be disabled, just its content managed
 
             if (isCodigo) {
                 codesGrid.setItems(value.getCodes() != null ? value.getCodes() : new ArrayList<>());
@@ -396,31 +397,23 @@ public class PropertiesView extends Div implements BeforeEnterObserver {
             newCodeValueField.setEnabled(false);
             newCodeDescriptionField.setEnabled(false);
             addCodeButton.setEnabled(false);
-            // codesGrid.setEnabled(false);
         }
     }
 
     private void clearForm() {
-        populateForm(null); // This will also hide codesManagementSection and clear grid
+        populateForm(null);
         if (editorLayoutDiv != null) {
             editorLayoutDiv.setVisible(false);
         }
         if (deleteButton != null) {
             deleteButton.setEnabled(false);
         }
-        // Explicitly ensure type combo is cleared and code fields too
         if (type != null) {
-            type.clear(); // This will trigger its value change listener which should handle disabling code fields
+            type.clear();
         }
-        // The populateForm(null) call already handles hiding the section and clearing the grid.
-        // The type.clear() above, through its listener, should ensure controls are disabled.
-        // However, an explicit disable here is safer if the listener logic changes or has complex conditions.
-        newCodeValueField.setEnabled(false);
-        newCodeDescriptionField.setEnabled(false);
-        addCodeButton.setEnabled(false);
-        // codesGrid.setEnabled(false); // If grid itself needs disabling
-
-        if (newCodeValueField != null) newCodeValueField.clear(); // Still good to clear values
+        // newCodeValueField, newCodeDescriptionField, addCodeButton are disabled by populateForm(null)
+        // or by the type.clear() listener.
+        if (newCodeValueField != null) newCodeValueField.clear();
         if (newCodeDescriptionField != null) newCodeDescriptionField.clear();
     }
 
