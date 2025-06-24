@@ -7,14 +7,16 @@ import com.vaadin.flow.component.datepicker.DatePicker;
 import com.vaadin.flow.component.dialog.Dialog;
 import com.vaadin.flow.component.grid.Grid;
 import com.vaadin.flow.component.html.Span;
+import com.vaadin.flow.component.orderedlayout.FlexComponent.Alignment; // Added
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
+import com.vaadin.flow.component.textfield.NumberField; // Added
 import com.vaadin.flow.component.textfield.TextField;
-import com.vaadin.flow.data.binder.HasValue;
+import com.vaadin.flow.component.HasValue; // Corrected import
 import uy.com.equipos.panelmanagement.data.Panel;
 import uy.com.equipos.panelmanagement.data.PanelistProperty;
 import uy.com.equipos.panelmanagement.data.PanelistPropertyCode;
-import uy.com.equipos.panelmanagement.data.PanelistProperty.Type; // Assuming Type is an inner enum
-import uy.com.equipos.panelmanagement.repositories.PanelistPropertyCodeRepository;
+import uy.com.equipos.panelmanagement.data.PropertyType; // Corrected import
+import uy.com.equipos.panelmanagement.data.PanelistPropertyCodeRepository; // Corrected path
 import uy.com.equipos.panelmanagement.services.PanelService; // Added
 import uy.com.equipos.panelmanagement.services.PanelistPropertyService;
 import uy.com.equipos.panelmanagement.services.PanelistService;
@@ -89,9 +91,16 @@ public class PanelistPropertyFilterDialog extends Dialog {
                 Component editor = entry.getValue();
                 Object value = null;
 
-                if (editor instanceof TextField) {
-                    value = ((TextField) editor).getValue();
-                    if (value != null && ((String) value).isEmpty()) value = null;
+                if (editor instanceof NumberField) { // Check NumberField first
+                    Double numValue = ((NumberField) editor).getValue();
+                    if (numValue != null) {
+                        value = numValue.toString(); // Convert Double to String
+                    }
+                } else if (editor instanceof TextField) {
+                    String textValue = ((TextField) editor).getValue();
+                    if (textValue != null && !textValue.isBlank()) {
+                        value = textValue;
+                    }
                 } else if (editor instanceof DatePicker) {
                     value = ((DatePicker) editor).getValue();
                 } else if (editor instanceof ComboBox) {
@@ -99,7 +108,7 @@ public class PanelistPropertyFilterDialog extends Dialog {
                 }
                 // Add other types if needed
 
-                if (value != null) {
+                if (value != null) { // Ensure value is not null after processing
                     filterCriteria.put(prop, value);
                 }
             }
@@ -128,7 +137,13 @@ public class PanelistPropertyFilterDialog extends Dialog {
         }
 
         Component editorComponent;
-        switch (property.getType()) {
+        // Ensure property.getType() returns PropertyType enum
+        PropertyType type = property.getType();
+        if (type == null) {
+             return new Span("Tipo de propiedad no definido para: " + property.getName());
+        }
+
+        switch (type) {
             case TEXTO:
                 editorComponent = new TextField();
                 break;
@@ -136,10 +151,9 @@ public class PanelistPropertyFilterDialog extends Dialog {
                 editorComponent = new DatePicker();
                 break;
             case NUMERO:
-                TextField numberField = new TextField();
-                numberField.setPattern("[0-9]*");
-                numberField.setPreventInvalidInput(true);
-                editorComponent = numberField;
+                NumberField numField = new NumberField();
+                numField.setPreventInvalidInput(true);
+                editorComponent = numField;
                 break;
             case CODIGO:
                 ComboBox<PanelistPropertyCode> comboBox = new ComboBox<>();
@@ -149,7 +163,7 @@ public class PanelistPropertyFilterDialog extends Dialog {
                 editorComponent = comboBox;
                 break;
             default:
-                editorComponent = new Span("Tipo no soportado: " + property.getType());
+                editorComponent = new Span("Tipo no soportado: " + type);
         }
         // Set width for all editor components to fill the cell
         if (editorComponent instanceof HasValue) {

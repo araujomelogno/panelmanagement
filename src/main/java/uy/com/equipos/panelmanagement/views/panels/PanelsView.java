@@ -13,13 +13,13 @@ import com.vaadin.flow.component.grid.Grid;
 import com.vaadin.flow.component.grid.GridVariant;
 import com.vaadin.flow.component.grid.HeaderRow;
 import com.vaadin.flow.component.html.Div;
-import com.vaadin.flow.component.html.H2;
+// import com.vaadin.flow.component.html.H2; // Unused
 import com.vaadin.flow.component.icon.Icon;
 import com.vaadin.flow.component.notification.Notification;
 import com.vaadin.flow.component.notification.Notification.Position;
 import com.vaadin.flow.component.notification.NotificationVariant;
-import com.vaadin.flow.component.orderedlayout.FlexComponent.Alignment;
-import com.vaadin.flow.component.orderedlayout.FlexComponent.JustifyContentMode;
+// import com.vaadin.flow.component.orderedlayout.FlexComponent.Alignment; // Unused in this class
+// import com.vaadin.flow.component.orderedlayout.FlexComponent.JustifyContentMode; // Unused
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.splitlayout.SplitLayout;
@@ -42,7 +42,7 @@ import java.util.Optional;
 import org.springframework.orm.ObjectOptimisticLockingFailureException;
 import org.vaadin.lineawesome.LineAwesomeIconUrl;
 import uy.com.equipos.panelmanagement.data.Panel;
-import uy.com.equipos.panelmanagement.repositories.PanelistPropertyCodeRepository;
+import uy.com.equipos.panelmanagement.data.PanelistPropertyCodeRepository; // Corrected path
 import uy.com.equipos.panelmanagement.services.PanelService;
 import uy.com.equipos.panelmanagement.services.PanelistPropertyService;
 import uy.com.equipos.panelmanagement.services.PanelistService; // Added
