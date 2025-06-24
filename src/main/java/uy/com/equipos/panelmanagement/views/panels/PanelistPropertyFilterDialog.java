@@ -152,7 +152,7 @@ public class PanelistPropertyFilterDialog extends Dialog {
                 break;
             case NUMERO:
                 NumberField numField = new NumberField();
-                numField.setPreventInvalidInput(true);
+                // numField.setPreventInvalidInput(true); // This method does not exist on NumberField
                 editorComponent = numField;
                 break;
             case CODIGO:
@@ -167,7 +167,10 @@ public class PanelistPropertyFilterDialog extends Dialog {
         }
         // Set width for all editor components to fill the cell
         if (editorComponent instanceof HasValue) {
-            ((HasValue<?, ?>) editorComponent).getElement().getStyle().set("width", "100%");
+            // getElement() is available on Component, so editorComponent.getElement() is fine.
+            // The HasValue check is okay if we might do other HasValue specific things,
+            // but for getElement, it's directly on Component.
+            editorComponent.getElement().getStyle().set("width", "100%");
         }
         return editorComponent;
     }
