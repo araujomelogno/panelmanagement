@@ -25,6 +25,10 @@ public class PanelService {
         return repository.findById(id);
     }
 
+    public Optional<Panel> getWithPanelists(Long id) {
+        return repository.findByIdWithPanelists(id);
+    }
+
     public Panel save(Panel entity) {
         return repository.save(entity);
     }
