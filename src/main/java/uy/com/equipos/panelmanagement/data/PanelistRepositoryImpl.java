@@ -3,7 +3,7 @@ package uy.com.equipos.panelmanagement.data;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 import jakarta.persistence.criteria.*;
-import uy.com.equipos.panelmanagement.data.PanelistProperty.Type; // Assuming Type is an inner enum
+import uy.com.equipos.panelmanagement.data.PropertyType; // Corrected import
 
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
@@ -45,7 +45,13 @@ public class PanelistRepositoryImpl implements PanelistRepositoryCustom {
 
             String valueAsString = null;
 
-            switch (property.getType()) {
+            PropertyType type = property.getType();
+            if (type == null) {
+                // Skip this criterion if property type is null
+                continue;
+            }
+
+            switch (type) {
                 case TEXTO:
                     if (value instanceof String) {
                         valueMatchPredicate = cb.like(cb.lower(ppvJoin.get("value")), "%" + ((String) value).toLowerCase() + "%");
@@ -53,34 +59,22 @@ public class PanelistRepositoryImpl implements PanelistRepositoryCustom {
                     break;
                 case FECHA:
                     if (value instanceof LocalDate) {
-                        // Dates are stored as strings, so format criteria to string for comparison
-                        // Assumes dates in DB are stored in ISO_LOCAL_DATE format (e.g., "2023-10-26")
                         valueAsString = ((LocalDate) value).format(DateTimeFormatter.ISO_LOCAL_DATE);
                         valueMatchPredicate = cb.equal(ppvJoin.get("value"), valueAsString);
                     }
                     break;
                 case NUMERO:
-                    // Numbers are stored as strings. For exact match, compare as strings.
-                    // This is not ideal for numeric comparisons (e.g., range queries)
-                    // but fits the current PanelistPropertyValue.value as String.
                     if (value instanceof Number) {
                         valueAsString = value.toString();
                     } else if (value instanceof String) {
-                        // Validate if it's a number string before comparing? For now, direct comparison.
                         valueAsString = (String) value;
                     }
-                    if (valueAsString != null) {
-                        // This will perform a string comparison, e.g. "123" matches "123"
-                        // but "123.0" might not match "123" depending on DB storage.
-                        // For robust numeric comparison, PanelistPropertyValue.value would need to be numeric type
-                        // or use a CAST function if available and reliable.
-                        // For now, exact string match:
+                    if (valueAsString != null && !valueAsString.isBlank()) { // Ensure not blank for numbers too
                         valueMatchPredicate = cb.equal(ppvJoin.get("value"), valueAsString);
                     }
                     break;
                 case CODIGO:
                     if (value instanceof PanelistPropertyCode) {
-                        // Assuming the 'code' field of PanelistPropertyCode is what's stored in PanelistPropertyValue.value
                         valueAsString = ((PanelistPropertyCode) value).getCode();
                         valueMatchPredicate = cb.equal(ppvJoin.get("value"), valueAsString);
                     }
