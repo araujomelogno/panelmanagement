@@ -42,7 +42,10 @@ import java.util.Optional;
 import org.springframework.orm.ObjectOptimisticLockingFailureException;
 import org.vaadin.lineawesome.LineAwesomeIconUrl;
 import uy.com.equipos.panelmanagement.data.Panel;
+import uy.com.equipos.panelmanagement.repositories.PanelistPropertyCodeRepository;
 import uy.com.equipos.panelmanagement.services.PanelService;
+import uy.com.equipos.panelmanagement.services.PanelistPropertyService;
+import uy.com.equipos.panelmanagement.services.PanelistService; // Added
 
 @PageTitle("Paneles")
 @Route("/:panelID?/:action?(edit)")
@@ -70,6 +73,7 @@ public class PanelsView extends Div implements BeforeEnterObserver {
 	private final Button cancel = new Button("Cancelar");
 	private final Button save = new Button("Guardar");
 	private Button deleteButton; // Add this with other button declarations
+	private Button addPanelistsButton;
 	private Button nuevoPanelButton;
 
 	private final BeanValidationBinder<Panel> binder;
@@ -77,15 +81,36 @@ public class PanelsView extends Div implements BeforeEnterObserver {
 	private Panel panel;
 
 	private final PanelService panelService;
+	private final PanelistPropertyService panelistPropertyService;
+	private final PanelistPropertyCodeRepository panelistPropertyCodeRepository;
+	private final PanelistService panelistService; // Added
 
-	public PanelsView(PanelService panelService) {
+	public PanelsView(PanelService panelService,
+						PanelistPropertyService panelistPropertyService,
+						PanelistPropertyCodeRepository panelistPropertyCodeRepository,
+						PanelistService panelistService) { // Added
 		this.panelService = panelService;
+		this.panelistPropertyService = panelistPropertyService;
+		this.panelistPropertyCodeRepository = panelistPropertyCodeRepository;
+		this.panelistService = panelistService; // Added
 		addClassNames("panels-view");
 
 		// Initialize deleteButton EARLIER
 		deleteButton = new Button("Eliminar");
 		deleteButton.addThemeVariants(ButtonVariant.LUMO_ERROR, ButtonVariant.LUMO_PRIMARY);
 		deleteButton.addClickListener(e -> onDeleteClicked());
+
+		addPanelistsButton = new Button("Agregar Panelistas");
+		addPanelistsButton.setEnabled(false);
+		addPanelistsButton.addClickListener(e -> {
+			if (this.panel != null && this.panel.getId() != null) {
+				PanelistPropertyFilterDialog filterDialog = new PanelistPropertyFilterDialog(
+						panelistPropertyService, panelistPropertyCodeRepository, this.panelService, panelistService, this.panel);
+				filterDialog.open();
+			} else {
+				Notification.show("Seleccione un panel primero.", 3000, Notification.Position.MIDDLE);
+			}
+		});
 
 		// Configurar columnas del Grid PRIMERO
 		grid.addColumn(Panel::getName).setHeader("Nombre").setKey("name").setAutoWidth(true);
@@ -255,7 +280,7 @@ public class PanelsView extends Div implements BeforeEnterObserver {
 		buttonLayout.setClassName("button-layout");
 		cancel.addThemeVariants(ButtonVariant.LUMO_TERTIARY);
 		save.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
-		buttonLayout.add(save, deleteButton, cancel);
+		buttonLayout.add(save, addPanelistsButton, deleteButton, cancel);
 		editorLayoutDiv.add(buttonLayout);
 	}
 
@@ -280,8 +305,11 @@ public class PanelsView extends Div implements BeforeEnterObserver {
 		this.panel = value;
 		binder.readBean(this.panel);
 
-		if (deleteButton != null) { 
-			 deleteButton.setEnabled(value != null && value.getId() != null);
+		if (deleteButton != null) {
+			deleteButton.setEnabled(value != null && value.getId() != null);
+		}
+		if (addPanelistsButton != null) {
+			addPanelistsButton.setEnabled(value != null && value.getId() != null);
 		}
 	}
 
@@ -290,6 +318,9 @@ public class PanelsView extends Div implements BeforeEnterObserver {
 		editorLayoutDiv.setVisible(false); // Ocultar el editor al limpiar el formulario
 		if (deleteButton != null) {
 			deleteButton.setEnabled(false);
+		}
+		if (addPanelistsButton != null) {
+			addPanelistsButton.setEnabled(false);
 		}
 	}
 
