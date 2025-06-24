@@ -143,7 +143,7 @@ public class PanelistSelectionDialog extends Dialog {
             }
 
             try {
-                Panel managedPanel = this.panelServiceForPanel.get(this.currentPanel.getId())
+                Panel managedPanel = this.panelServiceForPanel.getWithPanelists(this.currentPanel.getId())
                     .orElseThrow(() -> {
                         Notification.show("Error: El panel ya no existe.", 3000, Notification.Position.MIDDLE)
                                 .addThemeVariants(NotificationVariant.LUMO_ERROR);
