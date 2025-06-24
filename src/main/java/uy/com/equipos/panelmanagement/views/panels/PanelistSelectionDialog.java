@@ -17,6 +17,7 @@ import uy.com.equipos.panelmanagement.services.PanelistService;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Optional; // Added for orElseThrow and orElse
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -142,34 +143,46 @@ public class PanelistSelectionDialog extends Dialog {
             }
 
             try {
+                Panel managedPanel = this.panelServiceForPanel.get(this.currentPanel.getId())
+                    .orElseThrow(() -> {
+                        Notification.show("Error: El panel ya no existe.", 3000, Notification.Position.MIDDLE)
+                                .addThemeVariants(NotificationVariant.LUMO_ERROR);
+                        return new IllegalStateException("Panel no longer exists: " + this.currentPanel.getId());
+                    });
+
                 Set<Panelist> panelistsToUpdate = new HashSet<>();
                 int addedCount = 0;
 
-                for (Panelist selectedPanelist : this.selectedPanelists) {
-                    // Ensure Panelist's panels collection is initialized
-                    if (selectedPanelist.getPanels() == null) {
-                        selectedPanelist.setPanels(new HashSet<>());
+                for (Panelist detachedSelectedPanelist : this.selectedPanelists) {
+                    Panelist managedSelectedPanelist = this.panelistServiceForPanelist.get(detachedSelectedPanelist.getId())
+                        .orElse(null);
+
+                    if (managedSelectedPanelist == null) {
+                        Notification.show("Advertencia: El panelista con ID " + detachedSelectedPanelist.getId() + " ya no existe y no se puede vincular.", 5000, Notification.Position.MIDDLE)
+                                .addThemeVariants(NotificationVariant.LUMO_WARNING);
+                        continue;
                     }
 
-                    if (selectedPanelist.getPanels().add(this.currentPanel)) {
-                        // Also update the panel's collection for consistency in the current object graph,
-                        // though the change to panelist.getPanels() is what JPA will persist.
-                        if (this.currentPanel.getPanelists() == null) {
-                            this.currentPanel.setPanelists(new HashSet<>());
-                        }
-                        this.currentPanel.getPanelists().add(selectedPanelist);
+                    if (managedSelectedPanelist.getPanels() == null) {
+                        managedSelectedPanelist.setPanels(new HashSet<>());
+                    }
+                    if (managedPanel.getPanelists() == null) {
+                        managedPanel.setPanelists(new HashSet<>());
+                    }
 
-                        panelistsToUpdate.add(selectedPanelist);
+                    if (managedSelectedPanelist.getPanels().add(managedPanel)) {
+                        managedPanel.getPanelists().add(managedSelectedPanelist);
+
+                        panelistsToUpdate.add(managedSelectedPanelist);
                         addedCount++;
                     }
                 }
 
                 if (addedCount > 0) {
                     for (Panelist p : panelistsToUpdate) {
-                        // Assuming panelistServiceForPanelist can save a Panelist
                         this.panelistServiceForPanelist.save(p);
                     }
-                    Notification.show(addedCount + " panelista(s) vinculado(s) correctamente al panel: " + this.currentPanel.getName(), 5000, Notification.Position.BOTTOM_START)
+                    Notification.show(addedCount + " panelista(s) vinculado(s) correctamente al panel: " + managedPanel.getName(), 5000, Notification.Position.BOTTOM_START)
                         .addThemeVariants(NotificationVariant.LUMO_SUCCESS);
                 } else {
                     Notification.show("Los panelistas seleccionados ya estaban vinculados o no se pudieron vincular.", 3000, Notification.Position.MIDDLE);
