@@ -14,7 +14,11 @@ import jakarta.persistence.EntityNotFoundException;
 import jakarta.persistence.criteria.Predicate;
 import uy.com.equipos.panelmanagement.data.Panel;
 import uy.com.equipos.panelmanagement.data.Panelist;
+import uy.com.equipos.panelmanagement.data.PanelistProperty;
 import uy.com.equipos.panelmanagement.data.PanelistRepository;
+
+import java.util.Map;
+import java.util.stream.Collectors;
 
 @Service
 public class PanelistService {
@@ -79,6 +83,23 @@ public class PanelistService {
 
     public int count() {
         return (int) repository.count();
+    }
+
+    @Transactional(readOnly = true)
+    public List<Panelist> findPanelistsByCriteria(Map<PanelistProperty, Object> filterCriteria) {
+        if (filterCriteria == null || filterCriteria.isEmpty()) {
+            return repository.findAll(); // Or an empty list, as per requirements
+        }
+        // Remove entries with null or blank string values before passing to repository
+        Map<PanelistProperty, Object> finalCriteria = filterCriteria.entrySet().stream()
+            .filter(entry -> entry.getValue() != null)
+            .filter(entry -> !(entry.getValue() instanceof String) || !((String) entry.getValue()).isBlank())
+            .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+
+        if (finalCriteria.isEmpty()) {
+             return repository.findAll(); // Or an empty list
+        }
+        return repository.findByCriteria(finalCriteria);
     }
 
     @Transactional
