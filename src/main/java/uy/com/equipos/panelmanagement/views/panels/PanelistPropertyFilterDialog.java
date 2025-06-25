@@ -1,6 +1,11 @@
 package uy.com.equipos.panelmanagement.views.panels;
 
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
 import com.vaadin.flow.component.Component;
+import com.vaadin.flow.component.HasValue; // Corrected import
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.checkbox.Checkbox; // Added import
 import com.vaadin.flow.component.combobox.ComboBox;
@@ -10,22 +15,16 @@ import com.vaadin.flow.component.grid.Grid;
 import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.orderedlayout.FlexComponent.Alignment; // Added
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
-import com.vaadin.flow.component.textfield.NumberField; // Added
 import com.vaadin.flow.component.textfield.TextField;
-import com.vaadin.flow.component.HasValue; // Corrected import
+
 import uy.com.equipos.panelmanagement.data.Panel;
 import uy.com.equipos.panelmanagement.data.PanelistProperty;
 import uy.com.equipos.panelmanagement.data.PanelistPropertyCode;
-import uy.com.equipos.panelmanagement.data.PropertyType; // Corrected import
 import uy.com.equipos.panelmanagement.data.PanelistPropertyCodeRepository; // Corrected path
+import uy.com.equipos.panelmanagement.data.PropertyType; // Corrected import
 import uy.com.equipos.panelmanagement.services.PanelService; // Added
 import uy.com.equipos.panelmanagement.services.PanelistPropertyService;
 import uy.com.equipos.panelmanagement.services.PanelistService;
-
-
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
 
 public class PanelistPropertyFilterDialog extends Dialog {
 

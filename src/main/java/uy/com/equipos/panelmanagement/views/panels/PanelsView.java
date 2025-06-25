@@ -1,5 +1,11 @@
 package uy.com.equipos.panelmanagement.views.panels;
 
+import java.time.LocalDate;
+import java.util.Optional;
+
+import org.springframework.orm.ObjectOptimisticLockingFailureException;
+import org.vaadin.lineawesome.LineAwesomeIconUrl;
+
 import com.vaadin.flow.component.Key; // Added for keyboard shortcut
 import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.button.Button;
@@ -23,13 +29,10 @@ import com.vaadin.flow.component.notification.NotificationVariant;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.splitlayout.SplitLayout;
-import com.vaadin.flow.component.dialog.Dialog;
 import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.data.binder.BeanValidationBinder;
 import com.vaadin.flow.data.binder.ValidationException;
 import com.vaadin.flow.data.renderer.LitRenderer;
-import com.vaadin.flow.component.confirmdialog.ConfirmDialog; // Added import
-import org.springframework.dao.DataIntegrityViolationException; // Added import
 import com.vaadin.flow.router.BeforeEnterEvent;
 import com.vaadin.flow.router.BeforeEnterObserver;
 import com.vaadin.flow.router.Menu;
@@ -37,11 +40,8 @@ import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
 import com.vaadin.flow.router.RouteAlias;
 import com.vaadin.flow.spring.data.VaadinSpringDataHelpers;
+
 import jakarta.annotation.security.PermitAll;
-import java.time.LocalDate;
-import java.util.Optional;
-import org.springframework.orm.ObjectOptimisticLockingFailureException;
-import org.vaadin.lineawesome.LineAwesomeIconUrl;
 import uy.com.equipos.panelmanagement.data.Panel;
 import uy.com.equipos.panelmanagement.data.PanelistPropertyCodeRepository; // Corrected path
 import uy.com.equipos.panelmanagement.services.PanelService;
