@@ -45,7 +45,11 @@ public class ViewPanelistsDialog extends Dialog {
         configureGrid();
         loadPanelists();
 
-        VerticalLayout layout = new VerticalLayout(title, grid); // Added title
+        Button closeButton = new Button("Cerrar", e -> this.close());
+        closeButton.addThemeVariants(ButtonVariant.LUMO_TERTIARY);
+        getFooter().add(closeButton); // Add button to dialog footer
+
+        VerticalLayout layout = new VerticalLayout(title, grid);
         layout.setSizeFull();
         layout.setFlexGrow(1, grid); // Make grid take available space
         add(layout);
