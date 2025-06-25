@@ -140,18 +140,20 @@ public class PanelistPropertyFilterDialog extends Dialog {
 
             if (searchListener != null) {
                 searchListener.onSearch(filterCriteria);
+                // Si hay un listener, asumimos que el flujo continuará en otro diálogo,
+                // por lo que este diálogo de filtro debe cerrarse.
+                close();
             }
-            // La decisión de cerrar este diálogo y abrir el siguiente
-            // se manejará en la implementación del SearchListener en PanelistsView.
-            // Por defecto, este diálogo ya no abre PanelistSelectionDialog directamente.
-            // close(); // No cerrar aquí automáticamente.
+            // Si no hay searchListener, el diálogo permanecerá abierto (comportamiento anterior
+            // cuando PanelistPropertyFilterDialog abría PanelistSelectionDialog directamente).
+            // Sin embargo, con el refactor, siempre debería haber un searchListener si se espera una acción.
         });
     }
 
-    // Este método ya no es necesario si PanelistSelectionDialog no llama a closeDialog() de esta clase.
-    // public void closeDialog() {
-    //     this.close();
-    // }
+    // Mantener closeDialog() por si es llamado externamente, aunque el flujo principal ahora cierra internamente.
+    public void closeDialog() {
+        this.close();
+    }
 
     private Component createEditorComponentAndStore(PanelistProperty property) {
         Component editor = createEditorComponent(property);
