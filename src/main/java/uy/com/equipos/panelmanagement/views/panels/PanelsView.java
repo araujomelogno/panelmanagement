@@ -376,7 +376,7 @@ public class PanelsView extends Div implements BeforeEnterObserver {
 
 	private void showPanelistsDialog() {
 		if (this.panel != null && this.panel.getId() != null) {
-			ViewPanelistsDialog dialog = new ViewPanelistsDialog(this.panel, this.panelService);
+			ViewPanelistsDialog dialog = new ViewPanelistsDialog(this.panel, this.panelService, this.panelistService); // Added panelistService
 			dialog.open();
 		} else {
 			Notification.show("No hay un panel seleccionado.", 3000, Notification.Position.MIDDLE);
