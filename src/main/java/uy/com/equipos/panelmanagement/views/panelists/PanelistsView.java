@@ -159,7 +159,7 @@ public class PanelistsView extends Div implements BeforeEnterObserver {
 		// grid.addColumn(Panelist::getOccupation).setHeader("Ocupación").setKey("occupation").setAutoWidth(true); // Removed
 		grid.addColumn(Panelist::getLastContacted).setHeader("Último Contacto").setKey("lastContacted")
 				.setAutoWidth(true);
-		grid.addColumn(Panelist::getLastInterviewed).setHeader("Última Entrevista").setKey("lastInterviewed")
+		grid.addColumn(Panelist::getLastInterviewed).setHeader("Última Encuesta").setKey("lastInterviewed")
 				.setAutoWidth(true);
 		grid.addThemeVariants(GridVariant.LUMO_NO_BORDER);
 
@@ -227,7 +227,7 @@ public class PanelistsView extends Div implements BeforeEnterObserver {
 		// dateOfBirthFilter.setPlaceholder("Filtrar por Fecha de Nacimiento"); // Removed
 		// occupationFilter.setPlaceholder("Filtrar por Ocupación"); // Removed
 		lastContactedFilter.setPlaceholder("Filtrar por Último Contacto");
-		lastInterviewedFilter.setPlaceholder("Filtrar por Última Entrevista");
+		lastInterviewedFilter.setPlaceholder("Filtrar por Última Encuesta");
 
 		// Añadir listeners para refrescar el grid
 		firstNameFilter.addValueChangeListener(e -> grid.getDataProvider().refreshAll());
@@ -352,7 +352,7 @@ public class PanelistsView extends Div implements BeforeEnterObserver {
 		// dateOfBirth = new DatePicker("Fecha de Nacimiento"); // Removed
 		// occupation = new TextField("Ocupación"); // Removed
 		lastContacted = new DatePicker("Último Contacto");
-		lastInterviewed = new DatePicker("Última Entrevista");
+		lastInterviewed = new DatePicker("Última Encueesta");
 		// START: Add properties field - Removed
 		// propertiesField = new MultiSelectListBox<>(); // Removed
 		// propertiesField.setItems(panelistPropertyService.findAll()); // Removed
