@@ -6,6 +6,7 @@ import com.vaadin.flow.component.confirmdialog.ConfirmDialog;
 import com.vaadin.flow.component.dialog.Dialog;
 import com.vaadin.flow.component.grid.Grid;
 import com.vaadin.flow.component.grid.HeaderRow;
+import com.vaadin.flow.component.html.H2; // Added for title
 import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.textfield.TextField;
@@ -38,11 +39,15 @@ public class ViewPanelistsDialog extends Dialog {
         setWidth("80%");
         setHeight("70%");
 
+        H2 title = new H2("Panelistas del Panel: " + (panel != null ? panel.getName() : ""));
+        title.getStyle().set("margin-top", "0").set("margin-bottom", "var(--lumo-space-s)").set("font-size", "var(--lumo-font-size-xl)");
+
         configureGrid();
         loadPanelists();
 
-        VerticalLayout layout = new VerticalLayout(grid);
+        VerticalLayout layout = new VerticalLayout(title, grid); // Added title
         layout.setSizeFull();
+        layout.setFlexGrow(1, grid); // Make grid take available space
         add(layout);
 
         setCloseOnEsc(true);
