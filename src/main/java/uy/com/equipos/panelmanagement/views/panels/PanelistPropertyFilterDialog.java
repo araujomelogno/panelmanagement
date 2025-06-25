@@ -2,6 +2,7 @@ package uy.com.equipos.panelmanagement.views.panels;
 
 import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.button.Button;
+import com.vaadin.flow.component.checkbox.Checkbox; // Added import
 import com.vaadin.flow.component.combobox.ComboBox;
 import com.vaadin.flow.component.datepicker.DatePicker;
 import com.vaadin.flow.component.dialog.Dialog;
@@ -40,7 +41,7 @@ public class PanelistPropertyFilterDialog extends Dialog {
 
     // To store references to the editor components and checkboxes
     private Map<PanelistProperty, Component> propertyEditorMap = new HashMap<>();
-    private Map<PanelistProperty, Checkbox> propertyCheckboxMap = new HashMap<>();
+    private Map<PanelistProperty, Checkbox> propertyCheckboxMap = new HashMap<PanelistProperty, Checkbox>();
     private VerticalLayout contentLayout; // Made field
 
     // Listener para comunicar los filtros seleccionados
