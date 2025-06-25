@@ -64,6 +64,8 @@ import uy.com.equipos.panelmanagement.services.PanelService; // Added
 import uy.com.equipos.panelmanagement.services.PanelistPropertyService;
 import uy.com.equipos.panelmanagement.services.PanelistPropertyValueService;
 import uy.com.equipos.panelmanagement.services.PanelistService;
+import uy.com.equipos.panelmanagement.views.dialogs.PanelistResultsDialog; // Importar el nuevo diálogo
+import uy.com.equipos.panelmanagement.views.panels.PanelistPropertyFilterDialog; // Importar la clase del diálogo
 
 @PageTitle("Panelistas")
 @Route("panelists/:panelistID?/:action?(edit)")
@@ -174,8 +176,31 @@ public class PanelistsView extends Div implements BeforeEnterObserver {
 
 		// Crear barra de título
 		nuevoPanelistaButton = new Button("Nuevo Panelista");
-		nuevoPanelistaButton.getStyle().set("margin-left", "18px"); 
-		VerticalLayout mainLayout = new VerticalLayout(nuevoPanelistaButton, splitLayout);
+		nuevoPanelistaButton.getStyle().set("margin-left", "18px");
+
+		Button filtrarPanelistasButton = new Button("Filtrar Panelistas");
+		filtrarPanelistasButton.addClickListener(e -> {
+			PanelistPropertyFilterDialog filterDialog = new PanelistPropertyFilterDialog(
+					panelistPropertyService,
+					panelistPropertyCodeRepository,
+					panelService,
+					panelistService,
+					null, // currentPanel es null aquí ya que el filtro es global, no para un panel específico
+					filterCriteria -> { // Implementación del SearchListener
+						// Aquí se reciben los criterios del PanelistPropertyFilterDialog
+						// Abrir el segundo diálogo (ResultsDialog) pasando estos criterios
+						openPanelistResultsDialog(filterCriteria);
+					}
+			);
+			filterDialog.open();
+		});
+
+		HorizontalLayout buttonBar = new HorizontalLayout(nuevoPanelistaButton, filtrarPanelistasButton);
+		buttonBar.setAlignItems(Alignment.CENTER); // Alinea los botones verticalmente si tienen diferentes alturas
+		buttonBar.getStyle().set("margin-left", "18px");
+
+
+		VerticalLayout mainLayout = new VerticalLayout(buttonBar, splitLayout);
 		mainLayout.setSizeFull();
 		mainLayout.setPadding(false);
 		mainLayout.setSpacing(false);
@@ -881,5 +906,11 @@ public class PanelistsView extends Div implements BeforeEnterObserver {
 			}
 		});
 		dialog.open();
+	}
+
+	private void openPanelistResultsDialog(Map<PanelistProperty, Object> filterCriteria) {
+		// Crear y abrir el diálogo de resultados de panelistas.
+		PanelistResultsDialog resultsDialog = new PanelistResultsDialog(panelistService, filterCriteria);
+		resultsDialog.open();
 	}
 }

@@ -38,31 +38,51 @@ public class PanelistPropertyFilterDialog extends Dialog {
     private Button cancelButton = new Button("Cancelar");
     private Button searchButton = new Button("Buscar");
 
-    // To store references to the editor components
+    // To store references to the editor components and checkboxes
     private Map<PanelistProperty, Component> propertyEditorMap = new HashMap<>();
+    private Map<PanelistProperty, Checkbox> propertyCheckboxMap = new HashMap<>();
     private VerticalLayout contentLayout; // Made field
+
+    // Listener para comunicar los filtros seleccionados
+    @FunctionalInterface
+    public interface SearchListener {
+        void onSearch(Map<PanelistProperty, Object> filterCriteria);
+    }
+    private SearchListener searchListener;
+
 
     public PanelistPropertyFilterDialog(
             PanelistPropertyService panelistPropertyService,
             PanelistPropertyCodeRepository panelistPropertyCodeRepository,
-            PanelService globalPanelService, // Added
+            PanelService globalPanelService,
             PanelistService panelistService,
-            Panel currentPanel) {
+            Panel currentPanel, // Puede ser null si el diálogo se usa fuera del contexto de un Panel específico
+            SearchListener searchListener) { // Añadido searchListener
         this.panelistPropertyService = panelistPropertyService;
         this.panelistPropertyCodeRepository = panelistPropertyCodeRepository;
-        this.globalPanelService = globalPanelService; // Added
+        this.globalPanelService = globalPanelService;
         this.panelistService = panelistService;
         this.currentPanel = currentPanel;
+        this.searchListener = searchListener;
 
-        setHeaderTitle("Buscar Panelistas - Paso 1: Filtrar por Propiedades");
-        setWidth("600px"); // Set a width for the dialog
 
-        contentLayout = new VerticalLayout(); // Initialize field
+        setHeaderTitle("Filtrar Panelistas por Propiedades");
+        setWidth("800px"); // Ajustado para más contenido
+
+        contentLayout = new VerticalLayout();
         contentLayout.setPadding(false);
         contentLayout.setSpacing(true);
-        contentLayout.setAlignItems(Alignment.STRETCH); // Stretch items
+        contentLayout.setAlignItems(Alignment.STRETCH);
 
         propertiesGrid = new Grid<>(PanelistProperty.class, false);
+
+        // Columna de CheckBox
+        propertiesGrid.addComponentColumn(property -> {
+            Checkbox checkbox = new Checkbox();
+            propertyCheckboxMap.put(property, checkbox);
+            return checkbox;
+        }).setHeader("Seleccionar").setWidth("120px").setFlexGrow(0);
+
         propertiesGrid.addColumn(PanelistProperty::getName).setHeader("Propiedad").setFlexGrow(1);
         propertiesGrid.addComponentColumn(this::createEditorComponentAndStore).setHeader("Valor").setFlexGrow(2);
 
@@ -86,44 +106,52 @@ public class PanelistPropertyFilterDialog extends Dialog {
         cancelButton.addClickListener(e -> close());
         searchButton.addClickListener(e -> {
             Map<PanelistProperty, Object> filterCriteria = new HashMap<>();
-            for (Map.Entry<PanelistProperty, Component> entry : propertyEditorMap.entrySet()) {
-                PanelistProperty prop = entry.getKey();
-                Component editor = entry.getValue();
-                Object value = null;
+            for (Map.Entry<PanelistProperty, Checkbox> checkboxEntry : propertyCheckboxMap.entrySet()) {
+                PanelistProperty prop = checkboxEntry.getKey();
+                Checkbox checkbox = checkboxEntry.getValue();
 
-                if (editor instanceof NumberField) { // Check NumberField first
-                    Double numValue = ((NumberField) editor).getValue();
-                    if (numValue != null) {
-                        value = numValue.toString(); // Convert Double to String
-                    }
-                } else if (editor instanceof TextField) {
-                    String textValue = ((TextField) editor).getValue();
-                    if (textValue != null && !textValue.isBlank()) {
-                        value = textValue;
-                    }
-                } else if (editor instanceof DatePicker) {
-                    value = ((DatePicker) editor).getValue();
-                } else if (editor instanceof ComboBox) {
-                    value = ((ComboBox<?>) editor).getValue();
-                }
-                // Add other types if needed
+                if (checkbox.getValue()) { // Solo procesar si el checkbox está marcado
+                    Component editor = propertyEditorMap.get(prop);
+                    Object value = null;
 
-                if (value != null) { // Ensure value is not null after processing
-                    filterCriteria.put(prop, value);
+                    if (editor instanceof TextField) { // TextField para NUMERO y TEXTO
+                        String textValue = ((TextField) editor).getValue();
+                        if (textValue != null && !textValue.isBlank()) {
+                            // Si es de tipo NUMERO, intentamos parsear a un tipo numérico o mantener como String validado.
+                            // Por ahora, lo mantenemos como String, el servicio se encargará de la conversión/validación.
+                            value = textValue;
+                        }
+                    } else if (editor instanceof DatePicker) {
+                        value = ((DatePicker) editor).getValue();
+                    } else if (editor instanceof ComboBox) {
+                        // Para ComboBox<PanelistPropertyCode>, el valor es PanelistPropertyCode.
+                        // El servicio esperará el objeto PanelistPropertyCode o su representación String (ej. el código).
+                        // Aquí asumimos que el servicio puede manejar el objeto PanelistPropertyCode directamente si se pasa.
+                        // O si se necesita el String, sería ((ComboBox<PanelistPropertyCode>) editor).getValue().getCode().
+                        value = ((ComboBox<?>) editor).getValue();
+                    }
+                    // No hay NumberField, ya que se reemplazó por TextField para NUMERO.
+
+                    if (value != null) {
+                        filterCriteria.put(prop, value);
+                    }
                 }
             }
 
-            // Open Step 2 Dialog
-            PanelistSelectionDialog selectionDialog = new PanelistSelectionDialog(
-                    this.globalPanelService, this.panelistService, currentPanel, filterCriteria, this); // Added 'this'
-            selectionDialog.open();
-            // close(); // Do not close here anymore, PanelistSelectionDialog will close it
+            if (searchListener != null) {
+                searchListener.onSearch(filterCriteria);
+            }
+            // La decisión de cerrar este diálogo y abrir el siguiente
+            // se manejará en la implementación del SearchListener en PanelistsView.
+            // Por defecto, este diálogo ya no abre PanelistSelectionDialog directamente.
+            // close(); // No cerrar aquí automáticamente.
         });
     }
 
-    public void closeDialog() { // Added public method
-        this.close();
-    }
+    // Este método ya no es necesario si PanelistSelectionDialog no llama a closeDialog() de esta clase.
+    // public void closeDialog() {
+    //     this.close();
+    // }
 
     private Component createEditorComponentAndStore(PanelistProperty property) {
         Component editor = createEditorComponent(property);
@@ -146,17 +174,24 @@ public class PanelistPropertyFilterDialog extends Dialog {
         switch (type) {
             case TEXTO:
                 editorComponent = new TextField();
+                ((TextField) editorComponent).setPlaceholder("Valor de texto...");
                 break;
             case FECHA:
                 editorComponent = new DatePicker();
+                ((DatePicker) editorComponent).setPlaceholder("Seleccione fecha...");
                 break;
             case NUMERO:
-                NumberField numField = new NumberField();
-                // numField.setPreventInvalidInput(true); // This method does not exist on NumberField
-                editorComponent = numField;
+                // Usar TextField para números, se puede añadir validación o máscara si es necesario.
+                TextField numeroField = new TextField();
+                numeroField.setPlaceholder("Valor numérico...");
+                // Opcional: añadir un pattern para validación básica de números.
+                // numeroField.setPattern("[0-9]*"); // Solo enteros positivos
+                // numeroField.setPattern("^-?[0-9]*\\.?[0-9]+$"); // Números decimales, opcionalmente negativos
+                editorComponent = numeroField;
                 break;
             case CODIGO:
                 ComboBox<PanelistPropertyCode> comboBox = new ComboBox<>();
+                ((ComboBox<PanelistPropertyCode>) comboBox).setPlaceholder("Seleccione código...");
                 List<PanelistPropertyCode> codes = panelistPropertyCodeRepository.findByPanelistProperty(property);
                 comboBox.setItems(codes);
                 comboBox.setItemLabelGenerator(PanelistPropertyCode::getCode);
