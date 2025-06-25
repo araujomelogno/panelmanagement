@@ -106,9 +106,65 @@ public class PanelsView extends Div implements BeforeEnterObserver {
 		addPanelistsButton.setEnabled(false);
 		addPanelistsButton.addClickListener(e -> {
 			if (this.panel != null && this.panel.getId() != null) {
+				// Guardar una referencia al diálogo de filtro para poder cerrarlo después.
 				PanelistPropertyFilterDialog filterDialog = new PanelistPropertyFilterDialog(
-						panelistPropertyService, panelistPropertyCodeRepository, this.panelService, panelistService, this.panel);
-				filterDialog.open();
+						panelistPropertyService,
+						panelistPropertyCodeRepository,
+						this.panelService, // globalPanelService
+						panelistService,    // panelistService
+						this.panel,         // currentPanel
+						filterCriteria -> { // SearchListener implementation
+							// Este es el comportamiento que PanelistPropertyFilterDialog tenía antes internamente.
+							// Ahora lo llamamos desde el listener.
+							PanelistSelectionDialog selectionDialog = new PanelistSelectionDialog(
+									this.panelService,      // PanelService for Panel
+									this.panelistService,   // PanelistService for Panelist
+									this.panel,             // currentPanel
+									filterCriteria,         // los criterios del primer diálogo
+									null // ownerDialog - PanelistSelectionDialog ahora puede tomar null si no necesita cerrar un owner específico
+									// O, si PanelistSelectionDialog necesita cerrar PanelistPropertyFilterDialog,
+									// necesitaríamos una forma de pasar la referencia de filterDialog aquí.
+									// Por ahora, asumimos que PanelistSelectionDialog puede manejar un ownerDialog nulo
+									// o que cerraremos filterDialog explícitamente después de abrir selectionDialog.
+							);
+							// Para mantener el comportamiento anterior donde PanelistSelectionDialog cerraba su "owner",
+							// necesitaríamos que PanelistPropertyFilterDialog se pase a sí mismo de alguna manera.
+							// Una solución más simple es que el SearchListener sea responsable de cerrar el primer diálogo.
+							// filterDialog.close(); // Cerrar el primer diálogo antes de abrir el segundo.
+							// Sin embargo, PanelistSelectionDialog ya tiene lógica para cerrar su ownerDialog.
+							// Vamos a necesitar pasar filterDialog a PanelistSelectionDialog.
+							// Esto requiere que filterDialog sea final o efectivamente final.
+							// La forma más limpia es modificar PanelistSelectionDialog para que no dependa de cerrar
+							// su owner, o que PanelistPropertyFilterDialog se cierre a sí mismo al disparar el evento.
+
+							// Solución: El SearchListener en PanelistPropertyFilterDialog no cierra el dialogo.
+							// PanelistSelectionDialog SÍ cierra a su owner (PanelistPropertyFilterDialog)
+							// si se le pasa. Así que debemos pasar filterDialog.
+							// Para esto, filterDialog debe ser efectivamente final.
+						}
+				);
+
+				// Para poder pasar 'filterDialog' al SearchListener de sí mismo, necesitamos una variable final.
+				final PanelistPropertyFilterDialog finalFilterDialog = new PanelistPropertyFilterDialog(
+						panelistPropertyService,
+						panelistPropertyCodeRepository,
+						this.panelService,
+						panelistService,
+						this.panel,
+						filterCriteria -> {
+							PanelistSelectionDialog selectionDialog = new PanelistSelectionDialog(
+									this.panelService,
+									this.panelistService,
+									this.panel,
+									filterCriteria,
+									finalFilterDialog // Pasar la referencia del primer diálogo para que el segundo pueda cerrarlo
+							);
+							selectionDialog.open();
+							// No cerramos finalFilterDialog aquí, PanelistSelectionDialog lo hará si es necesario.
+						}
+				);
+				finalFilterDialog.open();
+
 			} else {
 				Notification.show("Seleccione un panel primero.", 3000, Notification.Position.MIDDLE);
 			}
