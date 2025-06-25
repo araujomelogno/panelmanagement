@@ -23,6 +23,7 @@ import com.vaadin.flow.component.notification.NotificationVariant;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.splitlayout.SplitLayout;
+import com.vaadin.flow.component.dialog.Dialog;
 import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.data.binder.BeanValidationBinder;
 import com.vaadin.flow.data.binder.ValidationException;
@@ -74,6 +75,7 @@ public class PanelsView extends Div implements BeforeEnterObserver {
 	private final Button save = new Button("Guardar");
 	private Button deleteButton; // Add this with other button declarations
 	private Button addPanelistsButton;
+	private Button viewPanelistsButton; // Added
 	private Button nuevoPanelButton;
 
 	private final BeanValidationBinder<Panel> binder;
@@ -107,6 +109,16 @@ public class PanelsView extends Div implements BeforeEnterObserver {
 				PanelistPropertyFilterDialog filterDialog = new PanelistPropertyFilterDialog(
 						panelistPropertyService, panelistPropertyCodeRepository, this.panelService, panelistService, this.panel);
 				filterDialog.open();
+			} else {
+				Notification.show("Seleccione un panel primero.", 3000, Notification.Position.MIDDLE);
+			}
+		});
+
+		viewPanelistsButton = new Button("Ver Panelistas");
+		viewPanelistsButton.setEnabled(false);
+		viewPanelistsButton.addClickListener(e -> {
+			if (this.panel != null && this.panel.getId() != null) {
+				showPanelistsDialog();
 			} else {
 				Notification.show("Seleccione un panel primero.", 3000, Notification.Position.MIDDLE);
 			}
@@ -280,7 +292,7 @@ public class PanelsView extends Div implements BeforeEnterObserver {
 		buttonLayout.setClassName("button-layout");
 		cancel.addThemeVariants(ButtonVariant.LUMO_TERTIARY);
 		save.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
-		buttonLayout.add(addPanelistsButton,save, deleteButton, cancel);
+		buttonLayout.add(addPanelistsButton, viewPanelistsButton, save, deleteButton, cancel); // Added viewPanelistsButton
 		editorLayoutDiv.add(buttonLayout);
 	}
 
@@ -311,6 +323,9 @@ public class PanelsView extends Div implements BeforeEnterObserver {
 		if (addPanelistsButton != null) {
 			addPanelistsButton.setEnabled(value != null && value.getId() != null);
 		}
+		if (viewPanelistsButton != null) { // Added
+			viewPanelistsButton.setEnabled(value != null && value.getId() != null);
+		}
 	}
 
 	private void clearForm() {
@@ -321,6 +336,9 @@ public class PanelsView extends Div implements BeforeEnterObserver {
 		}
 		if (addPanelistsButton != null) {
 			addPanelistsButton.setEnabled(false);
+		}
+		if (viewPanelistsButton != null) { // Added
+			viewPanelistsButton.setEnabled(false);
 		}
 	}
 
@@ -354,6 +372,15 @@ public class PanelsView extends Div implements BeforeEnterObserver {
 			}
 		});
 		dialog.open();
+	}
+
+	private void showPanelistsDialog() {
+		if (this.panel != null && this.panel.getId() != null) {
+			ViewPanelistsDialog dialog = new ViewPanelistsDialog(this.panel, this.panelService);
+			dialog.open();
+		} else {
+			Notification.show("No hay un panel seleccionado.", 3000, Notification.Position.MIDDLE);
+		}
 	}
 	// Cambio trivial para republicar en nueva rama
 }
