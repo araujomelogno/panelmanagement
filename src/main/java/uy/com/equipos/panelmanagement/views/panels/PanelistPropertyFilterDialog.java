@@ -159,7 +159,7 @@ public class PanelistPropertyFilterDialog extends Dialog {
                 ComboBox<PanelistPropertyCode> comboBox = new ComboBox<>();
                 List<PanelistPropertyCode> codes = panelistPropertyCodeRepository.findByPanelistProperty(property);
                 comboBox.setItems(codes);
-                comboBox.setItemLabelGenerator(PanelistPropertyCode::getDescription);
+                comboBox.setItemLabelGenerator(PanelistPropertyCode::getCode);
                 editorComponent = comboBox;
                 break;
             default:

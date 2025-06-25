@@ -280,7 +280,7 @@ public class PanelsView extends Div implements BeforeEnterObserver {
 		buttonLayout.setClassName("button-layout");
 		cancel.addThemeVariants(ButtonVariant.LUMO_TERTIARY);
 		save.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
-		buttonLayout.add(save, addPanelistsButton, deleteButton, cancel);
+		buttonLayout.add(addPanelistsButton,save, deleteButton, cancel);
 		editorLayoutDiv.add(buttonLayout);
 	}
 
