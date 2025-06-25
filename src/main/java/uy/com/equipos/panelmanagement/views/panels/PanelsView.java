@@ -143,27 +143,26 @@ public class PanelsView extends Div implements BeforeEnterObserver {
 							// Para esto, filterDialog debe ser efectivamente final.
 						}
 				);
-
-				// Para poder pasar 'filterDialog' al SearchListener de sí mismo, necesitamos una variable final.
-				final PanelistPropertyFilterDialog finalFilterDialog = new PanelistPropertyFilterDialog(
+				// Ya no se necesita la variable 'finalFilterDialog' ya que PanelistPropertyFilterDialog
+				// se cierra a sí mismo después de invocar el SearchListener.
+				PanelistPropertyFilterDialog filterDialog = new PanelistPropertyFilterDialog(
 						panelistPropertyService,
 						panelistPropertyCodeRepository,
-						this.panelService,
-						panelistService,
-						this.panel,
-						filterCriteria -> {
+						this.panelService, // globalPanelService
+						panelistService,    // panelistService
+						this.panel,         // currentPanel
+						filterCriteria -> { // SearchListener implementation
 							PanelistSelectionDialog selectionDialog = new PanelistSelectionDialog(
-									this.panelService,
-									this.panelistService,
-									this.panel,
-									filterCriteria,
-									finalFilterDialog // Pasar la referencia del primer diálogo para que el segundo pueda cerrarlo
+									this.panelService,      // PanelService for Panel
+									this.panelistService,   // PanelistService for Panelist
+									this.panel,             // currentPanel
+									filterCriteria,         // los criterios del primer diálogo
+									null                    // ownerDialog es null, ya que el primer diálogo se cierra solo.
 							);
 							selectionDialog.open();
-							// No cerramos finalFilterDialog aquí, PanelistSelectionDialog lo hará si es necesario.
 						}
 				);
-				finalFilterDialog.open();
+				filterDialog.open();
 
 			} else {
 				Notification.show("Seleccione un panel primero.", 3000, Notification.Position.MIDDLE);
