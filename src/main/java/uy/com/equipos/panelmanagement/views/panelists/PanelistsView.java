@@ -321,7 +321,8 @@ public class PanelistsView extends Div implements BeforeEnterObserver {
 	public void beforeEnter(BeforeEnterEvent event) {
 		Optional<Long> panelistId = event.getRouteParameters().get(PANELIST_ID).map(Long::parseLong);
 		if (panelistId.isPresent()) {
-			Optional<Panelist> panelistFromBackend = panelistService.get(panelistId.get());
+			// Use getWithSurveys to ensure surveys are loaded if navigating directly
+			Optional<Panelist> panelistFromBackend = panelistService.getWithSurveys(panelistId.get());
 			if (panelistFromBackend.isPresent()) {
 				populateForm(panelistFromBackend.get());
 				editorLayoutDiv.setVisible(true);
@@ -440,13 +441,27 @@ public class PanelistsView extends Div implements BeforeEnterObserver {
 	}
 
     private void openParticipatingSurveysDialog() {
-        if (this.panelist == null || this.panelist.getSurveys() == null || this.panelist.getSurveys().isEmpty()) {
-            Notification.show("Este panelista no ha participado en encuestas o no está seleccionado.", 3000, Notification.Position.MIDDLE);
+        if (this.panelist == null || this.panelist.getId() == null) {
+            Notification.show("No hay panelista seleccionado.", 3000, Notification.Position.MIDDLE);
+            return;
+        }
+
+        // Fetch the panelist with surveys to ensure they are loaded
+        Optional<Panelist> panelistWithSurveysOpt = panelistService.getWithSurveys(this.panelist.getId());
+
+        if (!panelistWithSurveysOpt.isPresent()) {
+            Notification.show("Error al cargar el panelista.", 3000, Notification.Position.MIDDLE);
+            return;
+        }
+        Panelist currentPanelist = panelistWithSurveysOpt.get();
+
+        if (currentPanelist.getSurveys() == null || currentPanelist.getSurveys().isEmpty()) {
+            Notification.show("Este panelista no ha participado en encuestas.", 3000, Notification.Position.MIDDLE);
             return;
         }
 
         Dialog dialog = new Dialog();
-        dialog.setHeaderTitle("Encuestas en las que participa: " + this.panelist.getFirstName() + " " + this.panelist.getLastName());
+        dialog.setHeaderTitle("Encuestas en las que participa: " + currentPanelist.getFirstName() + " " + currentPanelist.getLastName());
         dialog.setWidth("80%");
         dialog.setHeight("70%");
 
@@ -474,7 +489,7 @@ public class PanelistsView extends Div implements BeforeEnterObserver {
         toolFilterDialog.setPlaceholder("Filtrar...");
         filterRow.getCell(surveysGrid.getColumnByKey("tool")).setComponent(toolFilterDialog);
 
-        surveysGrid.setItems(query -> this.panelist.getSurveys().stream()
+        surveysGrid.setItems(query -> currentPanelist.getSurveys().stream()
                 .filter(survey -> nameFilterDialog.getValue() == null || survey.getName().toLowerCase().contains(nameFilterDialog.getValue().toLowerCase()))
                 .filter(survey -> initDateFilterDialog.getValue() == null || survey.getInitDate().equals(initDateFilterDialog.getValue()))
                 .filter(survey -> linkFilterDialog.getValue() == null || survey.getLink().toLowerCase().contains(linkFilterDialog.getValue().toLowerCase()))

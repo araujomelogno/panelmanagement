@@ -32,8 +32,15 @@ public class PanelistService {
     @Transactional(readOnly = true)
     public Optional<Panelist> get(Long id) {
         Optional<Panelist> panelistOptional = repository.findById(id);
-        panelistOptional.ifPresent(panelist -> Hibernate.initialize(panelist.getPropertyValues()));
+        // propertyValues is EAGER, explicit Hibernate.initialize is not strictly needed here.
+        // panelistOptional.ifPresent(panelist -> Hibernate.initialize(panelist.getPropertyValues()));
         return panelistOptional;
+    }
+
+    @Transactional(readOnly = true)
+    public Optional<Panelist> getWithSurveys(Long id) {
+        // findByIdWithSurveys will fetch surveys. propertyValues and panels are EAGER.
+        return repository.findByIdWithSurveys(id);
     }
 
     public Panelist save(Panelist entity) {
