@@ -12,3 +12,9 @@ CREATE TABLE IF NOT EXISTS panelist_property_code (
 -- created by Hibernate later, or if panelist_property_code.panelist_property_id needs to be
 -- immediately valid (though Hibernate with ddl-auto=update should handle panelist_property itself).
 -- For now, focusing only on panelist_property_code as it's the one causing the immediate error.
+
+-- Add the tool column to the survey table
+ALTER TABLE survey ADD COLUMN tool VARCHAR(255) NOT NULL DEFAULT 'SURVEYTOGO';
+
+-- Update existing rows to have a default value if necessary (optional, depending on policy)
+-- UPDATE survey SET tool = 'SURVEYTOGO' WHERE tool IS NULL;

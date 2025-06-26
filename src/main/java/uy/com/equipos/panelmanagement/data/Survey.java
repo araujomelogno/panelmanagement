@@ -1,7 +1,11 @@
 package uy.com.equipos.panelmanagement.data;
 
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import jakarta.validation.constraints.NotNull;
 import java.time.LocalDate;
+import uy.com.agesic.apptramites.lineadebase.domain.Tool;
 
 @Entity
 public class Survey extends AbstractEntity {
@@ -9,6 +13,10 @@ public class Survey extends AbstractEntity {
     private String name;
     private LocalDate initDate;
     private String link;
+
+    @Enumerated(EnumType.STRING)
+    @NotNull
+    private Tool tool;
 
     public String getName() {
         return name;
@@ -29,4 +37,11 @@ public class Survey extends AbstractEntity {
         this.link = link;
     }
 
+    public Tool getTool() {
+        return tool;
+    }
+
+    public void setTool(Tool tool) {
+        this.tool = tool;
+    }
 }
