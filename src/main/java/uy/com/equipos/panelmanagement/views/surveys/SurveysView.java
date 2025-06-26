@@ -54,6 +54,7 @@ public class SurveysView extends Div implements BeforeEnterObserver {
 	private TextField nameFilter = new TextField();
 	private DatePicker initDateFilter = new DatePicker();
 	private TextField linkFilter = new TextField();
+	private ComboBox<Tool> toolFilter = new ComboBox<>();
 
 	private TextField name;
 	private DatePicker initDate;
@@ -124,19 +125,26 @@ public class SurveysView extends Div implements BeforeEnterObserver {
 		nameFilter.setPlaceholder("Filtrar por Nombre");
 		initDateFilter.setPlaceholder("Filtrar por Fecha de Inicio");
 		linkFilter.setPlaceholder("Filtrar por Enlace");
+		toolFilter.setPlaceholder("Filtrar por Herramienta");
+		toolFilter.setItems(Tool.values());
+		toolFilter.setItemLabelGenerator(Tool::name);
+		toolFilter.setClearButtonVisible(true);
+
 
 		// Añadir listeners para refrescar el grid
 		nameFilter.addValueChangeListener(e -> grid.getDataProvider().refreshAll());
 		initDateFilter.addValueChangeListener(e -> grid.getDataProvider().refreshAll());
 		linkFilter.addValueChangeListener(e -> grid.getDataProvider().refreshAll());
+		toolFilter.addValueChangeListener(e -> grid.getDataProvider().refreshAll());
 
 		// Configurar el DataProvider del Grid
 		grid.setItems(query -> {
 			String nameVal = nameFilter.getValue();
 			LocalDate initDateVal = initDateFilter.getValue();
 			String linkVal = linkFilter.getValue();
+			Tool toolVal = toolFilter.getValue();
 
-			return surveyService.list(VaadinSpringDataHelpers.toSpringPageRequest(query), nameVal, initDateVal, linkVal)
+			return surveyService.list(VaadinSpringDataHelpers.toSpringPageRequest(query), nameVal, initDateVal, linkVal, toolVal)
 					.stream();
 		});
 
@@ -154,7 +162,7 @@ public class SurveysView extends Div implements BeforeEnterObserver {
 		// Configure Form
 		binder = new BeanValidationBinder<>(Survey.class);
 
-		// Bind fields. This is where you'd define e.g. validation rules
+		// Bind fields. This is where you'd define e.g. validation rules 
 		binder.bindInstanceFields(this);
 
 		cancel.addClickListener(e -> {
@@ -252,6 +260,7 @@ public class SurveysView extends Div implements BeforeEnterObserver {
 		headerRow.getCell(grid.getColumnByKey("name")).setComponent(nameFilter);
 		headerRow.getCell(grid.getColumnByKey("initDate")).setComponent(initDateFilter);
 		headerRow.getCell(grid.getColumnByKey("link")).setComponent(linkFilter);
+		headerRow.getCell(grid.getColumnByKey("tool")).setComponent(toolFilter);
 	}
 
 	private void refreshGrid() {
