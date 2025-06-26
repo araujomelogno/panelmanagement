@@ -300,7 +300,7 @@ public class PanelsView extends Div implements BeforeEnterObserver {
 		name = new TextField("Nombre");
 		created = new DatePicker("Fecha de Creación");
 		active = new Checkbox("Activo");
-		formLayout.add(name, created, active);
+		formLayout.add(name, created, active,addPanelistsButton, viewPanelistsButton);
 
 		editorDiv.add(formLayout);
 		createButtonLayout(editorLayoutDiv);
@@ -313,7 +313,7 @@ public class PanelsView extends Div implements BeforeEnterObserver {
 		buttonLayout.setClassName("button-layout");
 		cancel.addThemeVariants(ButtonVariant.LUMO_TERTIARY);
 		save.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
-		buttonLayout.add(addPanelistsButton, viewPanelistsButton, save, deleteButton, cancel); // Added viewPanelistsButton
+		buttonLayout.add( save, deleteButton, cancel); 
 		editorLayoutDiv.add(buttonLayout);
 	}
 

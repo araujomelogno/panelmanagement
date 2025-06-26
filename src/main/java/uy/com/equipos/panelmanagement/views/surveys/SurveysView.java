@@ -240,7 +240,7 @@ public class SurveysView extends Div implements BeforeEnterObserver {
 		tool = new ComboBox<>("Herramienta");
 		tool.setItems(Tool.values());
 		tool.setItemLabelGenerator(Tool::name);
-		formLayout.add(name, initDate, link, tool);
+		formLayout.add(name, initDate, link, tool,viewParticipantsButton);
 
 		editorDiv.add(formLayout);
 		createButtonLayout(editorLayoutDiv);
@@ -253,7 +253,7 @@ public class SurveysView extends Div implements BeforeEnterObserver {
 		buttonLayout.setClassName("button-layout");
 		cancel.addThemeVariants(ButtonVariant.LUMO_TERTIARY);
 		save.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
-		buttonLayout.add(save, deleteButton, cancel, viewParticipantsButton); // Added viewParticipantsButton
+		buttonLayout.add(save, deleteButton, cancel); 
 		editorLayoutDiv.add(buttonLayout);
 	}
 
