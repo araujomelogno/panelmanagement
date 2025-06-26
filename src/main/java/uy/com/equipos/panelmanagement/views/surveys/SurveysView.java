@@ -204,7 +204,8 @@ public class SurveysView extends Div implements BeforeEnterObserver {
 	public void beforeEnter(BeforeEnterEvent event) {
 		Optional<Long> surveyId = event.getRouteParameters().get(SURVEY_ID).map(Long::parseLong);
 		if (surveyId.isPresent()) {
-			Optional<Survey> surveyFromBackend = surveyService.get(surveyId.get());
+			// Use getWithPanelists to ensure panelists are loaded if navigating directly
+			Optional<Survey> surveyFromBackend = surveyService.getWithPanelists(surveyId.get());
 			if (surveyFromBackend.isPresent()) {
 				populateForm(surveyFromBackend.get());
 				editorLayoutDiv.setVisible(true);
@@ -300,13 +301,27 @@ public class SurveysView extends Div implements BeforeEnterObserver {
 	}
 
     private void openParticipantsDialog() {
-        if (this.survey == null || this.survey.getPanelists() == null || this.survey.getPanelists().isEmpty()) {
-            Notification.show("No hay participantes para esta encuesta o la encuesta no está seleccionada.", 3000, Notification.Position.MIDDLE);
+        if (this.survey == null || this.survey.getId() == null) {
+            Notification.show("No hay encuesta seleccionada.", 3000, Notification.Position.MIDDLE);
+            return;
+        }
+
+        // Fetch the survey with panelists to ensure they are loaded
+        Optional<Survey> surveyWithPanelistsOpt = surveyService.getWithPanelists(this.survey.getId());
+
+        if (!surveyWithPanelistsOpt.isPresent()) {
+            Notification.show("Error al cargar la encuesta.", 3000, Notification.Position.MIDDLE);
+            return;
+        }
+        Survey currentSurvey = surveyWithPanelistsOpt.get();
+
+        if (currentSurvey.getPanelists() == null || currentSurvey.getPanelists().isEmpty()) {
+            Notification.show("No hay participantes para esta encuesta.", 3000, Notification.Position.MIDDLE);
             return;
         }
 
         Dialog dialog = new Dialog();
-        dialog.setHeaderTitle("Participantes de la Encuesta: " + this.survey.getName());
+        dialog.setHeaderTitle("Participantes de la Encuesta: " + currentSurvey.getName());
         dialog.setWidth("80%");
         dialog.setHeight("70%");
 
@@ -335,7 +350,7 @@ public class SurveysView extends Div implements BeforeEnterObserver {
         filterRow.getCell(participantsGrid.getColumnByKey("phone")).setComponent(phoneFilterDialog);
 
 
-        participantsGrid.setItems(query -> this.survey.getPanelists().stream()
+        participantsGrid.setItems(query -> currentSurvey.getPanelists().stream()
                 .filter(panelist -> firstNameFilterDialog.getValue() == null || panelist.getFirstName().toLowerCase().contains(firstNameFilterDialog.getValue().toLowerCase()))
                 .filter(panelist -> lastNameFilterDialog.getValue() == null || panelist.getLastName().toLowerCase().contains(lastNameFilterDialog.getValue().toLowerCase()))
                 .filter(panelist -> emailFilterDialog.getValue() == null || panelist.getEmail().toLowerCase().contains(emailFilterDialog.getValue().toLowerCase()))
