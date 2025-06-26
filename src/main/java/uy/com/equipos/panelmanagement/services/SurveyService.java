@@ -9,6 +9,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import jakarta.persistence.criteria.Predicate;
+import uy.com.agesic.apptramites.lineadebase.domain.Tool;
 import uy.com.equipos.panelmanagement.data.Survey;
 import uy.com.equipos.panelmanagement.data.SurveyRepository;
 
@@ -41,7 +42,7 @@ public class SurveyService {
         return repository.findAll(filter, pageable);
     }
 
-    public Page<Survey> list(Pageable pageable, String name, LocalDate initDate, String link) {
+    public Page<Survey> list(Pageable pageable, String name, LocalDate initDate, String link, Tool tool) {
         Specification<Survey> spec = (root, query, cb) -> {
             List<Predicate> predicates = new ArrayList<>();
             if (name != null && !name.isEmpty()) {
@@ -52,6 +53,9 @@ public class SurveyService {
             }
             if (link != null && !link.isEmpty()) {
                 predicates.add(cb.like(cb.lower(root.get("link")), "%" + link.toLowerCase() + "%"));
+            }
+            if (tool != null) {
+                predicates.add(cb.equal(root.get("tool"), tool));
             }
             return cb.and(predicates.toArray(new Predicate[0]));
         };
