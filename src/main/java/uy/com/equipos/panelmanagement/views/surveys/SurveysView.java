@@ -10,6 +10,7 @@ import com.vaadin.flow.component.Key; // Added for keyboard shortcut
 import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
+import com.vaadin.flow.component.combobox.ComboBox;
 import com.vaadin.flow.component.datepicker.DatePicker;
 import com.vaadin.flow.component.formlayout.FormLayout;
 import com.vaadin.flow.component.grid.Grid;
@@ -33,6 +34,7 @@ import com.vaadin.flow.router.Route;
 import com.vaadin.flow.spring.data.VaadinSpringDataHelpers;
 
 import jakarta.annotation.security.PermitAll;
+import uy.com.agesic.apptramites.lineadebase.domain.Tool;
 import uy.com.equipos.panelmanagement.data.Survey;
 import uy.com.equipos.panelmanagement.services.SurveyService;
 
@@ -56,6 +58,7 @@ public class SurveysView extends Div implements BeforeEnterObserver {
 	private TextField name;
 	private DatePicker initDate;
 	private TextField link;
+	private ComboBox<Tool> tool;
 
 	private final Button cancel = new Button("Cancelar");
 	private final Button save = new Button("Guardar");
@@ -81,6 +84,7 @@ public class SurveysView extends Div implements BeforeEnterObserver {
 		grid.addColumn(Survey::getName).setHeader("Nombre").setKey("name").setAutoWidth(true);
 		grid.addColumn(Survey::getInitDate).setHeader("Fecha de Inicio").setKey("initDate").setAutoWidth(true);
 		grid.addColumn(Survey::getLink).setHeader("Enlace").setKey("link").setAutoWidth(true);
+		grid.addColumn(Survey::getTool).setHeader("Herramienta").setKey("tool").setAutoWidth(true);
 		grid.addThemeVariants(GridVariant.LUMO_NO_BORDER);
 
 		// Create UI - SplitLayout
@@ -218,7 +222,10 @@ public class SurveysView extends Div implements BeforeEnterObserver {
 		name = new TextField("Nombre");
 		initDate = new DatePicker("Fecha de Inicio");
 		link = new TextField("Enlace");
-		formLayout.add(name, initDate, link);
+		tool = new ComboBox<>("Herramienta");
+		tool.setItems(Tool.values());
+		tool.setItemLabelGenerator(Tool::name);
+		formLayout.add(name, initDate, link, tool);
 
 		editorDiv.add(formLayout);
 		createButtonLayout(editorLayoutDiv);
