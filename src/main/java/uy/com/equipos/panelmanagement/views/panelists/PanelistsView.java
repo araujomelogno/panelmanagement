@@ -54,6 +54,7 @@ import uy.com.equipos.panelmanagement.data.Panel;
 import uy.com.equipos.panelmanagement.data.Panelist;
 import uy.com.equipos.panelmanagement.data.PanelistProperty;
 import uy.com.equipos.panelmanagement.data.PanelistPropertyCode;
+import uy.com.equipos.panelmanagement.data.Survey;
 import uy.com.equipos.panelmanagement.data.PanelistPropertyCodeRepository;
 import uy.com.equipos.panelmanagement.data.PanelistPropertyValue; // Added
 import uy.com.equipos.panelmanagement.data.PropertyType;
@@ -103,6 +104,7 @@ public class PanelistsView extends Div implements BeforeEnterObserver {
 	private Button nuevoPanelistaButton;
 	// private Button gestionarPropiedadesButton; // Removed duplicate declaration
 	private Button viewParticipatingPanelsButton;
+    private Button viewParticipatingSurveysButton; // Added
 	Dialog viewPanelsDialog; // Package-private for testing
 	Grid<Panel> participatingPanelsGrid; // Package-private for testing
 	Panelist currentPanelistForPanelsDialog; // Package-private for testing
@@ -133,6 +135,9 @@ public class PanelistsView extends Div implements BeforeEnterObserver {
         this.panelistPropertyCodeRepository = panelistPropertyCodeRepository;
         this.panelService = panelService; // Added
 		addClassNames("panelists-view");
+
+        viewParticipatingSurveysButton = new Button("Ver encuestas participadas"); // Added
+        viewParticipatingSurveysButton.addClickListener(e -> openParticipatingSurveysDialog()); // Added
 
 		// Initialize deleteButton EARLIER
 		deleteButton = new Button("Eliminar");
@@ -371,7 +376,7 @@ public class PanelistsView extends Div implements BeforeEnterObserver {
 			}
 		});
 		formLayout.add(firstName, lastName, email, phone, lastContacted, lastInterviewed); // Removed dateOfBirth, occupation
-		formLayout.add(gestionarPropiedadesButton, viewParticipatingPanelsButton); // Added buttons here
+		formLayout.add(gestionarPropiedadesButton, viewParticipatingPanelsButton, viewParticipatingSurveysButton); // Added viewParticipatingSurveysButton
 
 		editorDiv.add(formLayout);
 		createButtonLayout(editorLayoutDiv);
@@ -429,7 +434,66 @@ public class PanelistsView extends Div implements BeforeEnterObserver {
 		if (viewParticipatingPanelsButton != null) {
 			viewParticipatingPanelsButton.setEnabled(value != null && value.getId() != null);
 		}
+        if (viewParticipatingSurveysButton != null) {
+            viewParticipatingSurveysButton.setEnabled(value != null && value.getId() != null);
+        }
 	}
+
+    private void openParticipatingSurveysDialog() {
+        if (this.panelist == null || this.panelist.getSurveys() == null || this.panelist.getSurveys().isEmpty()) {
+            Notification.show("Este panelista no ha participado en encuestas o no está seleccionado.", 3000, Notification.Position.MIDDLE);
+            return;
+        }
+
+        Dialog dialog = new Dialog();
+        dialog.setHeaderTitle("Encuestas en las que participa: " + this.panelist.getFirstName() + " " + this.panelist.getLastName());
+        dialog.setWidth("80%");
+        dialog.setHeight("70%");
+
+        Grid<Survey> surveysGrid = new Grid<>(Survey.class, false);
+        surveysGrid.addColumn(Survey::getName).setHeader("Nombre Encuesta").setSortable(true).setKey("name");
+        surveysGrid.addColumn(Survey::getInitDate).setHeader("Fecha Inicio").setSortable(true).setKey("initDate");
+        surveysGrid.addColumn(Survey::getLink).setHeader("Enlace").setSortable(true).setKey("link");
+        surveysGrid.addColumn(Survey::getTool).setHeader("Herramienta").setSortable(true).setKey("tool");
+
+        HeaderRow filterRow = surveysGrid.appendHeaderRow();
+        TextField nameFilterDialog = new TextField();
+        nameFilterDialog.setPlaceholder("Filtrar...");
+        filterRow.getCell(surveysGrid.getColumnByKey("name")).setComponent(nameFilterDialog);
+
+        DatePicker initDateFilterDialog = new DatePicker();
+        initDateFilterDialog.setPlaceholder("Filtrar...");
+        filterRow.getCell(surveysGrid.getColumnByKey("initDate")).setComponent(initDateFilterDialog);
+
+        TextField linkFilterDialog = new TextField();
+        linkFilterDialog.setPlaceholder("Filtrar...");
+        filterRow.getCell(surveysGrid.getColumnByKey("link")).setComponent(linkFilterDialog);
+
+        ComboBox<Tool> toolFilterDialog = new ComboBox<>();
+        toolFilterDialog.setItems(Tool.values());
+        toolFilterDialog.setPlaceholder("Filtrar...");
+        filterRow.getCell(surveysGrid.getColumnByKey("tool")).setComponent(toolFilterDialog);
+
+        surveysGrid.setItems(query -> this.panelist.getSurveys().stream()
+                .filter(survey -> nameFilterDialog.getValue() == null || survey.getName().toLowerCase().contains(nameFilterDialog.getValue().toLowerCase()))
+                .filter(survey -> initDateFilterDialog.getValue() == null || survey.getInitDate().equals(initDateFilterDialog.getValue()))
+                .filter(survey -> linkFilterDialog.getValue() == null || survey.getLink().toLowerCase().contains(linkFilterDialog.getValue().toLowerCase()))
+                .filter(survey -> toolFilterDialog.getValue() == null || survey.getTool().equals(toolFilterDialog.getValue()))
+                .skip(query.getOffset())
+                .limit(query.getLimit()));
+
+        nameFilterDialog.addValueChangeListener(e -> surveysGrid.getDataProvider().refreshAll());
+        initDateFilterDialog.addValueChangeListener(e -> surveysGrid.getDataProvider().refreshAll());
+        linkFilterDialog.addValueChangeListener(e -> surveysGrid.getDataProvider().refreshAll());
+        toolFilterDialog.addValueChangeListener(e -> surveysGrid.getDataProvider().refreshAll());
+
+        dialog.add(surveysGrid);
+        Button closeButton = new Button("Cerrar", e -> dialog.close());
+        closeButton.addThemeVariants(ButtonVariant.LUMO_TERTIARY);
+        dialog.getFooter().add(closeButton);
+
+        dialog.open();
+    }
 
 	// Changed to package-private for testing
 	void createOrOpenViewPanelsDialog() {
@@ -867,6 +931,9 @@ public class PanelistsView extends Div implements BeforeEnterObserver {
 		if (viewParticipatingPanelsButton != null) {
 			viewParticipatingPanelsButton.setEnabled(false);
 		}
+        if (viewParticipatingSurveysButton != null) { // Added
+            viewParticipatingSurveysButton.setEnabled(false); // Added
+        } // Added
 		// Explicitly clear propertiesField, ensure it's initialized - Removed
 		// if (propertiesField != null) { // Removed
 		// propertiesField.clear(); // Removed

@@ -11,6 +11,7 @@ import jakarta.persistence.ManyToMany;
 import jakarta.persistence.OneToMany;
 import jakarta.validation.constraints.Email;
 import java.time.LocalDate;
+import java.util.Set; // Added for Set<Survey>
 import java.util.HashSet;
 import java.util.Set;
 // PanelistPropertyValue is in the same package
@@ -76,5 +77,16 @@ public class Panelist extends AbstractEntity {
 
     public void setPanels(Set<Panel> panels) {
         this.panels = panels;
+    }
+
+    @ManyToMany(mappedBy = "panelists", fetch = FetchType.LAZY)
+    private Set<Survey> surveys = new HashSet<>();
+
+    public Set<Survey> getSurveys() {
+        return surveys;
+    }
+
+    public void setSurveys(Set<Survey> surveys) {
+        this.surveys = surveys;
     }
 }

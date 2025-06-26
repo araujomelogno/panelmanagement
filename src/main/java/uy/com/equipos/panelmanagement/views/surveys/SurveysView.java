@@ -12,6 +12,7 @@ import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.combobox.ComboBox;
 import com.vaadin.flow.component.datepicker.DatePicker;
+import com.vaadin.flow.component.dialog.Dialog;
 import com.vaadin.flow.component.formlayout.FormLayout;
 import com.vaadin.flow.component.grid.Grid;
 import com.vaadin.flow.component.grid.GridVariant;
@@ -35,6 +36,7 @@ import com.vaadin.flow.spring.data.VaadinSpringDataHelpers;
 
 import jakarta.annotation.security.PermitAll;
 import uy.com.agesic.apptramites.lineadebase.domain.Tool;
+import uy.com.equipos.panelmanagement.data.Panelist;
 import uy.com.equipos.panelmanagement.data.Survey;
 import uy.com.equipos.panelmanagement.services.SurveyService;
 
@@ -65,6 +67,7 @@ public class SurveysView extends Div implements BeforeEnterObserver {
 	private final Button save = new Button("Guardar");
 	private Button deleteButton; // Add this with other button declarations
 	private Button nuevaEncuestaButton;
+    private Button viewParticipantsButton;
 
 	private final BeanValidationBinder<Survey> binder;
 
@@ -80,6 +83,9 @@ public class SurveysView extends Div implements BeforeEnterObserver {
 		deleteButton = new Button("Eliminar");
 		deleteButton.addThemeVariants(ButtonVariant.LUMO_ERROR, ButtonVariant.LUMO_PRIMARY);
 		deleteButton.addClickListener(e -> onDeleteClicked());
+
+        viewParticipantsButton = new Button("Ver participantes");
+        viewParticipantsButton.addClickListener(e -> openParticipantsDialog());
 
 		// Configurar columnas del Grid PRIMERO
 		grid.addColumn(Survey::getName).setHeader("Nombre").setKey("name").setAutoWidth(true);
@@ -246,7 +252,7 @@ public class SurveysView extends Div implements BeforeEnterObserver {
 		buttonLayout.setClassName("button-layout");
 		cancel.addThemeVariants(ButtonVariant.LUMO_TERTIARY);
 		save.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
-		buttonLayout.add(save, deleteButton, cancel);
+		buttonLayout.add(save, deleteButton, cancel, viewParticipantsButton); // Added viewParticipantsButton
 		editorLayoutDiv.add(buttonLayout);
 	}
 
@@ -272,9 +278,12 @@ public class SurveysView extends Div implements BeforeEnterObserver {
 		this.survey = value;
 		binder.readBean(this.survey);
 
-		if (deleteButton != null) { 
+		if (deleteButton != null) {
 			 deleteButton.setEnabled(value != null && value.getId() != null);
 		}
+        if (viewParticipantsButton != null) {
+            viewParticipantsButton.setEnabled(value != null && value.getId() != null);
+        }
 	}
 
 	private void clearForm() {
@@ -285,7 +294,68 @@ public class SurveysView extends Div implements BeforeEnterObserver {
 		if (deleteButton != null) {
 			deleteButton.setEnabled(false);
 		}
+        if (viewParticipantsButton != null) {
+            viewParticipantsButton.setEnabled(false);
+        }
 	}
+
+    private void openParticipantsDialog() {
+        if (this.survey == null || this.survey.getPanelists() == null || this.survey.getPanelists().isEmpty()) {
+            Notification.show("No hay participantes para esta encuesta o la encuesta no está seleccionada.", 3000, Notification.Position.MIDDLE);
+            return;
+        }
+
+        Dialog dialog = new Dialog();
+        dialog.setHeaderTitle("Participantes de la Encuesta: " + this.survey.getName());
+        dialog.setWidth("80%");
+        dialog.setHeight("70%");
+
+        Grid<Panelist> participantsGrid = new Grid<>(Panelist.class, false);
+        participantsGrid.addColumn(Panelist::getFirstName).setHeader("Nombre").setSortable(true);
+        participantsGrid.addColumn(Panelist::getLastName).setHeader("Apellido").setSortable(true);
+        participantsGrid.addColumn(Panelist::getEmail).setHeader("Email").setSortable(true);
+        participantsGrid.addColumn(Panelist::getPhone).setHeader("Teléfono").setSortable(true);
+
+        // Add filters
+        HeaderRow filterRow = participantsGrid.appendHeaderRow();
+        TextField firstNameFilterDialog = new TextField();
+        firstNameFilterDialog.setPlaceholder("Filtrar...");
+        filterRow.getCell(participantsGrid.getColumnByKey("firstName")).setComponent(firstNameFilterDialog);
+
+        TextField lastNameFilterDialog = new TextField();
+        lastNameFilterDialog.setPlaceholder("Filtrar...");
+        filterRow.getCell(participantsGrid.getColumnByKey("lastName")).setComponent(lastNameFilterDialog);
+
+        TextField emailFilterDialog = new TextField();
+        emailFilterDialog.setPlaceholder("Filtrar...");
+        filterRow.getCell(participantsGrid.getColumnByKey("email")).setComponent(emailFilterDialog);
+
+        TextField phoneFilterDialog = new TextField();
+        phoneFilterDialog.setPlaceholder("Filtrar...");
+        filterRow.getCell(participantsGrid.getColumnByKey("phone")).setComponent(phoneFilterDialog);
+
+
+        participantsGrid.setItems(query -> this.survey.getPanelists().stream()
+                .filter(panelist -> firstNameFilterDialog.getValue() == null || panelist.getFirstName().toLowerCase().contains(firstNameFilterDialog.getValue().toLowerCase()))
+                .filter(panelist -> lastNameFilterDialog.getValue() == null || panelist.getLastName().toLowerCase().contains(lastNameFilterDialog.getValue().toLowerCase()))
+                .filter(panelist -> emailFilterDialog.getValue() == null || panelist.getEmail().toLowerCase().contains(emailFilterDialog.getValue().toLowerCase()))
+                .filter(panelist -> phoneFilterDialog.getValue() == null || panelist.getPhone().toLowerCase().contains(phoneFilterDialog.getValue().toLowerCase()))
+                .skip(query.getOffset())
+                .limit(query.getLimit())
+        );
+
+        firstNameFilterDialog.addValueChangeListener(e -> participantsGrid.getDataProvider().refreshAll());
+        lastNameFilterDialog.addValueChangeListener(e -> participantsGrid.getDataProvider().refreshAll());
+        emailFilterDialog.addValueChangeListener(e -> participantsGrid.getDataProvider().refreshAll());
+        phoneFilterDialog.addValueChangeListener(e -> participantsGrid.getDataProvider().refreshAll());
+
+        dialog.add(participantsGrid);
+        Button closeButton = new Button("Cerrar", e -> dialog.close());
+        closeButton.addThemeVariants(ButtonVariant.LUMO_TERTIARY);
+        dialog.getFooter().add(closeButton);
+
+        dialog.open();
+    }
 
 	private void onDeleteClicked() {
 		if (this.survey == null || this.survey.getId() == null) {
