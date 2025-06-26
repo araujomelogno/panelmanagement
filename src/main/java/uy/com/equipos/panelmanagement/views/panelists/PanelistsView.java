@@ -441,13 +441,28 @@ public class PanelistsView extends Div implements BeforeEnterObserver {
 	}
 
     private void openParticipatingSurveysDialog() {
-        if (this.panelist == null || this.panelist.getSurveys() == null || this.panelist.getSurveys().isEmpty()) {
-            Notification.show("Este panelista no ha participado en encuestas o no está seleccionado.", 3000, Notification.Position.MIDDLE);
+        if (this.panelist == null || this.panelist.getId() == null) {
+            Notification.show("No hay un panelista seleccionado.", 3000, Notification.Position.MIDDLE);
+            return;
+        }
+
+        // Re-fetch the panelist with surveys initialized
+        Optional<Panelist> panelistOpt = panelistService.findByIdWithSurveys(this.panelist.getId());
+
+        if (panelistOpt.isEmpty()) {
+            Notification.show("No se pudo cargar el panelista seleccionado.", 3000, Notification.Position.MIDDLE);
+            return;
+        }
+
+        Panelist currentPanelistWithSurveys = panelistOpt.get();
+
+        if (currentPanelistWithSurveys.getSurveys() == null || currentPanelistWithSurveys.getSurveys().isEmpty()) {
+            Notification.show("Este panelista no ha participado en encuestas.", 3000, Notification.Position.MIDDLE);
             return;
         }
 
         Dialog dialog = new Dialog();
-        dialog.setHeaderTitle("Encuestas en las que participa: " + this.panelist.getFirstName() + " " + this.panelist.getLastName());
+        dialog.setHeaderTitle("Encuestas en las que participa: " + currentPanelistWithSurveys.getFirstName() + " " + currentPanelistWithSurveys.getLastName());
         dialog.setWidth("80%");
         dialog.setHeight("70%");
 
@@ -475,7 +490,8 @@ public class PanelistsView extends Div implements BeforeEnterObserver {
         toolFilterDialog.setPlaceholder("Filtrar...");
         filterRow.getCell(surveysGrid.getColumnByKey("tool")).setComponent(toolFilterDialog);
 
-        surveysGrid.setItems(query -> this.panelist.getSurveys().stream()
+        // Use the freshly fetched panelist with initialized surveys
+        surveysGrid.setItems(query -> currentPanelistWithSurveys.getSurveys().stream()
                 .filter(survey -> nameFilterDialog.getValue() == null || survey.getName().toLowerCase().contains(nameFilterDialog.getValue().toLowerCase()))
                 .filter(survey -> initDateFilterDialog.getValue() == null || survey.getInitDate().equals(initDateFilterDialog.getValue()))
                 .filter(survey -> linkFilterDialog.getValue() == null || survey.getLink().toLowerCase().contains(linkFilterDialog.getValue().toLowerCase()))

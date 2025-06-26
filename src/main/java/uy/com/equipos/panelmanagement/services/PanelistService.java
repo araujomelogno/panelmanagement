@@ -32,8 +32,16 @@ public class PanelistService {
     @Transactional(readOnly = true)
     public Optional<Panelist> get(Long id) {
         Optional<Panelist> panelistOptional = repository.findById(id);
-        panelistOptional.ifPresent(panelist -> Hibernate.initialize(panelist.getPropertyValues()));
+        panelistOptional.ifPresent(panelist -> {
+            Hibernate.initialize(panelist.getPropertyValues());
+            Hibernate.initialize(panelist.getSurveys()); // Initialize surveys as well
+        });
         return panelistOptional;
+    }
+
+    @Transactional(readOnly = true)
+    public Optional<Panelist> findByIdWithSurveys(Long id) {
+        return repository.findByIdWithSurveys(id);
     }
 
     public Panelist save(Panelist entity) {
