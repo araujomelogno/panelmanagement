@@ -24,8 +24,14 @@ import com.vaadin.flow.component.notification.NotificationVariant;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.splitlayout.SplitLayout;
+import com.vaadin.flow.component.textfield.IntegerField;
 import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.data.binder.BeanValidationBinder;
+import java.util.Collections;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Set;
+import uy.com.equipos.panelmanagement.data.Panelist;
 import com.vaadin.flow.data.binder.ValidationException;
 import com.vaadin.flow.router.BeforeEnterEvent;
 import com.vaadin.flow.router.BeforeEnterObserver;
@@ -36,9 +42,11 @@ import com.vaadin.flow.spring.data.VaadinSpringDataHelpers;
 
 import jakarta.annotation.security.PermitAll;
 import uy.com.agesic.apptramites.lineadebase.domain.Tool;
+import uy.com.equipos.panelmanagement.data.Panel;
 // import uy.com.equipos.panelmanagement.data.Panelist; // Ya no se usa directamente aquí
 import uy.com.equipos.panelmanagement.data.Survey;
 import uy.com.equipos.panelmanagement.data.SurveyPanelistParticipation; // Nueva importación
+import uy.com.equipos.panelmanagement.services.PanelService;
 import uy.com.equipos.panelmanagement.services.SurveyService;
 import uy.com.equipos.panelmanagement.services.SurveyPanelistParticipationService; // Nueva importación
 
@@ -70,6 +78,7 @@ public class SurveysView extends Div implements BeforeEnterObserver {
 	private Button deleteButton; // Add this with other button declarations
 	private Button nuevaEncuestaButton;
     private Button viewParticipantsButton;
+    private Button sortearPanelistasButton; // New button for drawing panelists
 
 	private final BeanValidationBinder<Survey> binder;
 
@@ -77,10 +86,12 @@ public class SurveysView extends Div implements BeforeEnterObserver {
 
 	private final SurveyService surveyService;
     private final SurveyPanelistParticipationService participationService; // Nuevo servicio
+    private final PanelService panelService; // Service for Panel entities
 
-	public SurveysView(SurveyService surveyService, SurveyPanelistParticipationService participationService) {
+	public SurveysView(SurveyService surveyService, SurveyPanelistParticipationService participationService, PanelService panelService) {
 		this.surveyService = surveyService;
         this.participationService = participationService; // Inyectar nuevo servicio
+        this.panelService = panelService; // Inyectar PanelService
 		addClassNames("surveys-view");
 
 		// Initialize deleteButton EARLIER
@@ -90,6 +101,9 @@ public class SurveysView extends Div implements BeforeEnterObserver {
 
         viewParticipantsButton = new Button("Ver participantes");
         viewParticipantsButton.addClickListener(e -> openParticipantsDialog());
+
+        sortearPanelistasButton = new Button("Sortear Panelistas");
+        sortearPanelistasButton.addClickListener(e -> openSortearPanelistasDialog());
 
 		// Configurar columnas del Grid PRIMERO
 		grid.addColumn(Survey::getName).setHeader("Nombre").setKey("name").setAutoWidth(true);
@@ -246,7 +260,12 @@ public class SurveysView extends Div implements BeforeEnterObserver {
 		tool = new ComboBox<>("Herramienta");
 		tool.setItems(Tool.values());
 		tool.setItemLabelGenerator(Tool::name);
-		formLayout.add(name, initDate, link, tool,viewParticipantsButton);
+		// Add the new button to the form layout
+        HorizontalLayout editorButtonsWrapper = new HorizontalLayout(viewParticipantsButton, sortearPanelistasButton);
+        editorButtonsWrapper.setSpacing(true); // Add some space between buttons
+
+		formLayout.add(name, initDate, link, tool, editorButtonsWrapper);
+
 
 		editorDiv.add(formLayout);
 		createButtonLayout(editorLayoutDiv);
@@ -291,6 +310,9 @@ public class SurveysView extends Div implements BeforeEnterObserver {
         if (viewParticipantsButton != null) {
             viewParticipantsButton.setEnabled(value != null && value.getId() != null);
         }
+        if (sortearPanelistasButton != null) {
+            sortearPanelistasButton.setEnabled(value != null && value.getId() != null);
+        }
 	}
 
 	private void clearForm() {
@@ -304,7 +326,111 @@ public class SurveysView extends Div implements BeforeEnterObserver {
         if (viewParticipantsButton != null) {
             viewParticipantsButton.setEnabled(false);
         }
+        if (sortearPanelistasButton != null) {
+            sortearPanelistasButton.setEnabled(false);
+        }
 	}
+
+    private void openSortearPanelistasDialog() {
+        if (this.survey == null || this.survey.getId() == null) {
+            Notification.show("No hay encuesta seleccionada para sortear panelistas.", 3000, Notification.Position.MIDDLE);
+            return;
+        }
+
+        Dialog sorteoDialog = new Dialog();
+        sorteoDialog.setHeaderTitle("Sortear Panelistas para: " + this.survey.getName());
+        sorteoDialog.setWidth("500px");
+
+        VerticalLayout dialogLayout = new VerticalLayout();
+
+        ComboBox<Panel> panelComboBox = new ComboBox<>("Seleccionar Panel");
+        panelComboBox.setItems(panelService.findAll());
+        panelComboBox.setItemLabelGenerator(Panel::getName);
+        panelComboBox.setAllowCustomValue(true); // As requested
+		panelComboBox.addCustomValueSetListener(e -> {
+			String customValue = e.getDetail();
+			// This is a basic handler. In a real app, you might try to find a panel by this custom name,
+            // or provide an option to create a new one if it doesn't exist.
+            // For now, if a custom value is entered that doesn't match an item,
+            // it will likely just result in panelComboBox.getValue() being null unless it matches an existing name.
+            // A more robust solution would involve checking if customValue matches any existing Panel names
+            // or guiding the user. For now, we keep it simple as the main interaction is selection.
+			Notification.show("Valor personalizado '" + customValue + "' ingresado. Si no coincide con un panel existente, no se seleccionará.", 3500, Position.MIDDLE);
+		});
+
+
+        IntegerField cantidadPanelistasField = new IntegerField("Cantidad de Panelistas a Sortear");
+        cantidadPanelistasField.setPlaceholder("Ingrese un número entero");
+        cantidadPanelistasField.setStepButtonsVisible(true);
+        cantidadPanelistasField.setMin(1); // Panelists count must be at least 1
+
+        dialogLayout.add(panelComboBox, cantidadPanelistasField);
+        sorteoDialog.add(dialogLayout);
+
+        Button cancelButton = new Button("Cancelar", e -> sorteoDialog.close());
+        cancelButton.addThemeVariants(ButtonVariant.LUMO_TERTIARY);
+
+        Button doSortearButton = new Button("Sortear Panelistas", e -> {
+            Panel selectedPanel = panelComboBox.getValue();
+            Integer numToDraw = cantidadPanelistasField.getValue();
+
+            if (selectedPanel == null) {
+                Notification.show("Por favor, seleccione un panel.", 3000, Position.MIDDLE);
+                return;
+            }
+            if (numToDraw == null || numToDraw <= 0) {
+                Notification.show("Por favor, ingrese una cantidad válida de panelistas a sortear.", 3000, Position.MIDDLE);
+                return;
+            }
+
+            // Fetch the panel with its panelists
+            Optional<Panel> panelWithPanelistsOpt = panelService.getWithPanelists(selectedPanel.getId());
+            if (panelWithPanelistsOpt.isEmpty()) {
+                Notification.show("No se pudo cargar el panel seleccionado.", 3000, Position.MIDDLE);
+                return;
+            }
+            Panel panelWithPanelists = panelWithPanelistsOpt.get();
+            Set<Panelist> panelistsFromPanelSet = panelWithPanelists.getPanelists();
+
+            if (panelistsFromPanelSet == null || panelistsFromPanelSet.isEmpty()) {
+                Notification.show("El panel seleccionado no tiene panelistas.", 3000, Position.MIDDLE);
+                return;
+            }
+
+            List<Panelist> panelistsList = new ArrayList<>(panelistsFromPanelSet);
+
+            if (panelistsList.size() < numToDraw) {
+                Notification.show("El panel seleccionado solo tiene " + panelistsList.size() + " panelistas. No se pueden sortear " + numToDraw + ".", 5000, Position.MIDDLE);
+                return;
+            }
+
+            Collections.shuffle(panelistsList);
+            List<Panelist> selectedPanelists = panelistsList.subList(0, numToDraw);
+
+            int createdCount = 0;
+            try {
+                for (Panelist panelist : selectedPanelists) {
+                    SurveyPanelistParticipation participation = new SurveyPanelistParticipation();
+                    participation.setSurvey(this.survey);
+                    participation.setPanelist(panelist);
+                    participation.setDateIncluded(LocalDate.now());
+                    participation.setCompleted(false);
+                    participationService.save(participation);
+                    createdCount++;
+                }
+                Notification.show(createdCount + " participaciones de panelistas creadas exitosamente.", 3000, Position.BOTTOM_START);
+                sorteoDialog.close();
+            } catch (Exception ex) {
+                Notification.show("Error al crear participaciones: " + ex.getMessage(), 5000, Position.MIDDLE)
+                        .addThemeVariants(NotificationVariant.LUMO_ERROR);
+            }
+        });
+        doSortearButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
+
+        sorteoDialog.getFooter().add(cancelButton, doSortearButton);
+
+        sorteoDialog.open();
+    }
 
     private void openParticipantsDialog() {
         if (this.survey == null || this.survey.getId() == null) {
@@ -334,34 +460,75 @@ public class SurveysView extends Div implements BeforeEnterObserver {
         Grid<SurveyPanelistParticipation> participationsGrid = new Grid<>(SurveyPanelistParticipation.class, false);
         participationsGrid.addColumn(participation -> participation.getPanelist().getFirstName()).setHeader("Nombre Panelista").setSortable(true).setKey("panelistFirstName");
         participationsGrid.addColumn(participation -> participation.getPanelist().getLastName()).setHeader("Apellido Panelista").setSortable(true).setKey("panelistLastName");
-        participationsGrid.addColumn(SurveyPanelistParticipation::getDateIncluded).setHeader("Fecha Inclusión").setSortable(true);
-        participationsGrid.addColumn(SurveyPanelistParticipation::getDateSent).setHeader("Fecha Envío").setSortable(true);
-        participationsGrid.addColumn(SurveyPanelistParticipation::isCompleted).setHeader("Completada").setSortable(true);
+        Grid.Column<SurveyPanelistParticipation> dateIncludedColumn = participationsGrid.addColumn(SurveyPanelistParticipation::getDateIncluded).setHeader("Fecha Inclusión").setSortable(true).setKey("dateIncluded");
+        Grid.Column<SurveyPanelistParticipation> dateSentColumn = participationsGrid.addColumn(SurveyPanelistParticipation::getDateSent).setHeader("Fecha Envío").setSortable(true).setKey("dateSent");
+        Grid.Column<SurveyPanelistParticipation> completedColumn = participationsGrid.addColumn(SurveyPanelistParticipation::isCompleted).setHeader("Completada").setSortable(true).setKey("completed");
 
 
-        // Add filters (adaptar a los nuevos campos)
+        // Add filters
         HeaderRow filterRow = participationsGrid.appendHeaderRow();
+
         TextField panelistFirstNameFilter = new TextField();
         panelistFirstNameFilter.setPlaceholder("Filtrar...");
+        panelistFirstNameFilter.setClearButtonVisible(true);
         filterRow.getCell(participationsGrid.getColumnByKey("panelistFirstName")).setComponent(panelistFirstNameFilter);
 
         TextField panelistLastNameFilter = new TextField();
         panelistLastNameFilter.setPlaceholder("Filtrar...");
+        panelistLastNameFilter.setClearButtonVisible(true);
         filterRow.getCell(participationsGrid.getColumnByKey("panelistLastName")).setComponent(panelistLastNameFilter);
 
-        // Aquí podrías agregar más filtros para dateIncluded, dateSent, completed si es necesario
+        DatePicker dateIncludedFilter = new DatePicker();
+        dateIncludedFilter.setPlaceholder("Filtrar Fecha");
+        dateIncludedFilter.setClearButtonVisible(true);
+        filterRow.getCell(dateIncludedColumn).setComponent(dateIncludedFilter);
+
+        DatePicker dateSentFilter = new DatePicker();
+        dateSentFilter.setPlaceholder("Filtrar Fecha");
+        dateSentFilter.setClearButtonVisible(true);
+        filterRow.getCell(dateSentColumn).setComponent(dateSentFilter);
+
+        ComboBox<String> completedFilter = new ComboBox<>();
+        completedFilter.setPlaceholder("Todos");
+        completedFilter.setItems("Sí", "No", "Todos");
+        completedFilter.setClearButtonVisible(true); // Though "Todos" acts as a clearer
+        filterRow.getCell(completedColumn).setComponent(completedFilter);
+
 
         participationsGrid.setItems(query -> currentSurvey.getParticipations().stream()
-                .filter(participation -> panelistFirstNameFilter.getValue() == null || participation.getPanelist().getFirstName().toLowerCase().contains(panelistFirstNameFilter.getValue().toLowerCase()))
-                .filter(participation -> panelistLastNameFilter.getValue() == null || participation.getPanelist().getLastName().toLowerCase().contains(panelistLastNameFilter.getValue().toLowerCase()))
-                // Agregar más filtros aquí
+                .filter(participation -> {
+                    // Panelist First Name Filter
+                    boolean firstNameMatch = panelistFirstNameFilter.getValue() == null ||
+                                             panelistFirstNameFilter.getValue().isBlank() ||
+                                             participation.getPanelist().getFirstName().toLowerCase().contains(panelistFirstNameFilter.getValue().toLowerCase());
+                    // Panelist Last Name Filter
+                    boolean lastNameMatch = panelistLastNameFilter.getValue() == null ||
+                                            panelistLastNameFilter.getValue().isBlank() ||
+                                            participation.getPanelist().getLastName().toLowerCase().contains(panelistLastNameFilter.getValue().toLowerCase());
+                    // Date Included Filter
+                    boolean dateIncludedMatch = dateIncludedFilter.getValue() == null ||
+                                                dateIncludedFilter.getValue().equals(participation.getDateIncluded());
+                    // Date Sent Filter
+                    boolean dateSentMatch = dateSentFilter.getValue() == null ||
+                                            (participation.getDateSent() != null && dateSentFilter.getValue().equals(participation.getDateSent()));
+                    // Completed Filter
+                    boolean completedMatch = true;
+                    String completedValue = completedFilter.getValue();
+                    if (completedValue != null && !completedValue.equals("Todos")) {
+                        boolean isCompletedTarget = completedValue.equals("Sí");
+                        completedMatch = participation.isCompleted() == isCompletedTarget;
+                    }
+                    return firstNameMatch && lastNameMatch && dateIncludedMatch && dateSentMatch && completedMatch;
+                })
                 .skip(query.getOffset())
                 .limit(query.getLimit())
         );
 
         panelistFirstNameFilter.addValueChangeListener(e -> participationsGrid.getDataProvider().refreshAll());
         panelistLastNameFilter.addValueChangeListener(e -> participationsGrid.getDataProvider().refreshAll());
-        // Agregar listeners para otros filtros si se añaden
+        dateIncludedFilter.addValueChangeListener(e -> participationsGrid.getDataProvider().refreshAll());
+        dateSentFilter.addValueChangeListener(e -> participationsGrid.getDataProvider().refreshAll());
+        completedFilter.addValueChangeListener(e -> participationsGrid.getDataProvider().refreshAll());
 
         dialog.add(participationsGrid);
         Button closeButton = new Button("Cerrar", e -> dialog.close());
