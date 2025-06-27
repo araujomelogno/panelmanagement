@@ -34,15 +34,18 @@ public class PanelistService {
         Optional<Panelist> panelistOptional = repository.findById(id);
         panelistOptional.ifPresent(panelist -> {
             Hibernate.initialize(panelist.getPropertyValues());
-            Hibernate.initialize(panelist.getSurveys()); // Initialize surveys as well
+            Hibernate.initialize(panelist.getParticipations()); // Actualizado a participations
         });
         return panelistOptional;
     }
 
-    @Transactional(readOnly = true)
-    public Optional<Panelist> findByIdWithSurveys(Long id) {
-        return repository.findByIdWithSurveys(id);
-    }
+    // El método findByIdWithSurveys ya no es necesario o debe ser reemplazado
+    // por una lógica que cargue las participaciones si se requiere.
+    // Por ahora, lo comentamos o eliminamos.
+    // @Transactional(readOnly = true)
+    // public Optional<Panelist> findByIdWithParticipations(Long id) {
+    //    return repository.findByIdWithParticipations(id);
+    // }
 
     public Panelist save(Panelist entity) {
         return repository.save(entity);

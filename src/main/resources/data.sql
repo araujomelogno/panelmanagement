@@ -713,3 +713,12 @@ UPDATE PanelistProperty SET type = 'CODIGO' WHERE type = 'Codigo';
 -- Note: If the PanelistPropertyCode table or PanelistProperty.codes column
 -- needs initial data related to existing 'Codigo' type properties,
 -- those inserts/updates would also go here. For now, we are only converting types.
+
+-- Eliminar datos de la tabla survey_panelist (ya no existe)
+-- No es necesario eliminar explícitamente ya que la tabla se elimina en schema.sql
+
+-- Agregar datos de ejemplo para survey_panelist_participation (opcional)
+-- Ejemplo:
+-- insert into survey_panelist_participation(version, survey_id, panelist_id, date_included, date_sent, completed) values (1, 1, 1, '2023-01-01', '2023-01-02', false);
+-- insert into survey_panelist_participation(version, survey_id, panelist_id, date_included, date_sent, completed) values (1, 1, 2, '2023-01-01', null, false);
+-- insert into survey_panelist_participation(version, survey_id, panelist_id, date_included, date_sent, completed) values (1, 2, 1, '2023-02-01', '2023-02-05', true);
