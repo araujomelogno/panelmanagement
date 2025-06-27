@@ -102,7 +102,7 @@ public class SurveysView extends Div implements BeforeEnterObserver {
         viewParticipantsButton = new Button("Ver participantes");
         viewParticipantsButton.addClickListener(e -> openParticipantsDialog());
 
-        sortearPanelistasButton = new Button("Sortear Panelistas");
+        sortearPanelistasButton = new Button("Sortear participantes");
         sortearPanelistasButton.addClickListener(e -> openSortearPanelistasDialog());
 
 		// Configurar columnas del Grid PRIMERO
@@ -259,12 +259,8 @@ public class SurveysView extends Div implements BeforeEnterObserver {
 		link = new TextField("Enlace");
 		tool = new ComboBox<>("Herramienta");
 		tool.setItems(Tool.values());
-		tool.setItemLabelGenerator(Tool::name);
-		// Add the new button to the form layout
-        HorizontalLayout editorButtonsWrapper = new HorizontalLayout(viewParticipantsButton, sortearPanelistasButton);
-        editorButtonsWrapper.setSpacing(true); // Add some space between buttons
-
-		formLayout.add(name, initDate, link, tool, editorButtonsWrapper);
+		tool.setItemLabelGenerator(Tool::name); 
+		formLayout.add(name, initDate, link, tool, viewParticipantsButton,sortearPanelistasButton);
 
 
 		editorDiv.add(formLayout);
@@ -461,7 +457,7 @@ public class SurveysView extends Div implements BeforeEnterObserver {
         participationsGrid.addColumn(participation -> participation.getPanelist().getFirstName()).setHeader("Nombre Panelista").setSortable(true).setKey("panelistFirstName");
         participationsGrid.addColumn(participation -> participation.getPanelist().getLastName()).setHeader("Apellido Panelista").setSortable(true).setKey("panelistLastName");
         Grid.Column<SurveyPanelistParticipation> dateIncludedColumn = participationsGrid.addColumn(SurveyPanelistParticipation::getDateIncluded).setHeader("Fecha Inclusión").setSortable(true).setKey("dateIncluded");
-        Grid.Column<SurveyPanelistParticipation> dateSentColumn = participationsGrid.addColumn(SurveyPanelistParticipation::getDateSent).setHeader("Fecha Envío").setSortable(true).setKey("dateSent");
+        Grid.Column<SurveyPanelistParticipation> dateSentColumn = participationsGrid.addColumn(SurveyPanelistParticipation::getDateSent).setHeader("Fecha Ult. Envío").setSortable(true).setKey("dateSent");
         Grid.Column<SurveyPanelistParticipation> completedColumn = participationsGrid.addColumn(SurveyPanelistParticipation::isCompleted).setHeader("Completada").setSortable(true).setKey("completed");
 
 
