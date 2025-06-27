@@ -1,17 +1,20 @@
 package uy.com.equipos.panelmanagement.data;
 
-import jakarta.persistence.CascadeType;
-import jakarta.persistence.Entity;
-import jakarta.persistence.FetchType;
-import jakarta.persistence.JoinColumn;
-// import jakarta.persistence.JoinColumn; // Not strictly needed by Panelist's own fields now
-// import jakarta.persistence.JoinTable; // Removed
-import jakarta.persistence.OneToMany;
-import jakarta.validation.constraints.Email;
 import java.time.LocalDate;
 import java.util.HashSet;
 import java.util.Set;
 // PanelistPropertyValue is in the same package
+
+import jakarta.persistence.CascadeType;
+import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.JoinTable;
+import jakarta.persistence.ManyToMany;
+// import jakarta.persistence.JoinColumn; // Not strictly needed by Panelist's own fields now
+// import jakarta.persistence.JoinTable; // Removed
+import jakarta.persistence.OneToMany;
+import jakarta.validation.constraints.Email;
 
 @Entity
 public class Panelist extends AbstractEntity {
