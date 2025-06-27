@@ -4,14 +4,11 @@ import jakarta.persistence.CascadeType;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.JoinColumn;
-import jakarta.persistence.JoinTable;
-import jakarta.persistence.ManyToMany;
 // import jakarta.persistence.JoinColumn; // Not strictly needed by Panelist's own fields now
 // import jakarta.persistence.JoinTable; // Removed
 import jakarta.persistence.OneToMany;
 import jakarta.validation.constraints.Email;
 import java.time.LocalDate;
-import java.util.Set; // Added for Set<Survey>
 import java.util.HashSet;
 import java.util.Set;
 // PanelistPropertyValue is in the same package
@@ -79,14 +76,14 @@ public class Panelist extends AbstractEntity {
         this.panels = panels;
     }
 
-    @ManyToMany(mappedBy = "panelists", fetch = FetchType.LAZY)
-    private Set<Survey> surveys = new HashSet<>();
+    @OneToMany(mappedBy = "panelist")
+    private Set<SurveyPanelistParticipation> participations = new HashSet<>();
 
-    public Set<Survey> getSurveys() {
-        return surveys;
+    public Set<SurveyPanelistParticipation> getParticipations() {
+        return participations;
     }
 
-    public void setSurveys(Set<Survey> surveys) {
-        this.surveys = surveys;
+    public void setParticipations(Set<SurveyPanelistParticipation> participations) {
+        this.participations = participations;
     }
 }

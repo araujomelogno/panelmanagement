@@ -36,9 +36,11 @@ import com.vaadin.flow.spring.data.VaadinSpringDataHelpers;
 
 import jakarta.annotation.security.PermitAll;
 import uy.com.agesic.apptramites.lineadebase.domain.Tool;
-import uy.com.equipos.panelmanagement.data.Panelist;
+// import uy.com.equipos.panelmanagement.data.Panelist; // Ya no se usa directamente aquí
 import uy.com.equipos.panelmanagement.data.Survey;
+import uy.com.equipos.panelmanagement.data.SurveyPanelistParticipation; // Nueva importación
 import uy.com.equipos.panelmanagement.services.SurveyService;
+import uy.com.equipos.panelmanagement.services.SurveyPanelistParticipationService; // Nueva importación
 
 @PageTitle("Encuestas")
 @Route("surveys/:surveyID?/:action?(edit)")
@@ -74,9 +76,11 @@ public class SurveysView extends Div implements BeforeEnterObserver {
 	private Survey survey;
 
 	private final SurveyService surveyService;
+    private final SurveyPanelistParticipationService participationService; // Nuevo servicio
 
-	public SurveysView(SurveyService surveyService) {
+	public SurveysView(SurveyService surveyService, SurveyPanelistParticipationService participationService) {
 		this.surveyService = surveyService;
+        this.participationService = participationService; // Inyectar nuevo servicio
 		addClassNames("surveys-view");
 
 		// Initialize deleteButton EARLIER
@@ -204,10 +208,12 @@ public class SurveysView extends Div implements BeforeEnterObserver {
 	public void beforeEnter(BeforeEnterEvent event) {
 		Optional<Long> surveyId = event.getRouteParameters().get(SURVEY_ID).map(Long::parseLong);
 		if (surveyId.isPresent()) {
-			// Use getWithPanelists to ensure panelists are loaded if navigating directly
-			Optional<Survey> surveyFromBackend = surveyService.getWithPanelists(surveyId.get());
+			// Cargar la encuesta. La carga de participaciones dependerá de la configuración
+            // EAGER/LAZY o se puede hacer explícitamente si es necesario más adelante.
+			Optional<Survey> surveyFromBackend = surveyService.get(surveyId.get());
 			if (surveyFromBackend.isPresent()) {
 				populateForm(surveyFromBackend.get());
+				// Las participaciones se cargarán al abrir el diálogo específico.
 				editorLayoutDiv.setVisible(true);
 			} else {
 				Notification.show(String.format("La encuesta solicitada no fue encontrada, ID = %s", surveyId.get()),
@@ -306,65 +312,58 @@ public class SurveysView extends Div implements BeforeEnterObserver {
             return;
         }
 
-        // Fetch the survey with panelists to ensure they are loaded
-        Optional<Survey> surveyWithPanelistsOpt = surveyService.getWithPanelists(this.survey.getId());
-
-        if (!surveyWithPanelistsOpt.isPresent()) {
-            Notification.show("Error al cargar la encuesta.", 3000, Notification.Position.MIDDLE);
+        // Cargar las participaciones para la encuesta actual
+        // Esto asume que tienes un método en participationService para obtener participaciones por Survey ID
+        // o que la relación Survey -> SurveyPanelistParticipation está configurada como EAGER
+        // o se carga explícitamente al obtener la encuesta.
+        // Para ser explícitos, podríamos hacer:
+        // List<SurveyPanelistParticipation> participations = participationService.findBySurveyId(this.survey.getId());
+        // O, si la entidad Survey ya tiene las participaciones (por carga EAGER o JOIN FETCH previo):
+        Survey currentSurvey = surveyService.get(this.survey.getId()).orElse(null);
+        if (currentSurvey == null || currentSurvey.getParticipations() == null || currentSurvey.getParticipations().isEmpty()) {
+            Notification.show("No hay participaciones para esta encuesta.", 3000, Notification.Position.MIDDLE);
             return;
         }
-        Survey currentSurvey = surveyWithPanelistsOpt.get();
 
-        if (currentSurvey.getPanelists() == null || currentSurvey.getPanelists().isEmpty()) {
-            Notification.show("No hay participantes para esta encuesta.", 3000, Notification.Position.MIDDLE);
-            return;
-        }
 
         Dialog dialog = new Dialog();
-        dialog.setHeaderTitle("Participantes de la Encuesta: " + currentSurvey.getName());
+        dialog.setHeaderTitle("Participaciones de la Encuesta: " + currentSurvey.getName());
         dialog.setWidth("80%");
         dialog.setHeight("70%");
 
-        Grid<Panelist> participantsGrid = new Grid<>(Panelist.class, false);
-        participantsGrid.addColumn(Panelist::getFirstName).setHeader("Nombre").setSortable(true);
-        participantsGrid.addColumn(Panelist::getLastName).setHeader("Apellido").setSortable(true);
-        participantsGrid.addColumn(Panelist::getEmail).setHeader("Email").setSortable(true);
-        participantsGrid.addColumn(Panelist::getPhone).setHeader("Teléfono").setSortable(true);
-
-        // Add filters
-        HeaderRow filterRow = participantsGrid.appendHeaderRow();
-        TextField firstNameFilterDialog = new TextField();
-        firstNameFilterDialog.setPlaceholder("Filtrar...");
-        filterRow.getCell(participantsGrid.getColumnByKey("firstName")).setComponent(firstNameFilterDialog);
-
-        TextField lastNameFilterDialog = new TextField();
-        lastNameFilterDialog.setPlaceholder("Filtrar...");
-        filterRow.getCell(participantsGrid.getColumnByKey("lastName")).setComponent(lastNameFilterDialog);
-
-        TextField emailFilterDialog = new TextField();
-        emailFilterDialog.setPlaceholder("Filtrar...");
-        filterRow.getCell(participantsGrid.getColumnByKey("email")).setComponent(emailFilterDialog);
-
-        TextField phoneFilterDialog = new TextField();
-        phoneFilterDialog.setPlaceholder("Filtrar...");
-        filterRow.getCell(participantsGrid.getColumnByKey("phone")).setComponent(phoneFilterDialog);
+        Grid<SurveyPanelistParticipation> participationsGrid = new Grid<>(SurveyPanelistParticipation.class, false);
+        participationsGrid.addColumn(participation -> participation.getPanelist().getFirstName()).setHeader("Nombre Panelista").setSortable(true).setKey("panelistFirstName");
+        participationsGrid.addColumn(participation -> participation.getPanelist().getLastName()).setHeader("Apellido Panelista").setSortable(true).setKey("panelistLastName");
+        participationsGrid.addColumn(SurveyPanelistParticipation::getDateIncluded).setHeader("Fecha Inclusión").setSortable(true);
+        participationsGrid.addColumn(SurveyPanelistParticipation::getDateSent).setHeader("Fecha Envío").setSortable(true);
+        participationsGrid.addColumn(SurveyPanelistParticipation::isCompleted).setHeader("Completada").setSortable(true);
 
 
-        participantsGrid.setItems(query -> currentSurvey.getPanelists().stream()
-                .filter(panelist -> firstNameFilterDialog.getValue() == null || panelist.getFirstName().toLowerCase().contains(firstNameFilterDialog.getValue().toLowerCase()))
-                .filter(panelist -> lastNameFilterDialog.getValue() == null || panelist.getLastName().toLowerCase().contains(lastNameFilterDialog.getValue().toLowerCase()))
-                .filter(panelist -> emailFilterDialog.getValue() == null || panelist.getEmail().toLowerCase().contains(emailFilterDialog.getValue().toLowerCase()))
-                .filter(panelist -> phoneFilterDialog.getValue() == null || panelist.getPhone().toLowerCase().contains(phoneFilterDialog.getValue().toLowerCase()))
+        // Add filters (adaptar a los nuevos campos)
+        HeaderRow filterRow = participationsGrid.appendHeaderRow();
+        TextField panelistFirstNameFilter = new TextField();
+        panelistFirstNameFilter.setPlaceholder("Filtrar...");
+        filterRow.getCell(participationsGrid.getColumnByKey("panelistFirstName")).setComponent(panelistFirstNameFilter);
+
+        TextField panelistLastNameFilter = new TextField();
+        panelistLastNameFilter.setPlaceholder("Filtrar...");
+        filterRow.getCell(participationsGrid.getColumnByKey("panelistLastName")).setComponent(panelistLastNameFilter);
+
+        // Aquí podrías agregar más filtros para dateIncluded, dateSent, completed si es necesario
+
+        participationsGrid.setItems(query -> currentSurvey.getParticipations().stream()
+                .filter(participation -> panelistFirstNameFilter.getValue() == null || participation.getPanelist().getFirstName().toLowerCase().contains(panelistFirstNameFilter.getValue().toLowerCase()))
+                .filter(participation -> panelistLastNameFilter.getValue() == null || participation.getPanelist().getLastName().toLowerCase().contains(panelistLastNameFilter.getValue().toLowerCase()))
+                // Agregar más filtros aquí
                 .skip(query.getOffset())
                 .limit(query.getLimit())
         );
 
-        firstNameFilterDialog.addValueChangeListener(e -> participantsGrid.getDataProvider().refreshAll());
-        lastNameFilterDialog.addValueChangeListener(e -> participantsGrid.getDataProvider().refreshAll());
-        emailFilterDialog.addValueChangeListener(e -> participantsGrid.getDataProvider().refreshAll());
-        phoneFilterDialog.addValueChangeListener(e -> participantsGrid.getDataProvider().refreshAll());
+        panelistFirstNameFilter.addValueChangeListener(e -> participationsGrid.getDataProvider().refreshAll());
+        panelistLastNameFilter.addValueChangeListener(e -> participationsGrid.getDataProvider().refreshAll());
+        // Agregar listeners para otros filtros si se añaden
 
-        dialog.add(participantsGrid);
+        dialog.add(participationsGrid);
         Button closeButton = new Button("Cerrar", e -> dialog.close());
         closeButton.addThemeVariants(ButtonVariant.LUMO_TERTIARY);
         dialog.getFooter().add(closeButton);

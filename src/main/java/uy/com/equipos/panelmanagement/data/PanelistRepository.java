@@ -9,7 +9,9 @@ import java.util.Optional;
 
 public interface PanelistRepository extends JpaRepository<Panelist, Long>, JpaSpecificationExecutor<Panelist>, PanelistRepositoryCustom {
 
-    @Query("SELECT p FROM Panelist p LEFT JOIN FETCH p.surveys WHERE p.id = :id")
-    Optional<Panelist> findByIdWithSurveys(@Param("id") Long id);
+    // Ya no se necesita findByIdWithSurveys, se usará la carga EAGER/LAZY definida en la entidad
+    // o se creará un método específico para cargar participaciones si es necesario.
+    // @Query("SELECT p FROM Panelist p LEFT JOIN FETCH p.participations WHERE p.id = :id")
+    // Optional<Panelist> findByIdWithParticipations(@Param("id") Long id);
 
 }

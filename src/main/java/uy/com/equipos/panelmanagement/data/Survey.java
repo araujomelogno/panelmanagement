@@ -3,10 +3,7 @@ package uy.com.equipos.panelmanagement.data;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
-import jakarta.persistence.FetchType;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.JoinTable;
-import jakarta.persistence.ManyToMany;
+import jakarta.persistence.OneToMany;
 import jakarta.validation.constraints.NotNull;
 import java.time.LocalDate;
 import java.util.HashSet;
@@ -24,13 +21,8 @@ public class Survey extends AbstractEntity {
     @NotNull
     private Tool tool;
 
-    @ManyToMany(fetch = FetchType.LAZY)
-    @JoinTable(
-            name = "survey_panelist",
-            joinColumns = @JoinColumn(name = "survey_id"),
-            inverseJoinColumns = @JoinColumn(name = "panelist_id")
-    )
-    private Set<Panelist> panelists = new HashSet<>();
+    @OneToMany(mappedBy = "survey")
+    private Set<SurveyPanelistParticipation> participations = new HashSet<>();
 
     public String getName() {
         return name;
@@ -59,11 +51,11 @@ public class Survey extends AbstractEntity {
         this.tool = tool;
     }
 
-    public Set<Panelist> getPanelists() {
-        return panelists;
+    public Set<SurveyPanelistParticipation> getParticipations() {
+        return participations;
     }
 
-    public void setPanelists(Set<Panelist> panelists) {
-        this.panelists = panelists;
+    public void setParticipations(Set<SurveyPanelistParticipation> participations) {
+        this.participations = participations;
     }
 }

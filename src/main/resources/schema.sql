@@ -18,3 +18,20 @@ ALTER TABLE survey ADD COLUMN tool VARCHAR(255) NOT NULL DEFAULT 'SURVEYTOGO';
 
 -- Update existing rows to have a default value if necessary (optional, depending on policy)
 -- UPDATE survey SET tool = 'SURVEYTOGO' WHERE tool IS NULL;
+
+-- Eliminar la tabla survey_panelist (ya no es necesaria)
+DROP TABLE IF EXISTS survey_panelist;
+
+-- Crear la tabla survey_panelist_participation
+CREATE TABLE IF NOT EXISTS survey_panelist_participation (
+    id BIGINT NOT NULL AUTO_INCREMENT,
+    version BIGINT,
+    survey_id BIGINT,
+    panelist_id BIGINT,
+    date_included DATE,
+    date_sent DATE,
+    completed BOOLEAN,
+    PRIMARY KEY (id),
+    FOREIGN KEY (survey_id) REFERENCES survey(id),
+    FOREIGN KEY (panelist_id) REFERENCES panelist(id)
+);

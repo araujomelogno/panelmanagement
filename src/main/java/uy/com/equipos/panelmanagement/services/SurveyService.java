@@ -26,9 +26,12 @@ public class SurveyService {
         return repository.findById(id);
     }
 
-    public Optional<Survey> getWithPanelists(Long id) {
-        return repository.findByIdWithPanelists(id);
-    }
+    // El método getWithPanelists ya no es necesario o debe ser reemplazado
+    // por una lógica que cargue las participaciones si se requiere.
+    // Por ahora, lo comentamos o eliminamos.
+    // public Optional<Survey> getWithPanelists(Long id) {
+    //    return repository.findByIdWithPanelists(id);
+    // }
 
     public Survey save(Survey entity) {
         return repository.save(entity);
