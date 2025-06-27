@@ -33,6 +33,10 @@ public class SurveyService {
     //    return repository.findByIdWithPanelists(id);
     // }
 
+    public Optional<Survey> getWithParticipations(Long id) {
+        return repository.findByIdWithParticipations(id);
+    }
+
     public Survey save(Survey entity) {
         return repository.save(entity);
     }

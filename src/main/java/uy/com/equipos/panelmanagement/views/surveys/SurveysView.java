@@ -319,7 +319,7 @@ public class SurveysView extends Div implements BeforeEnterObserver {
         // Para ser explícitos, podríamos hacer:
         // List<SurveyPanelistParticipation> participations = participationService.findBySurveyId(this.survey.getId());
         // O, si la entidad Survey ya tiene las participaciones (por carga EAGER o JOIN FETCH previo):
-        Survey currentSurvey = surveyService.get(this.survey.getId()).orElse(null);
+        Survey currentSurvey = surveyService.getWithParticipations(this.survey.getId()).orElse(null); // Changed to getWithParticipations
         if (currentSurvey == null || currentSurvey.getParticipations() == null || currentSurvey.getParticipations().isEmpty()) {
             Notification.show("No hay participaciones para esta encuesta.", 3000, Notification.Position.MIDDLE);
             return;
