@@ -460,34 +460,75 @@ public class SurveysView extends Div implements BeforeEnterObserver {
         Grid<SurveyPanelistParticipation> participationsGrid = new Grid<>(SurveyPanelistParticipation.class, false);
         participationsGrid.addColumn(participation -> participation.getPanelist().getFirstName()).setHeader("Nombre Panelista").setSortable(true).setKey("panelistFirstName");
         participationsGrid.addColumn(participation -> participation.getPanelist().getLastName()).setHeader("Apellido Panelista").setSortable(true).setKey("panelistLastName");
-        participationsGrid.addColumn(SurveyPanelistParticipation::getDateIncluded).setHeader("Fecha Inclusión").setSortable(true);
-        participationsGrid.addColumn(SurveyPanelistParticipation::getDateSent).setHeader("Fecha Envío").setSortable(true);
-        participationsGrid.addColumn(SurveyPanelistParticipation::isCompleted).setHeader("Completada").setSortable(true);
+        Grid.Column<SurveyPanelistParticipation> dateIncludedColumn = participationsGrid.addColumn(SurveyPanelistParticipation::getDateIncluded).setHeader("Fecha Inclusión").setSortable(true).setKey("dateIncluded");
+        Grid.Column<SurveyPanelistParticipation> dateSentColumn = participationsGrid.addColumn(SurveyPanelistParticipation::getDateSent).setHeader("Fecha Envío").setSortable(true).setKey("dateSent");
+        Grid.Column<SurveyPanelistParticipation> completedColumn = participationsGrid.addColumn(SurveyPanelistParticipation::isCompleted).setHeader("Completada").setSortable(true).setKey("completed");
 
 
-        // Add filters (adaptar a los nuevos campos)
+        // Add filters
         HeaderRow filterRow = participationsGrid.appendHeaderRow();
+
         TextField panelistFirstNameFilter = new TextField();
         panelistFirstNameFilter.setPlaceholder("Filtrar...");
+        panelistFirstNameFilter.setClearButtonVisible(true);
         filterRow.getCell(participationsGrid.getColumnByKey("panelistFirstName")).setComponent(panelistFirstNameFilter);
 
         TextField panelistLastNameFilter = new TextField();
         panelistLastNameFilter.setPlaceholder("Filtrar...");
+        panelistLastNameFilter.setClearButtonVisible(true);
         filterRow.getCell(participationsGrid.getColumnByKey("panelistLastName")).setComponent(panelistLastNameFilter);
 
-        // Aquí podrías agregar más filtros para dateIncluded, dateSent, completed si es necesario
+        DatePicker dateIncludedFilter = new DatePicker();
+        dateIncludedFilter.setPlaceholder("Filtrar Fecha");
+        dateIncludedFilter.setClearButtonVisible(true);
+        filterRow.getCell(dateIncludedColumn).setComponent(dateIncludedFilter);
+
+        DatePicker dateSentFilter = new DatePicker();
+        dateSentFilter.setPlaceholder("Filtrar Fecha");
+        dateSentFilter.setClearButtonVisible(true);
+        filterRow.getCell(dateSentColumn).setComponent(dateSentFilter);
+
+        ComboBox<String> completedFilter = new ComboBox<>();
+        completedFilter.setPlaceholder("Todos");
+        completedFilter.setItems("Sí", "No", "Todos");
+        completedFilter.setClearButtonVisible(true); // Though "Todos" acts as a clearer
+        filterRow.getCell(completedColumn).setComponent(completedFilter);
+
 
         participationsGrid.setItems(query -> currentSurvey.getParticipations().stream()
-                .filter(participation -> panelistFirstNameFilter.getValue() == null || participation.getPanelist().getFirstName().toLowerCase().contains(panelistFirstNameFilter.getValue().toLowerCase()))
-                .filter(participation -> panelistLastNameFilter.getValue() == null || participation.getPanelist().getLastName().toLowerCase().contains(panelistLastNameFilter.getValue().toLowerCase()))
-                // Agregar más filtros aquí
+                .filter(participation -> {
+                    // Panelist First Name Filter
+                    boolean firstNameMatch = panelistFirstNameFilter.getValue() == null ||
+                                             panelistFirstNameFilter.getValue().isBlank() ||
+                                             participation.getPanelist().getFirstName().toLowerCase().contains(panelistFirstNameFilter.getValue().toLowerCase());
+                    // Panelist Last Name Filter
+                    boolean lastNameMatch = panelistLastNameFilter.getValue() == null ||
+                                            panelistLastNameFilter.getValue().isBlank() ||
+                                            participation.getPanelist().getLastName().toLowerCase().contains(panelistLastNameFilter.getValue().toLowerCase());
+                    // Date Included Filter
+                    boolean dateIncludedMatch = dateIncludedFilter.getValue() == null ||
+                                                dateIncludedFilter.getValue().equals(participation.getDateIncluded());
+                    // Date Sent Filter
+                    boolean dateSentMatch = dateSentFilter.getValue() == null ||
+                                            (participation.getDateSent() != null && dateSentFilter.getValue().equals(participation.getDateSent()));
+                    // Completed Filter
+                    boolean completedMatch = true;
+                    String completedValue = completedFilter.getValue();
+                    if (completedValue != null && !completedValue.equals("Todos")) {
+                        boolean isCompletedTarget = completedValue.equals("Sí");
+                        completedMatch = participation.isCompleted() == isCompletedTarget;
+                    }
+                    return firstNameMatch && lastNameMatch && dateIncludedMatch && dateSentMatch && completedMatch;
+                })
                 .skip(query.getOffset())
                 .limit(query.getLimit())
         );
 
         panelistFirstNameFilter.addValueChangeListener(e -> participationsGrid.getDataProvider().refreshAll());
         panelistLastNameFilter.addValueChangeListener(e -> participationsGrid.getDataProvider().refreshAll());
-        // Agregar listeners para otros filtros si se añaden
+        dateIncludedFilter.addValueChangeListener(e -> participationsGrid.getDataProvider().refreshAll());
+        dateSentFilter.addValueChangeListener(e -> participationsGrid.getDataProvider().refreshAll());
+        completedFilter.addValueChangeListener(e -> participationsGrid.getDataProvider().refreshAll());
 
         dialog.add(participationsGrid);
         Button closeButton = new Button("Cerrar", e -> dialog.close());
