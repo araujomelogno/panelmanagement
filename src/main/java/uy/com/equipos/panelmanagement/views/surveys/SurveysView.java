@@ -456,6 +456,7 @@ public class SurveysView extends Div implements BeforeEnterObserver {
         Grid<SurveyPanelistParticipation> participationsGrid = new Grid<>(SurveyPanelistParticipation.class, false);
         participationsGrid.addColumn(participation -> participation.getPanelist().getFirstName()).setHeader("Nombre Panelista").setSortable(true).setKey("panelistFirstName");
         participationsGrid.addColumn(participation -> participation.getPanelist().getLastName()).setHeader("Apellido Panelista").setSortable(true).setKey("panelistLastName");
+        participationsGrid.addColumn(participation -> participation.getPanelist().getEmail()).setHeader("Email Panelista").setSortable(true).setKey("panelistEmail"); // Added Email column
         Grid.Column<SurveyPanelistParticipation> dateIncludedColumn = participationsGrid.addColumn(SurveyPanelistParticipation::getDateIncluded).setHeader("Fecha Inclusión").setSortable(true).setKey("dateIncluded");
         Grid.Column<SurveyPanelistParticipation> dateSentColumn = participationsGrid.addColumn(SurveyPanelistParticipation::getDateSent).setHeader("Fecha Ult. Envío").setSortable(true).setKey("dateSent");
         Grid.Column<SurveyPanelistParticipation> completedColumn = participationsGrid.addColumn(SurveyPanelistParticipation::isCompleted).setHeader("Completada").setSortable(true).setKey("completed");
@@ -473,6 +474,11 @@ public class SurveysView extends Div implements BeforeEnterObserver {
         panelistLastNameFilter.setPlaceholder("Filtrar...");
         panelistLastNameFilter.setClearButtonVisible(true);
         filterRow.getCell(participationsGrid.getColumnByKey("panelistLastName")).setComponent(panelistLastNameFilter);
+
+        TextField panelistEmailFilter = new TextField(); // Added Email filter
+        panelistEmailFilter.setPlaceholder("Filtrar...");
+        panelistEmailFilter.setClearButtonVisible(true);
+        filterRow.getCell(participationsGrid.getColumnByKey("panelistEmail")).setComponent(panelistEmailFilter);
 
         DatePicker dateIncludedFilter = new DatePicker();
         dateIncludedFilter.setPlaceholder("Filtrar Fecha");
@@ -501,6 +507,10 @@ public class SurveysView extends Div implements BeforeEnterObserver {
                     boolean lastNameMatch = panelistLastNameFilter.getValue() == null ||
                                             panelistLastNameFilter.getValue().isBlank() ||
                                             participation.getPanelist().getLastName().toLowerCase().contains(panelistLastNameFilter.getValue().toLowerCase());
+                    // Panelist Email Filter
+                    boolean emailMatch = panelistEmailFilter.getValue() == null ||
+                                         panelistEmailFilter.getValue().isBlank() ||
+                                         participation.getPanelist().getEmail().toLowerCase().contains(panelistEmailFilter.getValue().toLowerCase());
                     // Date Included Filter
                     boolean dateIncludedMatch = dateIncludedFilter.getValue() == null ||
                                                 dateIncludedFilter.getValue().equals(participation.getDateIncluded());
@@ -514,7 +524,7 @@ public class SurveysView extends Div implements BeforeEnterObserver {
                         boolean isCompletedTarget = completedValue.equals("Sí");
                         completedMatch = participation.isCompleted() == isCompletedTarget;
                     }
-                    return firstNameMatch && lastNameMatch && dateIncludedMatch && dateSentMatch && completedMatch;
+                    return firstNameMatch && lastNameMatch && emailMatch && dateIncludedMatch && dateSentMatch && completedMatch; // Added emailMatch
                 })
                 .skip(query.getOffset())
                 .limit(query.getLimit())
@@ -522,6 +532,7 @@ public class SurveysView extends Div implements BeforeEnterObserver {
 
         panelistFirstNameFilter.addValueChangeListener(e -> participationsGrid.getDataProvider().refreshAll());
         panelistLastNameFilter.addValueChangeListener(e -> participationsGrid.getDataProvider().refreshAll());
+        panelistEmailFilter.addValueChangeListener(e -> participationsGrid.getDataProvider().refreshAll()); // Added listener for email filter
         dateIncludedFilter.addValueChangeListener(e -> participationsGrid.getDataProvider().refreshAll());
         dateSentFilter.addValueChangeListener(e -> participationsGrid.getDataProvider().refreshAll());
         completedFilter.addValueChangeListener(e -> participationsGrid.getDataProvider().refreshAll());
