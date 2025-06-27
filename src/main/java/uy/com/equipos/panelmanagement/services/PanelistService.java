@@ -47,6 +47,13 @@ public class PanelistService {
     //    return repository.findByIdWithParticipations(id);
     // }
 
+    @Transactional(readOnly = true)
+    public Optional<Panelist> findByIdWithSurveys(Long id) {
+        // The existing get() method already initializes participations,
+        // which is needed for getSurveys() to work correctly.
+        return get(id);
+    }
+
     public Panelist save(Panelist entity) {
         return repository.save(entity);
     }
