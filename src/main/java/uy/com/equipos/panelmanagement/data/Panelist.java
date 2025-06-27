@@ -3,6 +3,10 @@ package uy.com.equipos.panelmanagement.data;
 import java.time.LocalDate;
 import java.util.HashSet;
 import java.util.Set;
+import java.util.stream.Collectors; // Added for stream operations
+
+import uy.com.equipos.panelmanagement.data.Survey; // Added to reference Survey type
+
 // PanelistPropertyValue is in the same package
 
 import jakarta.persistence.CascadeType;
@@ -88,5 +92,19 @@ public class Panelist extends AbstractEntity {
 
     public void setParticipations(Set<SurveyPanelistParticipation> participations) {
         this.participations = participations;
+    }
+
+    /**
+     * Gets the set of surveys this panelist has participated in.
+     * This is derived from the 'participations' collection.
+     * @return A Set of Survey objects. Returns an empty set if participations is null or empty.
+     */
+    public Set<Survey> getSurveys() {
+        if (this.participations == null) {
+            return new HashSet<>();
+        }
+        return this.participations.stream()
+                                 .map(SurveyPanelistParticipation::getSurvey)
+                                 .collect(Collectors.toSet());
     }
 }
