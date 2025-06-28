@@ -1,12 +1,13 @@
 package uy.com.equipos.panelmanagement.data;
 
+import java.time.LocalDateTime;
+
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.validation.constraints.NotNull;
-import java.time.LocalDateTime;
 
 @Entity
 public class MessageTask extends AbstractEntity {

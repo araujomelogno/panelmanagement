@@ -122,7 +122,7 @@ public class SurveysView extends Div implements BeforeEnterObserver {
 
         sendReminderButton = new Button("Enviar recordatorio");
         sendReminderButton.addClickListener(e -> sendReminderAction());
-
+        
 		// Configurar columnas del Grid PRIMERO
 		grid.addColumn(Survey::getName).setHeader("Nombre").setKey("name").setAutoWidth(true);
 		grid.addColumn(Survey::getInitDate).setHeader("Fecha de Inicio").setKey("initDate").setAutoWidth(true);
