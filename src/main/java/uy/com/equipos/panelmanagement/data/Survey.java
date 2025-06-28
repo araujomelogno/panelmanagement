@@ -5,6 +5,7 @@ import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
 import jakarta.persistence.OneToMany;
 import jakarta.validation.constraints.NotNull;
+import jakarta.persistence.CascadeType;
 import java.time.LocalDate;
 import java.util.HashSet;
 import java.util.Set;
@@ -57,5 +58,16 @@ public class Survey extends AbstractEntity {
 
     public void setParticipations(Set<SurveyPanelistParticipation> participations) {
         this.participations = participations;
+    }
+
+    @OneToMany(mappedBy = "survey", cascade = CascadeType.ALL, orphanRemoval = true)
+    private Set<MessageTask> messageTasks = new HashSet<>();
+
+    public Set<MessageTask> getMessageTasks() {
+        return messageTasks;
+    }
+
+    public void setMessageTasks(Set<MessageTask> messageTasks) {
+        this.messageTasks = messageTasks;
     }
 }
