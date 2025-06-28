@@ -60,14 +60,19 @@ public class Survey extends AbstractEntity {
         this.participations = participations;
     }
 
-    @OneToMany(mappedBy = "survey", cascade = CascadeType.ALL, orphanRemoval = true)
-    private Set<MessageTask> messageTasks = new HashSet<>();
+    // The relationship from Survey to MessageTask is now indirect via SurveyPanelistParticipation.
+    // If you need to access MessageTasks related to a Survey, you would typically go through its participations.
+    // For example, survey.getParticipations().stream().flatMap(p -> p.getMessageTasks().stream()).collect(Collectors.toSet());
+    // Therefore, the direct @OneToMany MessageTask collection here might be removed or re-evaluated.
+    // For now, we'll comment it out as it's no longer directly mapped by "survey" in MessageTask.
+    // @OneToMany(mappedBy = "survey", cascade = CascadeType.ALL, orphanRemoval = true)
+    // private Set<MessageTask> messageTasks = new HashSet<>();
 
-    public Set<MessageTask> getMessageTasks() {
-        return messageTasks;
-    }
+    // public Set<MessageTask> getMessageTasks() {
+    //     return messageTasks;
+    // }
 
-    public void setMessageTasks(Set<MessageTask> messageTasks) {
-        this.messageTasks = messageTasks;
-    }
+    // public void setMessageTasks(Set<MessageTask> messageTasks) {
+    //     this.messageTasks = messageTasks;
+    // }
 }

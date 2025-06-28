@@ -25,13 +25,8 @@ public class MessageTask extends AbstractEntity {
 
     @NotNull
     @ManyToOne
-    @JoinColumn(name = "survey_id")
-    private Survey survey;
-
-    @NotNull
-    @ManyToOne
-    @JoinColumn(name = "panelist_id")
-    private Panelist panelist;
+    @JoinColumn(name = "survey_panelist_participation_id")
+    private SurveyPanelistParticipation surveyPanelistParticipation;
 
     public JobType getJobType() {
         return jobType;
@@ -57,19 +52,11 @@ public class MessageTask extends AbstractEntity {
         this.status = status;
     }
 
-    public Survey getSurvey() {
-        return survey;
+    public SurveyPanelistParticipation getSurveyPanelistParticipation() {
+        return surveyPanelistParticipation;
     }
 
-    public void setSurvey(Survey survey) {
-        this.survey = survey;
-    }
-
-    public Panelist getPanelist() {
-        return panelist;
-    }
-
-    public void setPanelist(Panelist panelist) {
-        this.panelist = panelist;
+    public void setSurveyPanelistParticipation(SurveyPanelistParticipation surveyPanelistParticipation) {
+        this.surveyPanelistParticipation = surveyPanelistParticipation;
     }
 }

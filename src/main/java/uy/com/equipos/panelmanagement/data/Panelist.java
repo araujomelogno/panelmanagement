@@ -108,14 +108,18 @@ public class Panelist extends AbstractEntity {
                                  .collect(Collectors.toSet());
     }
 
-    @OneToMany(mappedBy = "panelist", cascade = CascadeType.ALL, orphanRemoval = true)
-    private Set<MessageTask> messageTasks = new HashSet<>();
+    // The relationship from Panelist to MessageTask is now indirect via SurveyPanelistParticipation.
+    // Similar to the Survey entity, direct access to MessageTasks from Panelist might be re-evaluated.
+    // Access would typically be: panelist.getParticipations().stream().flatMap(p -> p.getMessageTasks().stream()).collect(Collectors.toSet());
+    // Commenting out for now.
+    // @OneToMany(mappedBy = "panelist", cascade = CascadeType.ALL, orphanRemoval = true)
+    // private Set<MessageTask> messageTasks = new HashSet<>();
 
-    public Set<MessageTask> getMessageTasks() {
-        return messageTasks;
-    }
+    // public Set<MessageTask> getMessageTasks() {
+    //     return messageTasks;
+    // }
 
-    public void setMessageTasks(Set<MessageTask> messageTasks) {
-        this.messageTasks = messageTasks;
-    }
+    // public void setMessageTasks(Set<MessageTask> messageTasks) {
+    //     this.messageTasks = messageTasks;
+    // }
 }
