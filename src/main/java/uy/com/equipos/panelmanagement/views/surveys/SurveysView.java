@@ -85,6 +85,7 @@ public class SurveysView extends Div implements BeforeEnterObserver {
     private Button viewParticipantsButton;
     private Button sortearPanelistasButton; // New button for drawing panelists
     private Button sendSurveysButton; // New button for sending surveys
+    private Button sendReminderButton; // New button for sending reminders
 
 	private final BeanValidationBinder<Survey> binder;
 
@@ -118,6 +119,9 @@ public class SurveysView extends Div implements BeforeEnterObserver {
 
         sendSurveysButton = new Button("Enviar encuestas");
         sendSurveysButton.addClickListener(e -> sendSurveysAction());
+
+        sendReminderButton = new Button("Enviar recordatorio");
+        sendReminderButton.addClickListener(e -> sendReminderAction());
 
 		// Configurar columnas del Grid PRIMERO
 		grid.addColumn(Survey::getName).setHeader("Nombre").setKey("name").setAutoWidth(true);
@@ -274,7 +278,7 @@ public class SurveysView extends Div implements BeforeEnterObserver {
 		tool = new ComboBox<>("Herramienta");
 		tool.setItems(Tool.values());
 		tool.setItemLabelGenerator(Tool::name); 
-		formLayout.add(name, initDate, link, tool, viewParticipantsButton, sortearPanelistasButton, sendSurveysButton);
+		formLayout.add(name, initDate, link, tool, viewParticipantsButton, sortearPanelistasButton, sendSurveysButton, sendReminderButton);
 
 
 		editorDiv.add(formLayout);
@@ -326,6 +330,9 @@ public class SurveysView extends Div implements BeforeEnterObserver {
         if (sendSurveysButton != null) {
             sendSurveysButton.setEnabled(value != null && value.getId() != null);
         }
+        if (sendReminderButton != null) {
+            sendReminderButton.setEnabled(value != null && value.getId() != null);
+        }
 	}
 
 	private void clearForm() {
@@ -344,6 +351,9 @@ public class SurveysView extends Div implements BeforeEnterObserver {
         }
         if (sendSurveysButton != null) {
             sendSurveysButton.setEnabled(false);
+        }
+        if (sendReminderButton != null) {
+            sendReminderButton.setEnabled(false);
         }
 	}
 
@@ -382,6 +392,43 @@ public class SurveysView extends Div implements BeforeEnterObserver {
             }
         }
         Notification.show(tasksCreated + " tareas de mensaje creadas para los panelistas.", 6000, Notification.Position.MIDDLE);
+    }
+
+    private void sendReminderAction() {
+        if (this.survey == null || this.survey.getId() == null) {
+            Notification.show("Por favor, seleccione una encuesta.", 3000, Notification.Position.MIDDLE);
+            return;
+        }
+
+        Optional<Survey> surveyOpt = surveyService.getWithParticipations(this.survey.getId());
+        if (surveyOpt.isEmpty()) {
+            Notification.show("Encuesta no encontrada.", 3000, Notification.Position.MIDDLE);
+            return;
+        }
+
+        Survey currentSurveyWithParticipations = surveyOpt.get();
+        Set<SurveyPanelistParticipation> participations = currentSurveyWithParticipations.getParticipations();
+
+        if (participations == null || participations.isEmpty()) {
+            Notification.show("No hay panelistas asignados a esta encuesta para enviar recordatorios.", 3000, Notification.Position.MIDDLE);
+            return;
+        }
+
+        int tasksCreated = 0;
+        for (SurveyPanelistParticipation participation : participations) {
+            Panelist panelist = participation.getPanelist();
+            if (panelist != null) {
+                MessageTask mt = new MessageTask();
+                mt.setJobType(JobType.ALCHEMER_REMINDER);
+                mt.setCreated(LocalDateTime.now());
+                mt.setStatus(MessageTaskStatus.PENDING); // Assuming PENDING exists
+                mt.setSurvey(currentSurveyWithParticipations);
+                mt.setPanelist(panelist);
+                messageTaskService.save(mt);
+                tasksCreated++;
+            }
+        }
+        Notification.show(tasksCreated + " tareas de recordatorio creadas para los panelistas.", 6000, Notification.Position.MIDDLE);
     }
 
     private void openSortearPanelistasDialog() {
