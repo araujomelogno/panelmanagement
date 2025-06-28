@@ -456,7 +456,7 @@ public class SurveysView extends Div implements BeforeEnterObserver {
         Grid<SurveyPanelistParticipation> participationsGrid = new Grid<>(SurveyPanelistParticipation.class, false);
         participationsGrid.addColumn(participation -> participation.getPanelist().getFirstName()).setHeader("Nombre Panelista").setSortable(true).setKey("panelistFirstName");
         participationsGrid.addColumn(participation -> participation.getPanelist().getLastName()).setHeader("Apellido Panelista").setSortable(true).setKey("panelistLastName");
-        participationsGrid.addColumn(participation -> participation.getPanelist().getEmail()).setHeader("Email Panelista").setSortable(true).setKey("panelistEmail"); // Added Email column
+        participationsGrid.addColumn(participation -> participation.getPanelist().getEmail()).setHeader("Email").setSortable(true).setKey("panelistEmail"); // Added Email column
         Grid.Column<SurveyPanelistParticipation> dateIncludedColumn = participationsGrid.addColumn(SurveyPanelistParticipation::getDateIncluded).setHeader("Fecha Inclusión").setSortable(true).setKey("dateIncluded");
         Grid.Column<SurveyPanelistParticipation> dateSentColumn = participationsGrid.addColumn(SurveyPanelistParticipation::getDateSent).setHeader("Fecha Ult. Envío").setSortable(true).setKey("dateSent");
         Grid.Column<SurveyPanelistParticipation> completedColumn = participationsGrid.addColumn(SurveyPanelistParticipation::isCompleted).setHeader("Completada").setSortable(true).setKey("completed");
