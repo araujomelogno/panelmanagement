@@ -107,4 +107,15 @@ public class Panelist extends AbstractEntity {
                                  .map(SurveyPanelistParticipation::getSurvey)
                                  .collect(Collectors.toSet());
     }
+
+    @OneToMany(mappedBy = "panelist", cascade = CascadeType.ALL, orphanRemoval = true)
+    private Set<MessageTask> messageTasks = new HashSet<>();
+
+    public Set<MessageTask> getMessageTasks() {
+        return messageTasks;
+    }
+
+    public void setMessageTasks(Set<MessageTask> messageTasks) {
+        this.messageTasks = messageTasks;
+    }
 }

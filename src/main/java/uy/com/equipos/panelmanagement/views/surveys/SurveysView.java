@@ -28,10 +28,14 @@ import com.vaadin.flow.component.textfield.IntegerField;
 import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.data.binder.BeanValidationBinder;
 import java.util.Collections;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 import uy.com.equipos.panelmanagement.data.Panelist;
+import uy.com.equipos.panelmanagement.data.JobType;
+import uy.com.equipos.panelmanagement.data.MessageTask;
+import uy.com.equipos.panelmanagement.data.MessageTaskStatus;
 import com.vaadin.flow.data.binder.ValidationException;
 import com.vaadin.flow.router.BeforeEnterEvent;
 import com.vaadin.flow.router.BeforeEnterObserver;
@@ -49,6 +53,7 @@ import uy.com.equipos.panelmanagement.data.SurveyPanelistParticipation; // Nueva
 import uy.com.equipos.panelmanagement.services.PanelService;
 import uy.com.equipos.panelmanagement.services.SurveyService;
 import uy.com.equipos.panelmanagement.services.SurveyPanelistParticipationService; // Nueva importación
+import uy.com.equipos.panelmanagement.services.MessageTaskService; // Nueva importación
 
 @PageTitle("Encuestas")
 @Route("surveys/:surveyID?/:action?(edit)")
@@ -79,6 +84,7 @@ public class SurveysView extends Div implements BeforeEnterObserver {
 	private Button nuevaEncuestaButton;
     private Button viewParticipantsButton;
     private Button sortearPanelistasButton; // New button for drawing panelists
+    private Button sendSurveysButton; // New button for sending surveys
 
 	private final BeanValidationBinder<Survey> binder;
 
@@ -87,11 +93,16 @@ public class SurveysView extends Div implements BeforeEnterObserver {
 	private final SurveyService surveyService;
     private final SurveyPanelistParticipationService participationService; // Nuevo servicio
     private final PanelService panelService; // Service for Panel entities
+    private final MessageTaskService messageTaskService; // Service for MessageTask entities
 
-	public SurveysView(SurveyService surveyService, SurveyPanelistParticipationService participationService, PanelService panelService) {
+	public SurveysView(SurveyService surveyService, 
+                         SurveyPanelistParticipationService participationService, 
+                         PanelService panelService,
+                         MessageTaskService messageTaskService) {
 		this.surveyService = surveyService;
         this.participationService = participationService; // Inyectar nuevo servicio
         this.panelService = panelService; // Inyectar PanelService
+        this.messageTaskService = messageTaskService; // Inyectar MessageTaskService
 		addClassNames("surveys-view");
 
 		// Initialize deleteButton EARLIER
@@ -104,6 +115,9 @@ public class SurveysView extends Div implements BeforeEnterObserver {
 
         sortearPanelistasButton = new Button("Sortear participantes");
         sortearPanelistasButton.addClickListener(e -> openSortearPanelistasDialog());
+
+        sendSurveysButton = new Button("Enviar encuestas");
+        sendSurveysButton.addClickListener(e -> sendSurveysAction());
 
 		// Configurar columnas del Grid PRIMERO
 		grid.addColumn(Survey::getName).setHeader("Nombre").setKey("name").setAutoWidth(true);
@@ -260,7 +274,7 @@ public class SurveysView extends Div implements BeforeEnterObserver {
 		tool = new ComboBox<>("Herramienta");
 		tool.setItems(Tool.values());
 		tool.setItemLabelGenerator(Tool::name); 
-		formLayout.add(name, initDate, link, tool, viewParticipantsButton,sortearPanelistasButton);
+		formLayout.add(name, initDate, link, tool, viewParticipantsButton, sortearPanelistasButton, sendSurveysButton);
 
 
 		editorDiv.add(formLayout);
@@ -309,6 +323,9 @@ public class SurveysView extends Div implements BeforeEnterObserver {
         if (sortearPanelistasButton != null) {
             sortearPanelistasButton.setEnabled(value != null && value.getId() != null);
         }
+        if (sendSurveysButton != null) {
+            sendSurveysButton.setEnabled(value != null && value.getId() != null);
+        }
 	}
 
 	private void clearForm() {
@@ -325,7 +342,47 @@ public class SurveysView extends Div implements BeforeEnterObserver {
         if (sortearPanelistasButton != null) {
             sortearPanelistasButton.setEnabled(false);
         }
+        if (sendSurveysButton != null) {
+            sendSurveysButton.setEnabled(false);
+        }
 	}
+
+    private void sendSurveysAction() {
+        if (this.survey == null || this.survey.getId() == null) {
+            Notification.show("Por favor, seleccione una encuesta.", 3000, Notification.Position.MIDDLE);
+            return;
+        }
+
+        Optional<Survey> surveyOpt = surveyService.getWithParticipations(this.survey.getId());
+        if (surveyOpt.isEmpty()) {
+            Notification.show("Encuesta no encontrada.", 3000, Notification.Position.MIDDLE);
+            return;
+        }
+
+        Survey currentSurveyWithParticipations = surveyOpt.get();
+        Set<SurveyPanelistParticipation> participations = currentSurveyWithParticipations.getParticipations();
+
+        if (participations == null || participations.isEmpty()) {
+            Notification.show("No hay panelistas asignados a esta encuesta.", 3000, Notification.Position.MIDDLE);
+            return;
+        }
+
+        int tasksCreated = 0;
+        for (SurveyPanelistParticipation participation : participations) {
+            Panelist panelist = participation.getPanelist();
+            if (panelist != null) {
+                MessageTask mt = new MessageTask();
+                mt.setJobType(JobType.ALCHEMER_INVITE);
+                mt.setCreated(LocalDateTime.now());
+                mt.setStatus(MessageTaskStatus.PENDING);
+                mt.setSurvey(currentSurveyWithParticipations);
+                mt.setPanelist(panelist);
+                messageTaskService.save(mt);
+                tasksCreated++;
+            }
+        }
+        Notification.show(tasksCreated + " tareas de mensaje creadas para los panelistas.", 6000, Notification.Position.MIDDLE);
+    }
 
     private void openSortearPanelistasDialog() {
         if (this.survey == null || this.survey.getId() == null) {
@@ -456,7 +513,7 @@ public class SurveysView extends Div implements BeforeEnterObserver {
         Grid<SurveyPanelistParticipation> participationsGrid = new Grid<>(SurveyPanelistParticipation.class, false);
         participationsGrid.addColumn(participation -> participation.getPanelist().getFirstName()).setHeader("Nombre Panelista").setSortable(true).setKey("panelistFirstName");
         participationsGrid.addColumn(participation -> participation.getPanelist().getLastName()).setHeader("Apellido Panelista").setSortable(true).setKey("panelistLastName");
-        participationsGrid.addColumn(participation -> participation.getPanelist().getEmail()).setHeader("Email").setSortable(true).setKey("panelistEmail"); // Added Email column
+        participationsGrid.addColumn(participation -> participation.getPanelist().getEmail()).setHeader("Email Panelista").setSortable(true).setKey("panelistEmail"); // Added Email column
         Grid.Column<SurveyPanelistParticipation> dateIncludedColumn = participationsGrid.addColumn(SurveyPanelistParticipation::getDateIncluded).setHeader("Fecha Inclusión").setSortable(true).setKey("dateIncluded");
         Grid.Column<SurveyPanelistParticipation> dateSentColumn = participationsGrid.addColumn(SurveyPanelistParticipation::getDateSent).setHeader("Fecha Ult. Envío").setSortable(true).setKey("dateSent");
         Grid.Column<SurveyPanelistParticipation> completedColumn = participationsGrid.addColumn(SurveyPanelistParticipation::isCompleted).setHeader("Completada").setSortable(true).setKey("completed");

@@ -41,6 +41,7 @@ public class PanelistRepositoryImpl implements PanelistRepositoryCustom {
             if (value instanceof String && ((String) value).isBlank()) continue;
 
             Subquery<Long> subquery = query.subquery(Long.class);
+            
             Root<Panelist> subqueryPanelistRoot = subquery.correlate(panelistRoot);
             Join<Panelist, PanelistPropertyValue> ppvJoin = subqueryPanelistRoot.join("propertyValues");
 
