@@ -379,14 +379,14 @@ public class SurveysView extends Div implements BeforeEnterObserver {
 
         int tasksCreated = 0;
         for (SurveyPanelistParticipation participation : participations) {
-            Panelist panelist = participation.getPanelist();
-            if (panelist != null) {
+            // Panelist panelist = participation.getPanelist(); // No longer needed directly for MessageTask
+            // if (panelist != null) { // Check if participation itself is valid if necessary
+            if (participation != null && participation.getPanelist() != null) { // Ensure participation and its panelist are not null
                 MessageTask mt = new MessageTask();
                 mt.setJobType(JobType.ALCHEMER_INVITE);
                 mt.setCreated(LocalDateTime.now());
                 mt.setStatus(MessageTaskStatus.PENDING);
-                mt.setSurvey(currentSurveyWithParticipations);
-                mt.setPanelist(panelist);
+                mt.setSurveyPanelistParticipation(participation); // Set the participation
                 messageTaskService.save(mt);
                 tasksCreated++;
             }
@@ -416,14 +416,14 @@ public class SurveysView extends Div implements BeforeEnterObserver {
 
         int tasksCreated = 0;
         for (SurveyPanelistParticipation participation : participations) {
-            Panelist panelist = participation.getPanelist();
-            if (panelist != null) {
+            // Panelist panelist = participation.getPanelist(); // No longer needed directly for MessageTask
+            // if (panelist != null) { // Check if participation itself is valid if necessary
+            if (participation != null && participation.getPanelist() != null) { // Ensure participation and its panelist are not null
                 MessageTask mt = new MessageTask();
                 mt.setJobType(JobType.ALCHEMER_REMINDER);
                 mt.setCreated(LocalDateTime.now());
                 mt.setStatus(MessageTaskStatus.PENDING); // Assuming PENDING exists
-                mt.setSurvey(currentSurveyWithParticipations);
-                mt.setPanelist(panelist);
+                mt.setSurveyPanelistParticipation(participation); // Set the participation
                 messageTaskService.save(mt);
                 tasksCreated++;
             }
