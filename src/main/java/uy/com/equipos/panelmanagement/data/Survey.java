@@ -8,8 +8,7 @@ import jakarta.validation.constraints.NotNull;
 import jakarta.persistence.CascadeType;
 import java.time.LocalDate;
 import java.util.HashSet;
-import java.util.Set;
-import uy.com.agesic.apptramites.lineadebase.domain.Tool;
+import java.util.Set; 
 
 @Entity
 public class Survey extends AbstractEntity {

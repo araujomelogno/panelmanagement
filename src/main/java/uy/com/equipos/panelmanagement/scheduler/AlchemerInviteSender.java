@@ -1,11 +1,17 @@
-package uy.com.dLocal.optimus.scheduler;
+package uy.com.equipos.panelmanagement.scheduler;
+
+import java.time.LocalDate;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -14,21 +20,15 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestTemplate;
-import uy.com.dLocal.optimus.domain.MessageTask;
-import uy.com.dLocal.optimus.domain.Panelist;
-import uy.com.dLocal.optimus.domain.SurveyPanelistParticipation;
-import uy.com.dLocal.optimus.domain.enumeration.JobType;
-import uy.com.dLocal.optimus.domain.enumeration.MessageTaskStatus;
-import uy.com.dLocal.optimus.service.MessageTaskService;
-import uy.com.dLocal.optimus.service.PanelistService;
-import uy.com.dLocal.optimus.service.SurveyPanelistParticipationService;
 
-import java.time.Instant;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import uy.com.equipos.panelmanagement.data.JobType;
+import uy.com.equipos.panelmanagement.data.MessageTask;
+import uy.com.equipos.panelmanagement.data.MessageTaskStatus;
+import uy.com.equipos.panelmanagement.data.Panelist;
+import uy.com.equipos.panelmanagement.data.SurveyPanelistParticipation;
+import uy.com.equipos.panelmanagement.services.MessageTaskService;
+import uy.com.equipos.panelmanagement.services.PanelistService;
+import uy.com.equipos.panelmanagement.services.SurveyPanelistParticipationService;
 
 @Component
 @EnableScheduling
@@ -67,11 +67,11 @@ public class AlchemerInviteSender {
             JobType.ALCHEMER_INVITE,
             MessageTaskStatus.PENDING
         );
-
+//
         for (MessageTask task : pendingTasks) {
             try {
                 log.info("Procesando MessageTask ID: {}", task.getId());
-                Optional<SurveyPanelistParticipation> participationOpt = surveyPanelistParticipationService.findOne(task.getSurveyPanelistParticipation().getId());
+                Optional<SurveyPanelistParticipation> participationOpt = surveyPanelistParticipationService.get(task.getSurveyPanelistParticipation().getId());
 
                 if (participationOpt.isEmpty()) {
                     log.error("No se encontró SurveyPanelistParticipation para MessageTask ID: {}", task.getId());
@@ -120,10 +120,10 @@ public class AlchemerInviteSender {
 
                 // 9. Si la invocación del paso anterior es exitosa
                 if (invitationSent) {
-                    panelist.setLastContacted(Instant.now());
+                    panelist.setLastContacted(LocalDate.now());
                     panelistService.save(panelist);
 
-                    participation.setDateSent(Instant.now());
+                    participation.setDateSent(LocalDate.now());
                     surveyPanelistParticipationService.save(participation);
 
                     task.setStatus(MessageTaskStatus.DONE);

@@ -50,7 +50,6 @@ import com.vaadin.flow.router.Route;
 import com.vaadin.flow.spring.data.VaadinSpringDataHelpers;
 
 import jakarta.annotation.security.PermitAll;
-import uy.com.agesic.apptramites.lineadebase.domain.Tool;
 import uy.com.equipos.panelmanagement.data.Panel;
 import uy.com.equipos.panelmanagement.data.Panelist;
 import uy.com.equipos.panelmanagement.data.PanelistProperty;
@@ -59,6 +58,7 @@ import uy.com.equipos.panelmanagement.data.PanelistPropertyCodeRepository;
 import uy.com.equipos.panelmanagement.data.PanelistPropertyValue; // Added
 import uy.com.equipos.panelmanagement.data.PropertyType;
 import uy.com.equipos.panelmanagement.data.Survey;
+import uy.com.equipos.panelmanagement.data.Tool;
 import uy.com.equipos.panelmanagement.services.PanelService; // Added
 import uy.com.equipos.panelmanagement.services.PanelistPropertyService;
 import uy.com.equipos.panelmanagement.services.PanelistPropertyValueService;

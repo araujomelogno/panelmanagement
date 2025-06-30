@@ -1,7 +1,12 @@
 package uy.com.equipos.panelmanagement.views.surveys;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 import org.springframework.orm.ObjectOptimisticLockingFailureException;
 import org.vaadin.lineawesome.LineAwesomeIconUrl;
@@ -27,15 +32,6 @@ import com.vaadin.flow.component.splitlayout.SplitLayout;
 import com.vaadin.flow.component.textfield.IntegerField;
 import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.data.binder.BeanValidationBinder;
-import java.util.Collections;
-import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Set;
-import uy.com.equipos.panelmanagement.data.Panelist;
-import uy.com.equipos.panelmanagement.data.JobType;
-import uy.com.equipos.panelmanagement.data.MessageTask;
-import uy.com.equipos.panelmanagement.data.MessageTaskStatus;
 import com.vaadin.flow.data.binder.ValidationException;
 import com.vaadin.flow.router.BeforeEnterEvent;
 import com.vaadin.flow.router.BeforeEnterObserver;
@@ -45,15 +41,19 @@ import com.vaadin.flow.router.Route;
 import com.vaadin.flow.spring.data.VaadinSpringDataHelpers;
 
 import jakarta.annotation.security.PermitAll;
-import uy.com.agesic.apptramites.lineadebase.domain.Tool;
+import uy.com.equipos.panelmanagement.data.JobType;
+import uy.com.equipos.panelmanagement.data.MessageTask;
+import uy.com.equipos.panelmanagement.data.MessageTaskStatus;
 import uy.com.equipos.panelmanagement.data.Panel;
+import uy.com.equipos.panelmanagement.data.Panelist;
 // import uy.com.equipos.panelmanagement.data.Panelist; // Ya no se usa directamente aquí
 import uy.com.equipos.panelmanagement.data.Survey;
 import uy.com.equipos.panelmanagement.data.SurveyPanelistParticipation; // Nueva importación
-import uy.com.equipos.panelmanagement.services.PanelService;
-import uy.com.equipos.panelmanagement.services.SurveyService;
-import uy.com.equipos.panelmanagement.services.SurveyPanelistParticipationService; // Nueva importación
+import uy.com.equipos.panelmanagement.data.Tool;
 import uy.com.equipos.panelmanagement.services.MessageTaskService; // Nueva importación
+import uy.com.equipos.panelmanagement.services.PanelService;
+import uy.com.equipos.panelmanagement.services.SurveyPanelistParticipationService; // Nueva importación
+import uy.com.equipos.panelmanagement.services.SurveyService;
 
 @PageTitle("Encuestas")
 @Route("surveys/:surveyID?/:action?(edit)")
