@@ -144,76 +144,181 @@ public class AlchemerInviteSender {
         log.info("Finalizada tarea AlchemerInviteSender. Tareas procesadas: {}", pendingTasks.size());
     }
 
-    private String getContactId(String surveyLinkOrCampaignId, String email) {
-        String campaignId = extractCampaignId(surveyLinkOrCampaignId);
-        String url = String.format("%s/v5/surveycampaign/%s/contact?email=%s&api_token=%s&api_token_secret=%s",
-                                   ALCHEMER_API_BASE_URL, campaignId, email, apiToken, apiTokenSecret);
+    private String getContactId(String surveyLinkOrSurveyId, String email) {
+        String extractedId = extractCampaignId(surveyLinkOrSurveyId); // Assumed to be survey_id and used as campaign_id for default campaign
+
+        // V5 SurveyContact API: GET /v5/survey/{survey_id}/surveycampaign/{campaign_id}/surveycontact
+        // Filter by email: ?filter[field][0]=email_address&filter[operator][0]==&filter[value][0]={email}
+
+        UriComponentsBuilder builder = UriComponentsBuilder.fromHttpUrl(ALCHEMER_API_BASE_URL)
+            .pathSegment("v5", "survey", extractedId, "surveycampaign", extractedId, "surveycontact")
+            .queryParam("filter[field][0]", "email_address")
+            .queryParam("filter[operator][0]", "==")
+            .queryParam("filter[value][0]", email) // email value will be URL encoded by the builder
+            .queryParam("api_token", apiToken)
+            .queryParam("api_token_secret", apiTokenSecret);
+
+        String url = builder.toUriString();
+        log.debug("getContactId URL: {}", url);
+
         try {
             ResponseEntity<Map> response = restTemplate.getForEntity(url, Map.class);
+
             if (response.getStatusCode() == HttpStatus.OK && response.getBody() != null) {
-                List<Map<String, Object>> data = (List<Map<String, Object>>) response.getBody().get("data");
-                if (data != null && !data.isEmpty()) {
-                    return String.valueOf(data.get(0).get("id"));
+                log.debug("getContactId response body: {}", response.getBody());
+                if (Boolean.TRUE.equals(response.getBody().get("result_ok"))) {
+                    Object dataObj = response.getBody().get("data");
+                    if (dataObj instanceof List) {
+                        List<Map<String, Object>> dataList = (List<Map<String, Object>>) dataObj;
+                        if (!dataList.isEmpty()) {
+                            // Assuming the first contact found is the correct one
+                            Map<String, Object> contactData = dataList.get(0);
+                            log.info("Contacto encontrado para email {}: ID {}", email, contactData.get("id"));
+                            return String.valueOf(contactData.get("id"));
+                        } else {
+                            log.info("Contacto con email {} no encontrado en campaña {} (survey_id {}) (lista vacía).", email, extractedId, extractedId);
+                        }
+                    } else if (dataObj instanceof Map) {
+                        // Less common for list endpoints, but handle if API returns single object if only one found
+                        Map<String, Object> contactData = (Map<String, Object>) dataObj;
+                         if (contactData.containsKey("id") && email.equalsIgnoreCase(String.valueOf(contactData.get("email_address")))) {
+                            log.info("Contacto encontrado para email {}: ID {}", email, contactData.get("id"));
+                            return String.valueOf(contactData.get("id"));
+                        }
+                    } else {
+                        log.info("Contacto con email {} no encontrado en campaña {} (survey_id {}) (formato de 'data' inesperado). Respuesta: {}", email, extractedId, extractedId, response.getBody());
+                    }
+                } else {
+                    log.warn("API call para getContactId no fue exitosa (result_ok=false) para email {}. Campaña/Survey ID {}. Respuesta: {}", email, extractedId, response.getBody());
                 }
+            } else {
+                 log.warn("Respuesta no OK del servidor ({}) al buscar contacto {} en campaña {} (survey_id {}).", response.getStatusCode(), email, extractedId, extractedId);
             }
         } catch (HttpClientErrorException e) {
-            if (e.getStatusCode() != HttpStatus.NOT_FOUND) {
-                log.error("Error al verificar contacto {} en campaña {}: {}", email, campaignId, e.getMessage());
+            if (e.getStatusCode() == HttpStatus.NOT_FOUND) {
+                log.info("Contacto {} no encontrado (HTTP 404) en campaña {} (survey_id {}).", email, extractedId, extractedId);
+            } else {
+                log.error("Error (HttpClientErrorException) al verificar contacto {} en campaña {} (survey_id {}): {} - {}", email, extractedId, extractedId, e.getStatusCode(), e.getResponseBodyAsString());
             }
-        } catch (Exception e) {
-            log.error("Excepción inesperada al verificar contacto {} en campaña {}: {}", email, campaignId, e.getMessage(), e);
+        } catch (org.springframework.web.client.RestClientException e) {
+            log.error("Error (RestClientException) al verificar contacto {} en campaña {} (survey_id {}): {}", email, extractedId, extractedId, e.getMessage(), e);
         }
         return null;
     }
 
-    private String addContactToCampaign(String surveyLinkOrCampaignId, String email, String firstName, String lastName) {
-        String campaignId = extractCampaignId(surveyLinkOrCampaignId);
-        String url = String.format("%s/v5/surveycampaign/%s/contact?api_token=%s&api_token_secret=%s",
-                                   ALCHEMER_API_BASE_URL, campaignId, apiToken, apiTokenSecret);
+    private String addContactToCampaign(String surveyLinkOrSurveyId, String email, String firstName, String lastName) {
+        String extractedId = extractCampaignId(surveyLinkOrSurveyId); // Assumed survey_id, used as campaign_id
 
-        Map<String, String> body = new HashMap<>();
-        body.put("email", email);
-        body.put("first_name", firstName);
-        body.put("last_name", lastName);
+        // V5 SurveyContact CREATE: PUT /v5/survey/{s_id}/surveycampaign/{c_id}/surveycontact
+        // Contact data as URL parameters.
+        UriComponentsBuilder builder = UriComponentsBuilder.fromHttpUrl(ALCHEMER_API_BASE_URL)
+            .pathSegment("v5", "survey", extractedId, "surveycampaign", extractedId, "surveycontact")
+            .queryParam("api_token", apiToken)
+            .queryParam("api_token_secret", apiTokenSecret)
+            .queryParam("email_address", email) // Parameter names from Alchemer docs
+            .queryParam("first_name", firstName)
+            .queryParam("last_name", lastName);
+            // The Alchemer documentation for "CREATE CONTACT" for SurveyContact shows:
+            // .../surveycontact/?_method=PUT&email_address=...
+            // This implies that even if we make a PUT request, they might still expect _method=PUT.
+            // However, this is usually for clients that can't make true PUT requests.
+            // For RestTemplate, a direct PUT should be fine. If issues arise, adding _method=PUT can be tested.
+            // builder.queryParam("_method", "PUT"); // Not adding this initially.
+
+        String url = builder.toUriString();
+        log.debug("addContactToCampaign URL: {}", url);
 
         HttpHeaders headers = new HttpHeaders();
-        headers.setContentType(MediaType.APPLICATION_JSON);
-        HttpEntity<Map<String, String>> request = new HttpEntity<>(body, headers);
+        // For PUT with all data in URL parameters, the body is typically empty.
+        // Alchemer docs don't specify Content-Type for this, but form-urlencoded is a safe default if any is needed.
+        headers.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
+        HttpEntity<Void> requestEntity = new HttpEntity<>(null, headers); // Empty body
 
         try {
-            ResponseEntity<Map> response = restTemplate.postForEntity(url, request, Map.class);
+            // Using exchange for PUT to get ResponseEntity back, enabling access to response body and status.
+            ResponseEntity<Map> response = restTemplate.exchange(url, HttpMethod.PUT, requestEntity, Map.class);
+
             if (response.getStatusCode() == HttpStatus.OK && response.getBody() != null) {
-                Map<String, Object> data = (Map<String, Object>) response.getBody().get("data");
-                if (data != null && data.containsKey("id")) {
-                    return String.valueOf(data.get("id"));
+                log.debug("addContactToCampaign response body: {}", response.getBody());
+                // Expected response: { "result_ok": true, "data": { "id": "NEW_CONTACT_ID", ... } }
+                if (Boolean.TRUE.equals(response.getBody().get("result_ok"))) {
+                    Object dataObj = response.getBody().get("data");
+                    if (dataObj instanceof Map) {
+                        Map<String, Object> dataMap = (Map<String, Object>) dataObj;
+                        if (dataMap.containsKey("id")) {
+                            String newContactId = String.valueOf(dataMap.get("id"));
+                            log.info("Contacto {} agregado/actualizado en campaña {} (survey_id {}). Nuevo ContactID: {}", email, extractedId, extractedId, newContactId);
+                            return newContactId;
+                        } else {
+                            log.error("Respuesta OK pero sin ID de contacto al agregar {} a campaña {} (survey_id {}). Respuesta: {}", email, extractedId, extractedId, response.getBody());
+                        }
+                    } else {
+                        log.error("Formato de 'data' inesperado al agregar contacto {}. Respuesta: {}", email, response.getBody());
+                    }
+                } else {
+                    log.error("Error en la respuesta de Alchemer (result_ok false) al agregar contacto {}: {}", email, response.getBody());
                 }
+            } else {
+                 log.error("Error del servidor ({}) al agregar contacto {} a campaña {} (survey_id {}). Body: {}", response.getStatusCode(), email, extractedId, extractedId, response.getBody());
             }
-        } catch (Exception e) {
-            log.error("Error al agregar contacto {} a campaña {}: {}", email, campaignId, e.getMessage(), e);
+        } catch (HttpClientErrorException e) {
+            log.error("Error (HttpClientErrorException) al agregar contacto {} a campaña {} (survey_id {}): {} - {}", email, extractedId, extractedId, e.getStatusCode(), e.getResponseBodyAsString());
+        } catch (org.springframework.web.client.RestClientException e) {
+            log.error("Error (RestClientException) al agregar contacto {} a campaña {} (survey_id {}): {}", email, extractedId, extractedId, e.getMessage(), e);
         }
         return null;
     }
 
-    private boolean sendInvitation(String surveyLinkOrCampaignId, String contactId) {
-        String campaignId = extractCampaignId(surveyLinkOrCampaignId);
-        String url = String.format("%s/v5/surveycampaign/%s/send?api_token=%s&api_token_secret=%s",
-                                   ALCHEMER_API_BASE_URL, campaignId, apiToken, apiTokenSecret);
+    private boolean sendInvitation(String surveyLinkOrSurveyId, String contactId) {
+        String extractedId = extractCampaignId(surveyLinkOrSurveyId); // Assumed survey_id, also used as campaign_id for the default/target campaign
 
-        Map<String, List<String>> body = new HashMap<>();
-        body.put("contact_ids", Collections.singletonList(contactId));
+        // The current code uses: POST /v5/surveycampaign/{campaignId}/send
+        // with JSON body {"contact_ids": ["CONTACT_ID"]}.
+        // This endpoint is not explicitly detailed in the main V5 object documentation (SurveyCampaign, EmailMessage).
+        // However, it might be a valid simplified endpoint for sending a default campaign message.
+        // We will proceed with this structure, ensuring correct IDs and improving response handling.
+        // If this proves incorrect, a more complex method involving specific EmailMessage IDs would be needed.
+
+        UriComponentsBuilder builder = UriComponentsBuilder.fromHttpUrl(ALCHEMER_API_BASE_URL)
+            .pathSegment("v5", "surveycampaign", extractedId, "send")
+            .queryParam("api_token", apiToken)
+            .queryParam("api_token_secret", apiTokenSecret);
+
+        String url = builder.toUriString();
+        log.debug("sendInvitation URL: {}", url);
+
+        Map<String, List<String>> requestBody = new HashMap<>();
+        // Sticking with "contact_ids" as per the original code. If issues occur,
+        // "sps_contact_ids" could be an alternative to test based on some Alchemer examples.
+        requestBody.put("contact_ids", Collections.singletonList(contactId));
 
         HttpHeaders headers = new HttpHeaders();
-        headers.setContentType(MediaType.APPLICATION_JSON);
-        HttpEntity<Map<String, List<String>>> request = new HttpEntity<>(body, headers);
+        headers.setContentType(MediaType.APPLICATION_JSON); // Body is JSON
+        HttpEntity<Map<String, List<String>>> requestEntity = new HttpEntity<>(requestBody, headers);
 
         try {
-            ResponseEntity<Map> response = restTemplate.postForEntity(url, request, Map.class);
-            // La API de Alchemer devuelve 200 OK incluso si hay problemas parciales,
-            // pero para un solo contacto, un 200 debería ser suficiente.
-            // Se podría mejorar parseando la respuesta para más detalles.
-            return response.getStatusCode() == HttpStatus.OK;
-        } catch (Exception e) {
-            log.error("Error al enviar invitación al contacto {} en campaña {}: {}", contactId, campaignId, e.getMessage(), e);
+            ResponseEntity<Map> response = restTemplate.postForEntity(url, requestEntity, Map.class);
+
+            if (response.getStatusCode() == HttpStatus.OK && response.getBody() != null) {
+                log.debug("sendInvitation response body: {}", response.getBody());
+                // Successful response typically: {"result_ok":true,"data":{"QUEUED":"1"}}
+                // Error example: {"result_ok":false,"message":"No valid contacts selected."}
+                if (Boolean.TRUE.equals(response.getBody().get("result_ok"))) {
+                    // Further check data if necessary, e.g., data.QUEUED > 0
+                    // For now, result_ok:true is the primary success indicator.
+                    log.info("Invitación para contacto {} en campaña {} (survey_id {}) procesada para envío. Respuesta: {}", contactId, extractedId, extractedId, response.getBody());
+                    return true;
+                } else {
+                    log.error("Error en la respuesta de Alchemer (result_ok false) al enviar invitación a ContactID {}, CampaignID/SurveyID {}. Respuesta: {}", contactId, extractedId, response.getBody());
+                    return false;
+                }
+            } else {
+                 log.error("Error del servidor ({}) al enviar invitación a contacto {} en campaña {} (survey_id {}). Body: {}", response.getStatusCode(), contactId, extractedId, extractedId, response.getBody());
+            }
+        } catch (HttpClientErrorException e) {
+            log.error("Error (HttpClientErrorException) al enviar invitación a contacto {} en campaña {} (survey_id {}): {} - {}", contactId, extractedId, extractedId, e.getStatusCode(), e.getResponseBodyAsString());
+        } catch (org.springframework.web.client.RestClientException e) {
+            log.error("Error (RestClientException) al enviar invitación a contacto {} en campaña {} (survey_id {}): {}", contactId, extractedId, extractedId, e.getMessage(), e);
         }
         return false;
     }
