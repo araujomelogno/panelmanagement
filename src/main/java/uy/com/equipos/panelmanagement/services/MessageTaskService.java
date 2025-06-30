@@ -4,6 +4,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import uy.com.equipos.panelmanagement.data.MessageTask;
 import uy.com.equipos.panelmanagement.data.MessageTaskRepository;
+import uy.com.equipos.panelmanagement.data.JobType;
+import uy.com.equipos.panelmanagement.data.MessageTaskStatus;
+import java.util.List;
 
 @Service
 public class MessageTaskService {
@@ -17,6 +20,10 @@ public class MessageTaskService {
 
     public MessageTask save(MessageTask messageTask) {
         return repository.save(messageTask);
+    }
+
+    public List<MessageTask> findAllByJobTypeAndStatus(JobType jobType, MessageTaskStatus status) {
+        return repository.findAllByJobTypeAndStatus(jobType, status);
     }
 
     // Optional: Add other common service methods like list, get, delete if needed for future use.
