@@ -298,66 +298,120 @@ public class AlchemerInviteSender {
 		return null;
 	}
 
-	private boolean sendInvitation(String surveyLinkOrSurveyId, String contactId) {
-		String campaignId = extractCampaignId(surveyLinkOrSurveyId);
-		if (campaignId == null) {
-			log.warn("sendInvitation: Campaign ID not found via extractCampaignId for input: {}. Attempting to use Survey ID as fallback.", surveyLinkOrSurveyId);
-			campaignId = extractSurveyId(surveyLinkOrSurveyId);
-			if (campaignId == null) {
-				log.error("sendInvitation: Could not extract any usable ID (Campaign or Survey) from input: {} for sendInvitation", surveyLinkOrSurveyId);
-				return false;
-			}
-		}
-
-		// The current code uses: POST /v5/surveycampaign/{campaignId}/send
-		// with JSON body {"contact_ids": ["CONTACT_ID"]}.
-		// This endpoint is not explicitly detailed in the main V5 object documentation
-		// (SurveyCampaign, EmailMessage).
-		// However, it might be a valid simplified endpoint for sending a default campaign message.
-		// We will proceed with this structure, ensuring correct IDs and improving response handling.
-
+	private String getEmailMessageIdToSend(String surveyId, String campaignId) {
+		// Construct URL for GET /v5/survey/{surveyId}/surveycampaign/{campaignId}/emailmessage
 		UriComponentsBuilder builder = UriComponentsBuilder.fromHttpUrl(ALCHEMER_API_BASE_URL)
-				.pathSegment("v5", "surveycampaign", campaignId, "send").queryParam("api_token", apiToken)
-				.queryParam("api_token_secret", apiTokenSecret);
+			.pathSegment("v5", "survey", surveyId, "surveycampaign", campaignId, "emailmessage")
+			.queryParam("api_token", apiToken)
+			.queryParam("api_token_secret", apiTokenSecret);
 
 		String url = builder.toUriString();
-		log.debug("sendInvitation URL: {}", url);
-
-		Map<String, List<String>> requestBody = new HashMap<>();
-		requestBody.put("contact_ids", Collections.singletonList(contactId));
-
-		HttpHeaders headers = new HttpHeaders();
-		headers.setContentType(MediaType.APPLICATION_JSON);
-		HttpEntity<Map<String, List<String>>> requestEntity = new HttpEntity<>(requestBody, headers);
+		log.debug("getEmailMessageIdToSend URL: {}", url);
 
 		try {
-			ResponseEntity<Map> response = restTemplate.postForEntity(url, requestEntity, Map.class);
+			ResponseEntity<Map> response = restTemplate.getForEntity(url, Map.class);
 
 			if (response.getStatusCode() == HttpStatus.OK && response.getBody() != null) {
-				log.debug("sendInvitation response body: {}", response.getBody());
+				log.debug("getEmailMessageIdToSend response body: {}", response.getBody());
 				if (Boolean.TRUE.equals(response.getBody().get("result_ok"))) {
-					log.info(
-							"Invitación para contacto {} en CampaignID {} procesada para envío. Respuesta: {}",
-							contactId, campaignId, response.getBody());
+					Object dataObj = response.getBody().get("data");
+					if (dataObj instanceof List) {
+						@SuppressWarnings("unchecked") // Checked by instanceof
+						List<Map<String, Object>> messages = (List<Map<String, Object>>) dataObj;
+						for (Map<String, Object> message : messages) {
+							// Look for the first message of subtype "message" (initial invite)
+							if ("message".equalsIgnoreCase(String.valueOf(message.get("subtype")))) {
+								String messageId = String.valueOf(message.get("id"));
+								log.info("Found EmailMessage ID {} of subtype 'message' for CampaignID {}", messageId, campaignId);
+								return messageId;
+							}
+						}
+						log.warn("No EmailMessage with subtype 'message' found for CampaignID {}", campaignId);
+					} else {
+						log.warn("EmailMessage list not found or in unexpected format for CampaignID {}. Response: {}", campaignId, response.getBody());
+					}
+				} else {
+					log.warn("API call for getEmailMessageIdToSend was not successful (result_ok=false) for CampaignID {}. Response: {}", campaignId, response.getBody());
+				}
+			} else {
+				log.warn("Server error ({}) while fetching email messages for CampaignID {}", response.getStatusCode(), campaignId);
+			}
+		} catch (HttpClientErrorException e) {
+			log.error("Error (HttpClientErrorException) fetching email messages for CampaignID {}: {} - {}",
+					campaignId, e.getStatusCode(), e.getResponseBodyAsString(), e);
+		} catch (org.springframework.web.client.RestClientException e) {
+			log.error("Error (RestClientException) fetching email messages for CampaignID {}: {}", campaignId, e.getMessage(), e);
+		}
+		return null;
+	}
+
+	private boolean sendInvitation(String surveyLinkOrSurveyId, String contactId) { // contactId is no longer directly used in the API call here but good for logging
+		String surveyId = extractSurveyId(surveyLinkOrSurveyId);
+		String campaignId = extractCampaignId(surveyLinkOrSurveyId);
+
+		if (surveyId == null) {
+			log.error("sendInvitation: Could not extract Survey ID from input: {}", surveyLinkOrSurveyId);
+			return false;
+		}
+		if (campaignId == null) {
+			// Fallback for campaignId if not directly found in link (though extractCampaignId should handle most cases)
+			log.warn("sendInvitation: Campaign ID not directly found via extractCampaignId for input: {}. Using Survey ID {} as fallback campaign context.", surveyLinkOrSurveyId, surveyId);
+			campaignId = surveyId; // Should ideally not happen if extractCampaignId is robust
+		}
+
+		String messageId = getEmailMessageIdToSend(surveyId, campaignId);
+		if (messageId == null) {
+			log.error("sendInvitation: Could not retrieve an EmailMessage ID to send for SurveyID {} and CampaignID {}. ContactID {} will not be invited at this time.", surveyId, campaignId, contactId);
+			return false;
+		}
+
+		// UPDATE EmailMessage with send=true
+		// POST /v5/survey/{surveyId}/surveycampaign/{campaignId}/emailmessage/{messageId}?send=true
+		UriComponentsBuilder builder = UriComponentsBuilder.fromHttpUrl(ALCHEMER_API_BASE_URL)
+			.pathSegment("v5", "survey", surveyId, "surveycampaign", campaignId, "emailmessage", messageId)
+			.queryParam("api_token", apiToken)
+			.queryParam("api_token_secret", apiTokenSecret)
+			.queryParam("send", "true"); // Parameter to trigger the send
+			// The Alchemer docs for EmailMessage Update show _method=POST as a query param:
+			// https://apihelp.alchemer.com/help/emailmessage-sub-object-v5#updateobject
+			// ".../emailmessage/100000?_method=POST"
+			// It's safer to include it if their server relies on it for routing or processing.
+			builder.queryParam("_method", "POST");
+
+
+		String url = builder.toUriString();
+		log.info("sendInvitation (Update EmailMessage to send) URL: {}", url); // Changed to INFO for better visibility
+
+		HttpHeaders headers = new HttpHeaders();
+		// Parameters are in the URL, so body can be empty.
+		// Content-Type for POSTs with URL parameters is typically application/x-www-form-urlencoded
+		headers.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
+		HttpEntity<String> requestEntity = new HttpEntity<>(null, headers); // Empty body
+
+		try {
+			ResponseEntity<Map> response = restTemplate.exchange(url, HttpMethod.POST, requestEntity, Map.class);
+
+			if (response.getStatusCode() == HttpStatus.OK && response.getBody() != null) {
+				log.debug("sendInvitation (Update EmailMessage) response body: {}", response.getBody());
+				if (Boolean.TRUE.equals(response.getBody().get("result_ok"))) {
+					log.info("Invitation for ContactID {} via EmailMessageID {} in CampaignID {} successfully triggered for sending. SurveyID: {}",
+							contactId, messageId, campaignId, surveyId);
 					return true;
 				} else {
-					log.error(
-							"Error en la respuesta de Alchemer (result_ok false) al enviar invitación a ContactID {}, CampaignID {}. Respuesta: {}",
-							contactId, campaignId, response.getBody());
+					log.error("API error (result_ok=false) when triggering send for EmailMessageID {} (CampaignID {}). ContactID {}. Response: {}",
+							messageId, campaignId, contactId, response.getBody());
 					return false;
 				}
 			} else {
-				log.error(
-						"Error del servidor ({}) al enviar invitación a contacto {} en CampaignID {}. Body: {}",
-						response.getStatusCode(), contactId, campaignId, response.getBody());
+				log.error("Server error ({}) when triggering send for EmailMessageID {} (CampaignID {}). ContactID {}. Body: {}",
+						response.getStatusCode(), messageId, campaignId, contactId, response.getBody());
 			}
 		} catch (HttpClientErrorException e) {
-			log.error(
-					"Error (HttpClientErrorException) al enviar invitación a contacto {} en CampaignID {}: {} - {}",
-					contactId, campaignId, e.getStatusCode(), e.getResponseBodyAsString());
+			log.error("Error (HttpClientErrorException) triggering send for EmailMessageID {} (CampaignID {}). ContactID {}: {} - {}",
+					messageId, campaignId, contactId, e.getStatusCode(), e.getResponseBodyAsString(), e);
 		} catch (org.springframework.web.client.RestClientException e) {
-			log.error("Error (RestClientException) al enviar invitación a contacto {} en CampaignID {}: {}",
-					contactId, campaignId, e.getMessage(), e);
+			log.error("Error (RestClientException) triggering send for EmailMessageID {} (CampaignID {}). ContactID {}: {}",
+					messageId, campaignId, contactId, e.getMessage(), e);
 		}
 		return false;
 	}
