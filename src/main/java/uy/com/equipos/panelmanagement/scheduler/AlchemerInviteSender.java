@@ -60,14 +60,14 @@ public class AlchemerInviteSender {
         this.restTemplate = new RestTemplate();
     }
 
-    @Scheduled(cron = "0 */5 * * * ?")
+    @Scheduled(cron = "*/30 * * * * *")
     public void sendInvites() {
         log.info("Iniciando tarea AlchemerInviteSender");
         List<MessageTask> pendingTasks = messageTaskService.findAllByJobTypeAndStatus(
             JobType.ALCHEMER_INVITE,
             MessageTaskStatus.PENDING
         );
-//
+
         for (MessageTask task : pendingTasks) {
             try {
                 log.info("Procesando MessageTask ID: {}", task.getId());
