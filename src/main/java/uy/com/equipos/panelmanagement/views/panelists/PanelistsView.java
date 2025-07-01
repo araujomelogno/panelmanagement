@@ -239,9 +239,7 @@ public class PanelistsView extends Div implements BeforeEnterObserver {
 		firstNameFilter.addValueChangeListener(e -> grid.getDataProvider().refreshAll());
 		lastNameFilter.addValueChangeListener(e -> grid.getDataProvider().refreshAll());
 		emailFilter.addValueChangeListener(e -> grid.getDataProvider().refreshAll());
-		phoneFilter.addValueChangeListener(e -> grid.getDataProvider().refreshAll());
-		// dateOfBirthFilter.addValueChangeListener(e -> grid.getDataProvider().refreshAll()); // Removed
-		// occupationFilter.addValueChangeListener(e -> grid.getDataProvider().refreshAll()); // Removed
+		phoneFilter.addValueChangeListener(e -> grid.getDataProvider().refreshAll()); 
 		lastContactedFilter.addValueChangeListener(e -> grid.getDataProvider().refreshAll());
 		lastInterviewedFilter.addValueChangeListener(e -> grid.getDataProvider().refreshAll());
 
@@ -358,7 +356,10 @@ public class PanelistsView extends Div implements BeforeEnterObserver {
 		// dateOfBirth = new DatePicker("Fecha de Nacimiento"); // Removed
 		// occupation = new TextField("Ocupación"); // Removed
 		lastContacted = new DatePicker("Último Contacto");
+		lastContacted.setReadOnly(true);
 		lastInterviewed = new DatePicker("Última Encueesta");
+		lastInterviewed.setReadOnly(true);
+		
 		// START: Add properties field - Removed
 		// propertiesField = new MultiSelectListBox<>(); // Removed
 		// propertiesField.setItems(panelistPropertyService.findAll()); // Removed
