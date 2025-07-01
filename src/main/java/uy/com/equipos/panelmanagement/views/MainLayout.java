@@ -87,7 +87,8 @@ public class MainLayout extends AppLayout {
 
         // Add "Configuración" with "Usuarios" as a sub-item
         SideNavItem configuracionItem = new SideNavItem("Configuración");
-        configuracionItem.addItem(new SideNavItem("Usuarios", "usuarios")); // Assuming "usuarios" is the path
+        configuracionItem.addItem(new SideNavItem("Usuarios", "users")); // Corrected path
+
         nav.addItem(configuracionItem);
 
         return nav;
