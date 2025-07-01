@@ -87,8 +87,10 @@ public class MainLayout extends AppLayout {
 
         // Add "Configuración" with "Usuarios" as a sub-item
         SideNavItem configuracionItem = new SideNavItem("Configuración");
-        configuracionItem.addItem(new SideNavItem("Usuarios", "users")); // Corrected path
-
+        configuracionItem.setPrefixComponent(new Icon("vaadin", "tools"));
+        SideNavItem usuariosItem = new SideNavItem("Usuarios", "users");
+        usuariosItem.setPrefixComponent(new Icon("vaadin", "users"));
+        configuracionItem.addItem(usuariosItem);
         nav.addItem(configuracionItem);
 
         return nav;
