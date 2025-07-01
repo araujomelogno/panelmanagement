@@ -1,8 +1,6 @@
 package uy.com.equipos.panelmanagement.scheduler;
 
 import java.time.LocalDate;
-import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -61,7 +59,8 @@ public class AlchemerInviteSender {
 		this.restTemplate = new RestTemplate();
 	}
 
-	@Scheduled(cron = "*/30 * * * * *")
+	//@Scheduled(cron = "*/30 * * * * *")
+	@Scheduled(cron = "0 */5 * * * *")
 	public void sendInvites() {
 		log.info("Iniciando tarea AlchemerInviteSender");
 		List<MessageTask> pendingTasks = messageTaskService.findAllByJobTypeAndStatus(JobType.ALCHEMER_INVITE,
@@ -106,18 +105,18 @@ public class AlchemerInviteSender {
 				// 7. si no existe el email en la campaña , se deberá agregar el contacto.
 				if (contactId == null) {
 					contactId = addContactToCampaign(surveyLink, email, firstName, lastName);
-				}
+					if (contactId == null) {
+						log.error(
+								"No se pudo obtener o crear el ContactID para el email: {} en la campaña del survey link: {}",
+								email, surveyLink);
+						task.setStatus(MessageTaskStatus.ERROR);
+						messageTaskService.save(task);
+						continue;
+					}
 
-				if (contactId == null) {
-					log.error(
-							"No se pudo obtener o crear el ContactID para el email: {} en la campaña del survey link: {}",
-							email, surveyLink);
-					task.setStatus(MessageTaskStatus.ERROR);
-					messageTaskService.save(task);
-					continue;
+					
 				}
-
-				// 8. Enviar la invitación
+				// 8. Enviar la invitación (solo envia si no lo envio antes) 
 				boolean invitationSent = sendInvitation(surveyLink, contactId);
 
 				// 9. Si la invocación del paso anterior es exitosa
@@ -155,7 +154,9 @@ public class AlchemerInviteSender {
 			return null;
 		}
 		if (campaignId == null) {
-			log.warn("getContactId: Campaign ID could not be extracted from input: {}. Defaulting to Survey ID for campaign context.", surveyLinkOrSurveyId);
+			log.warn(
+					"getContactId: Campaign ID could not be extracted from input: {}. Defaulting to Survey ID for campaign context.",
+					surveyLinkOrSurveyId);
 			campaignId = surveyId; // Default to surveyId if campaignId is not specifically found
 		}
 
@@ -166,7 +167,7 @@ public class AlchemerInviteSender {
 
 		UriComponentsBuilder builder = UriComponentsBuilder.fromHttpUrl(ALCHEMER_API_BASE_URL)
 				.pathSegment("v5", "survey", surveyId, "surveycampaign", campaignId, "surveycontact")
-				.queryParam("filter[field][0]", "email_address").queryParam("filter[operator][0]", "==")
+				.queryParam("filter[field][0]", "semailaddress").queryParam("filter[operator][0]", "=")
 				.queryParam("filter[value][0]", email) // email value will be URL encoded by the builder
 				.queryParam("api_token", apiToken).queryParam("api_token_secret", apiTokenSecret);
 
@@ -174,7 +175,8 @@ public class AlchemerInviteSender {
 		log.debug("getContactId URL: {}", url);
 
 		try {
-			ResponseEntity<Map> response = restTemplate.getForEntity(url, Map.class);
+
+			ResponseEntity<Map> response = restTemplate.getForEntity(builder.build().toUri(), Map.class);
 
 			if (response.getStatusCode() == HttpStatus.OK && response.getBody() != null) {
 				log.debug("getContactId response body: {}", response.getBody());
@@ -184,17 +186,20 @@ public class AlchemerInviteSender {
 						List<Map<String, Object>> dataList = (List<Map<String, Object>>) dataObj;
 						if (!dataList.isEmpty()) {
 							Map<String, Object> contactData = dataList.get(0);
-							log.info("Contacto encontrado para email {}: ID {} (SurveyID: {}, CampaignID: {})", email, contactData.get("id"), surveyId, campaignId);
+							log.info("Contacto encontrado para email {}: ID {} (SurveyID: {}, CampaignID: {})", email,
+									contactData.get("id"), surveyId, campaignId);
 							return String.valueOf(contactData.get("id"));
 						} else {
-							log.info("Contacto con email {} no encontrado en SurveyID: {}, CampaignID: {} (lista vacía).",
+							log.info(
+									"Contacto con email {} no encontrado en SurveyID: {}, CampaignID: {} (lista vacía).",
 									email, surveyId, campaignId);
 						}
 					} else if (dataObj instanceof Map) {
 						Map<String, Object> contactData = (Map<String, Object>) dataObj;
 						if (contactData.containsKey("id")
 								&& email.equalsIgnoreCase(String.valueOf(contactData.get("email_address")))) {
-							log.info("Contacto encontrado para email {}: ID {} (SurveyID: {}, CampaignID: {})", email, contactData.get("id"), surveyId, campaignId);
+							log.info("Contacto encontrado para email {}: ID {} (SurveyID: {}, CampaignID: {})", email,
+									contactData.get("id"), surveyId, campaignId);
 							return String.valueOf(contactData.get("id"));
 						}
 					} else {
@@ -236,7 +241,9 @@ public class AlchemerInviteSender {
 			return null;
 		}
 		if (campaignId == null) {
-			log.warn("addContactToCampaign: Campaign ID could not be extracted from input: {}. Defaulting to Survey ID for campaign context.", surveyLinkOrSurveyId);
+			log.warn(
+					"addContactToCampaign: Campaign ID could not be extracted from input: {}. Defaulting to Survey ID for campaign context.",
+					surveyLinkOrSurveyId);
 			campaignId = surveyId; // Default to surveyId
 		}
 
@@ -262,33 +269,22 @@ public class AlchemerInviteSender {
 			if (response.getStatusCode() == HttpStatus.OK && response.getBody() != null) {
 				log.debug("addContactToCampaign response body: {}", response.getBody());
 				if (Boolean.TRUE.equals(response.getBody().get("result_ok"))) {
-					Object dataObj = response.getBody().get("data");
-					if (dataObj instanceof Map) {
-						Map<String, Object> dataMap = (Map<String, Object>) dataObj;
-						if (dataMap.containsKey("id")) {
-							String newContactId = String.valueOf(dataMap.get("id"));
-							log.info(
-									"Contacto {} agregado/actualizado en SurveyID: {}, CampaignID: {}. Nuevo ContactID: {}",
-									email, surveyId, campaignId, newContactId);
-							return newContactId;
-						} else {
-							log.error(
-									"Respuesta OK pero sin ID de contacto al agregar {} a SurveyID: {}, CampaignID: {}. Respuesta: {}",
-									email, surveyId, campaignId, response.getBody());
-						}
-					} else {
-						log.error("Formato de 'data' inesperado al agregar contacto {} (SurveyID: {}, CampaignID: {}). Respuesta: {}",
-								email, surveyId, campaignId, response.getBody());
-					}
+
+					String newContactId = response.getBody().get("id").toString();
+					return newContactId;
+
 				} else {
-					log.error("Error en la respuesta de Alchemer (result_ok false) al agregar contacto {} (SurveyID: {}, CampaignID: {}): {}",
+					log.error(
+							"Error en la respuesta de Alchemer (result_ok false) al agregar contacto {} (SurveyID: {}, CampaignID: {}): {}",
 							email, surveyId, campaignId, response.getBody());
 				}
 			} else {
 				log.error("Error del servidor ({}) al agregar contacto {} a SurveyID: {}, CampaignID: {}. Body: {}",
 						response.getStatusCode(), email, surveyId, campaignId, response.getBody());
 			}
-		} catch (HttpClientErrorException e) {
+		} catch (
+
+		HttpClientErrorException e) {
 			log.error("Error (HttpClientErrorException) al agregar contacto {} a SurveyID: {}, CampaignID: {}: {} - {}",
 					email, surveyId, campaignId, e.getStatusCode(), e.getResponseBodyAsString());
 		} catch (org.springframework.web.client.RestClientException e) {
@@ -299,11 +295,11 @@ public class AlchemerInviteSender {
 	}
 
 	private String getEmailMessageIdToSend(String surveyId, String campaignId) {
-		// Construct URL for GET /v5/survey/{surveyId}/surveycampaign/{campaignId}/emailmessage
+		// Construct URL for GET
+		// /v5/survey/{surveyId}/surveycampaign/{campaignId}/emailmessage
 		UriComponentsBuilder builder = UriComponentsBuilder.fromHttpUrl(ALCHEMER_API_BASE_URL)
-			.pathSegment("v5", "survey", surveyId, "surveycampaign", campaignId, "emailmessage")
-			.queryParam("api_token", apiToken)
-			.queryParam("api_token_secret", apiTokenSecret);
+				.pathSegment("v5", "survey", surveyId, "surveycampaign", campaignId, "emailmessage")
+				.queryParam("api_token", apiToken).queryParam("api_token_secret", apiTokenSecret);
 
 		String url = builder.toUriString();
 		log.debug("getEmailMessageIdToSend URL: {}", url);
@@ -322,30 +318,38 @@ public class AlchemerInviteSender {
 							// Look for the first message of subtype "message" (initial invite)
 							if ("message".equalsIgnoreCase(String.valueOf(message.get("subtype")))) {
 								String messageId = String.valueOf(message.get("id"));
-								log.info("Found EmailMessage ID {} of subtype 'message' for CampaignID {}", messageId, campaignId);
+								log.info("Found EmailMessage ID {} of subtype 'message' for CampaignID {}", messageId,
+										campaignId);
 								return messageId;
 							}
 						}
 						log.warn("No EmailMessage with subtype 'message' found for CampaignID {}", campaignId);
 					} else {
-						log.warn("EmailMessage list not found or in unexpected format for CampaignID {}. Response: {}", campaignId, response.getBody());
+						log.warn("EmailMessage list not found or in unexpected format for CampaignID {}. Response: {}",
+								campaignId, response.getBody());
 					}
 				} else {
-					log.warn("API call for getEmailMessageIdToSend was not successful (result_ok=false) for CampaignID {}. Response: {}", campaignId, response.getBody());
+					log.warn(
+							"API call for getEmailMessageIdToSend was not successful (result_ok=false) for CampaignID {}. Response: {}",
+							campaignId, response.getBody());
 				}
 			} else {
-				log.warn("Server error ({}) while fetching email messages for CampaignID {}", response.getStatusCode(), campaignId);
+				log.warn("Server error ({}) while fetching email messages for CampaignID {}", response.getStatusCode(),
+						campaignId);
 			}
 		} catch (HttpClientErrorException e) {
-			log.error("Error (HttpClientErrorException) fetching email messages for CampaignID {}: {} - {}",
-					campaignId, e.getStatusCode(), e.getResponseBodyAsString(), e);
+			log.error("Error (HttpClientErrorException) fetching email messages for CampaignID {}: {} - {}", campaignId,
+					e.getStatusCode(), e.getResponseBodyAsString(), e);
 		} catch (org.springframework.web.client.RestClientException e) {
-			log.error("Error (RestClientException) fetching email messages for CampaignID {}: {}", campaignId, e.getMessage(), e);
+			log.error("Error (RestClientException) fetching email messages for CampaignID {}: {}", campaignId,
+					e.getMessage(), e);
 		}
 		return null;
 	}
 
-	private boolean sendInvitation(String surveyLinkOrSurveyId, String contactId) { // contactId is no longer directly used in the API call here but good for logging
+	private boolean sendInvitation(String surveyLinkOrSurveyId, String contactId) { // contactId is no longer directly
+																					// used in the API call here but
+																					// good for logging
 		String surveyId = extractSurveyId(surveyLinkOrSurveyId);
 		String campaignId = extractCampaignId(surveyLinkOrSurveyId);
 
@@ -354,37 +358,43 @@ public class AlchemerInviteSender {
 			return false;
 		}
 		if (campaignId == null) {
-			// Fallback for campaignId if not directly found in link (though extractCampaignId should handle most cases)
-			log.warn("sendInvitation: Campaign ID not directly found via extractCampaignId for input: {}. Using Survey ID {} as fallback campaign context.", surveyLinkOrSurveyId, surveyId);
+			// Fallback for campaignId if not directly found in link (though
+			// extractCampaignId should handle most cases)
+			log.warn(
+					"sendInvitation: Campaign ID not directly found via extractCampaignId for input: {}. Using Survey ID {} as fallback campaign context.",
+					surveyLinkOrSurveyId, surveyId);
 			campaignId = surveyId; // Should ideally not happen if extractCampaignId is robust
 		}
 
 		String messageId = getEmailMessageIdToSend(surveyId, campaignId);
 		if (messageId == null) {
-			log.error("sendInvitation: Could not retrieve an EmailMessage ID to send for SurveyID {} and CampaignID {}. ContactID {} will not be invited at this time.", surveyId, campaignId, contactId);
+			log.error(
+					"sendInvitation: Could not retrieve an EmailMessage ID to send for SurveyID {} and CampaignID {}. ContactID {} will not be invited at this time.",
+					surveyId, campaignId, contactId);
 			return false;
 		}
 
 		// UPDATE EmailMessage with send=true
-		// POST /v5/survey/{surveyId}/surveycampaign/{campaignId}/emailmessage/{messageId}?send=true
+		// POST
+		// /v5/survey/{surveyId}/surveycampaign/{campaignId}/emailmessage/{messageId}?send=true
 		UriComponentsBuilder builder = UriComponentsBuilder.fromHttpUrl(ALCHEMER_API_BASE_URL)
-			.pathSegment("v5", "survey", surveyId, "surveycampaign", campaignId, "emailmessage", messageId)
-			.queryParam("api_token", apiToken)
-			.queryParam("api_token_secret", apiTokenSecret)
-			.queryParam("send", "true"); // Parameter to trigger the send
-			// The Alchemer docs for EmailMessage Update show _method=POST as a query param:
-			// https://apihelp.alchemer.com/help/emailmessage-sub-object-v5#updateobject
-			// ".../emailmessage/100000?_method=POST"
-			// It's safer to include it if their server relies on it for routing or processing.
-			builder.queryParam("_method", "POST");
-
+				.pathSegment("v5", "survey", surveyId, "surveycampaign", campaignId, "emailmessage", messageId)
+				.queryParam("api_token", apiToken).queryParam("api_token_secret", apiTokenSecret)
+				.queryParam("send", "true"); // Parameter to trigger the send
+		// The Alchemer docs for EmailMessage Update show _method=POST as a query param:
+		// https://apihelp.alchemer.com/help/emailmessage-sub-object-v5#updateobject
+		// ".../emailmessage/100000?_method=POST"
+		// It's safer to include it if their server relies on it for routing or
+		// processing.
+		builder.queryParam("_method", "POST");
 
 		String url = builder.toUriString();
 		log.info("sendInvitation (Update EmailMessage to send) URL: {}", url); // Changed to INFO for better visibility
 
 		HttpHeaders headers = new HttpHeaders();
 		// Parameters are in the URL, so body can be empty.
-		// Content-Type for POSTs with URL parameters is typically application/x-www-form-urlencoded
+		// Content-Type for POSTs with URL parameters is typically
+		// application/x-www-form-urlencoded
 		headers.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
 		HttpEntity<String> requestEntity = new HttpEntity<>(null, headers); // Empty body
 
@@ -394,23 +404,28 @@ public class AlchemerInviteSender {
 			if (response.getStatusCode() == HttpStatus.OK && response.getBody() != null) {
 				log.debug("sendInvitation (Update EmailMessage) response body: {}", response.getBody());
 				if (Boolean.TRUE.equals(response.getBody().get("result_ok"))) {
-					log.info("Invitation for ContactID {} via EmailMessageID {} in CampaignID {} successfully triggered for sending. SurveyID: {}",
+					log.info(
+							"Invitation for ContactID {} via EmailMessageID {} in CampaignID {} successfully triggered for sending. SurveyID: {}",
 							contactId, messageId, campaignId, surveyId);
 					return true;
 				} else {
-					log.error("API error (result_ok=false) when triggering send for EmailMessageID {} (CampaignID {}). ContactID {}. Response: {}",
+					log.error(
+							"API error (result_ok=false) when triggering send for EmailMessageID {} (CampaignID {}). ContactID {}. Response: {}",
 							messageId, campaignId, contactId, response.getBody());
 					return false;
 				}
 			} else {
-				log.error("Server error ({}) when triggering send for EmailMessageID {} (CampaignID {}). ContactID {}. Body: {}",
+				log.error(
+						"Server error ({}) when triggering send for EmailMessageID {} (CampaignID {}). ContactID {}. Body: {}",
 						response.getStatusCode(), messageId, campaignId, contactId, response.getBody());
 			}
 		} catch (HttpClientErrorException e) {
-			log.error("Error (HttpClientErrorException) triggering send for EmailMessageID {} (CampaignID {}). ContactID {}: {} - {}",
+			log.error(
+					"Error (HttpClientErrorException) triggering send for EmailMessageID {} (CampaignID {}). ContactID {}: {} - {}",
 					messageId, campaignId, contactId, e.getStatusCode(), e.getResponseBodyAsString(), e);
 		} catch (org.springframework.web.client.RestClientException e) {
-			log.error("Error (RestClientException) triggering send for EmailMessageID {} (CampaignID {}). ContactID {}: {}",
+			log.error(
+					"Error (RestClientException) triggering send for EmailMessageID {} (CampaignID {}). ContactID {}: {}",
 					messageId, campaignId, contactId, e.getMessage(), e);
 		}
 		return false;
@@ -421,9 +436,11 @@ public class AlchemerInviteSender {
 			return null;
 		}
 
-		// Pattern for the new URL format: https://app.alchemer.com/invite/messages/id/SURVEY_ID/link/CAMPAIGN_ID
+		// Pattern for the new URL format:
+		// https://app.alchemer.com/invite/messages/id/SURVEY_ID/link/CAMPAIGN_ID
 		// We are interested in the CAMPAIGN_ID, which is the last numeric part.
-		// Example: "https://app.alchemer.com/invite/messages/id/8367882/link/24099873" -> "24099873"
+		// Example: "https://app.alchemer.com/invite/messages/id/8367882/link/24099873"
+		// -> "24099873"
 		Pattern newUrlPattern = Pattern.compile("/id/(\\d+)/link/(\\d+)$");
 		Matcher matcher = newUrlPattern.matcher(surveyLink);
 
@@ -444,10 +461,11 @@ public class AlchemerInviteSender {
 		}
 		// If not a recognized URL pattern or no numeric part found by fallback,
 		// and it's not null and doesn't contain '/', assume it's the ID directly.
-		// Also, if it contained '/' but no numeric part was extracted, it might be a malformed URL
+		// Also, if it contained '/' but no numeric part was extracted, it might be a
+		// malformed URL
 		// or a direct ID with an accidental slash. If it's numeric, treat as ID.
 		if (surveyLink.matches("\\d+")) {
-		    return surveyLink;
+			return surveyLink;
 		}
 		// If no ID could be parsed, return null.
 		return null;
@@ -458,15 +476,18 @@ public class AlchemerInviteSender {
 			return null;
 		}
 
-		// 1. Try the new URL pattern: https://app.alchemer.com/invite/messages/id/SURVEY_ID/link/CAMPAIGN_ID
-		// Example: "https://app.alchemer.com/invite/messages/id/8367882/link/24099873" -> "8367882"
+		// 1. Try the new URL pattern:
+		// https://app.alchemer.com/invite/messages/id/SURVEY_ID/link/CAMPAIGN_ID
+		// Example: "https://app.alchemer.com/invite/messages/id/8367882/link/24099873"
+		// -> "8367882"
 		Pattern newUrlPattern = Pattern.compile("/id/(\\d+)/link/(\\d+)");
 		Matcher newMatcher = newUrlPattern.matcher(surveyLink);
 		if (newMatcher.find()) {
 			return newMatcher.group(1); // SURVEY_ID
 		}
 
-		// 2. Try common older Alchemer URL pattern: e.g., /s3/SURVEY_ID/... or /survey/SURVEY_ID/...
+		// 2. Try common older Alchemer URL pattern: e.g., /s3/SURVEY_ID/... or
+		// /survey/SURVEY_ID/...
 		// Example: "https://app.alchemer.com/s3/1234567/My-Survey" -> "1234567"
 		Pattern oldUrlPattern = Pattern.compile("/(?:s3|survey)/(\\d+)");
 		Matcher oldMatcher = oldUrlPattern.matcher(surveyLink);
@@ -480,7 +501,8 @@ public class AlchemerInviteSender {
 			return surveyLink;
 		}
 
-		// 4. If no pattern matched and it's not a plain number, we couldn't extract a survey ID.
+		// 4. If no pattern matched and it's not a plain number, we couldn't extract a
+		// survey ID.
 		return null;
 	}
 }
