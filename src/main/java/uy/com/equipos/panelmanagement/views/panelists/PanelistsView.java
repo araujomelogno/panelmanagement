@@ -357,8 +357,10 @@ public class PanelistsView extends Div implements BeforeEnterObserver {
 		phone = new TextField("Teléfono");
 		// dateOfBirth = new DatePicker("Fecha de Nacimiento"); // Removed
 		// occupation = new TextField("Ocupación"); // Removed
-		lastContacted = new DatePicker("Último Contacto");
-		lastInterviewed = new DatePicker("Última Encueesta");
+                lastContacted = new DatePicker("Último Contacto");
+                lastContacted.setReadOnly(true);
+                lastInterviewed = new DatePicker("Última Encueesta");
+                lastInterviewed.setReadOnly(true);
 		// START: Add properties field - Removed
 		// propertiesField = new MultiSelectListBox<>(); // Removed
 		// propertiesField.setItems(panelistPropertyService.findAll()); // Removed
