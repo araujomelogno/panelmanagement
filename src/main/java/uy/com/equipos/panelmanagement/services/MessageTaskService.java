@@ -22,7 +22,7 @@ public class MessageTaskService {
         return repository.save(messageTask);
     }
 
-    public List<MessageTask> findAllByJobTypeAndStatus(JobType jobType, MessageTaskS tatus status) {
+    public List<MessageTask> findAllByJobTypeAndStatus(JobType jobType, MessageTaskStatus status) {
         return repository.findAllByJobTypeAndStatus(jobType, status);
     }
 
