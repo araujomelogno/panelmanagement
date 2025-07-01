@@ -35,3 +35,6 @@ CREATE TABLE IF NOT EXISTS survey_panelist_participation (
     FOREIGN KEY (survey_id) REFERENCES survey(id),
     FOREIGN KEY (panelist_id) REFERENCES panelist(id)
 );
+-- Add survey_id column to message_task
+ALTER TABLE message_task ADD COLUMN survey_id BIGINT;
+ALTER TABLE message_task ADD CONSTRAINT fk_message_task_survey FOREIGN KEY (survey_id) REFERENCES survey(id);

@@ -387,6 +387,7 @@ public class SurveysView extends Div implements BeforeEnterObserver {
                 mt.setCreated(LocalDateTime.now());
                 mt.setStatus(MessageTaskStatus.PENDING);
                 mt.setSurveyPanelistParticipation(participation); // Set the participation
+                mt.setSurvey(currentSurveyWithParticipations); // Associate survey
                 messageTaskService.save(mt);
                 tasksCreated++;
             }
@@ -424,6 +425,7 @@ public class SurveysView extends Div implements BeforeEnterObserver {
                 mt.setCreated(LocalDateTime.now());
                 mt.setStatus(MessageTaskStatus.PENDING); // Assuming PENDING exists
                 mt.setSurveyPanelistParticipation(participation); // Set the participation
+                mt.setSurvey(currentSurveyWithParticipations); // Associate survey
                 messageTaskService.save(mt);
                 tasksCreated++;
             }
