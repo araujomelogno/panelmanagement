@@ -97,7 +97,7 @@ public class MessageTaskView extends Div implements HasComponents, HasStyle {
             if (selectedDate == null) {
                 activeFilters.remove(filterKey);
             } else {
-                activeFilters.put(filterKey, task -> {
+                activeFilters.put(filterKey, (Predicate<MessageTask> & java.io.Serializable) task -> {
                     if (task.getCreated() == null) return false;
                     return task.getCreated().toLocalDate().equals(selectedDate);
                 });
@@ -118,7 +118,7 @@ public class MessageTaskView extends Div implements HasComponents, HasStyle {
             if (selectedValue == null) {
                 activeFilters.remove(filterKey);
             } else {
-                activeFilters.put(filterKey, task -> {
+                activeFilters.put(filterKey, (Predicate<MessageTask> & java.io.Serializable) task -> {
                     E taskValue = valueProvider.apply(task);
                     return taskValue != null && taskValue.equals(selectedValue);
                 });
@@ -139,7 +139,7 @@ public class MessageTaskView extends Div implements HasComponents, HasStyle {
             if (filterValue.isEmpty()) {
                 activeFilters.remove(filterKey);
             } else {
-                activeFilters.put(filterKey, task ->
+                activeFilters.put(filterKey, (Predicate<MessageTask> & java.io.Serializable) task ->
                     Objects.toString(valueProvider.apply(task), "").toLowerCase().contains(filterValue)
                 );
             }
@@ -152,10 +152,14 @@ public class MessageTaskView extends Div implements HasComponents, HasStyle {
         if (gridListDataView == null) {
             return;
         }
+        // Ensure the combined predicate is serializable
         Predicate<MessageTask> combinedFilter = activeFilters.values().stream()
-            .reduce(Predicate::and)
-            .orElse(task -> true); // If no filters, show all
-        gridListDataView.setFilter(combinedFilter);
+            .reduce((java.io.Serializable & Predicate<MessageTask>) Predicate::and)
+            .orElse((java.io.Serializable & Predicate<MessageTask>) task -> true); // If no filters, show all (must also be serializable)
+
+        // The setFilter method expects a SerializablePredicate.
+        // Our combinedFilter should now conform if all individual predicates were serializable.
+        gridListDataView.setFilter((com.vaadin.flow.function.SerializablePredicate<MessageTask>) combinedFilter);
     }
 
     // Functional interface for accessing property values, needed for createTextFieldFilter
