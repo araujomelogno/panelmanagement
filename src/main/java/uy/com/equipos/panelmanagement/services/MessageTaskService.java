@@ -8,6 +8,7 @@ import org.springframework.stereotype.Service;
 import uy.com.equipos.panelmanagement.data.JobType;
 import uy.com.equipos.panelmanagement.data.MessageTask;
 import uy.com.equipos.panelmanagement.data.MessageTaskRepository;
+import uy.com.equipos.panelmanagement.data.MessageTaskStatus;
 
 @Service
 public class MessageTaskService {
@@ -23,7 +24,7 @@ public class MessageTaskService {
         return repository.save(messageTask);
     }
 
-    public List<MessageTask> findAllByJobTypeAndStatus(JobType jobType, MessageTask status) {
+    public List<MessageTask> findAllByJobTypeAndStatus(JobType jobType, MessageTaskStatus status) {
         return repository.findAllByJobTypeAndStatus(jobType, status);
     }
 
@@ -31,20 +32,4 @@ public class MessageTaskService {
         return repository.findAll();
     }
 
-    // Optional: Add other common service methods like list, get, delete if needed for future use.
-    // public Optional<MessageTask> get(Long id) {
-    //     return repository.findById(id);
-    // }
-
-    // public void delete(Long id) {
-    //     repository.deleteById(id);
-    // }
-
-    // public Page<MessageTask> list(Pageable pageable) {
-    //     return repository.findAll(pageable);
-    // }
-
-    // public Page<MessageTask> list(Pageable pageable, Specification<MessageTask> filter) {
-    //     return repository.findAll(filter, pageable);
-    // }
 }
