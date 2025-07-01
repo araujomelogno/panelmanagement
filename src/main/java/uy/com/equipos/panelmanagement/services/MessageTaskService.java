@@ -1,12 +1,13 @@
 package uy.com.equipos.panelmanagement.services;
 
+import java.util.List;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+
+import uy.com.equipos.panelmanagement.data.JobType;
 import uy.com.equipos.panelmanagement.data.MessageTask;
 import uy.com.equipos.panelmanagement.data.MessageTaskRepository;
-import uy.com.equipos.panelmanagement.data.JobType;
-import uy.com.equipos.panelmanagement.data.MessageTaskStatus;
-import java.util.List;
 
 @Service
 public class MessageTaskService {
@@ -22,7 +23,7 @@ public class MessageTaskService {
         return repository.save(messageTask);
     }
 
-    public List<MessageTask> findAllByJobTypeAndStatus(JobType jobType, MessageTaskS tatus status) {
+    public List<MessageTask> findAllByJobTypeAndStatus(JobType jobType, MessageTask status) {
         return repository.findAllByJobTypeAndStatus(jobType, status);
     }
 

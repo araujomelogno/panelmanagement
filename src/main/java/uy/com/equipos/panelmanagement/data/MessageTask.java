@@ -23,7 +23,7 @@ public class MessageTask extends AbstractEntity {
     @Enumerated(EnumType.STRING)
     private MessageTaskStatus status;
 
-    @NotNull
+    
     @ManyToOne
     @JoinColumn(name = "survey_panelist_participation_id")
     private SurveyPanelistParticipation surveyPanelistParticipation;

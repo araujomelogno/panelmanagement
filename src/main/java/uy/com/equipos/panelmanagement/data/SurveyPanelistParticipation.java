@@ -21,7 +21,6 @@ public class SurveyPanelistParticipation extends AbstractEntity {
 
     @ManyToOne
     @JoinColumn(name = "panelist_id")
-    @NotNull
     private Panelist panelist;
 
     private LocalDate dateIncluded;

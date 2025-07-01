@@ -82,28 +82,26 @@ public class SurveysView extends Div implements BeforeEnterObserver {
 	private final Button save = new Button("Guardar");
 	private Button deleteButton; // Add this with other button declarations
 	private Button nuevaEncuestaButton;
-    private Button viewParticipantsButton;
-    private Button sortearPanelistasButton; // New button for drawing panelists
-    private Button sendSurveysButton; // New button for sending surveys
-    private Button sendReminderButton; // New button for sending reminders
+	private Button viewParticipantsButton;
+	private Button sortearPanelistasButton; // New button for drawing panelists
+	private Button sendSurveysButton; // New button for sending surveys
+	private Button sendReminderButton; // New button for sending reminders
 
 	private final BeanValidationBinder<Survey> binder;
 
 	private Survey survey;
 
 	private final SurveyService surveyService;
-    private final SurveyPanelistParticipationService participationService; // Nuevo servicio
-    private final PanelService panelService; // Service for Panel entities
-    private final MessageTaskService messageTaskService; // Service for MessageTask entities
+	private final SurveyPanelistParticipationService participationService; // Nuevo servicio
+	private final PanelService panelService; // Service for Panel entities
+	private final MessageTaskService messageTaskService; // Service for MessageTask entities
 
-	public SurveysView(SurveyService surveyService, 
-                         SurveyPanelistParticipationService participationService, 
-                         PanelService panelService,
-                         MessageTaskService messageTaskService) {
+	public SurveysView(SurveyService surveyService, SurveyPanelistParticipationService participationService,
+			PanelService panelService, MessageTaskService messageTaskService) {
 		this.surveyService = surveyService;
-        this.participationService = participationService; // Inyectar nuevo servicio
-        this.panelService = panelService; // Inyectar PanelService
-        this.messageTaskService = messageTaskService; // Inyectar MessageTaskService
+		this.participationService = participationService; // Inyectar nuevo servicio
+		this.panelService = panelService; // Inyectar PanelService
+		this.messageTaskService = messageTaskService; // Inyectar MessageTaskService
 		addClassNames("surveys-view");
 
 		// Initialize deleteButton EARLIER
@@ -111,18 +109,18 @@ public class SurveysView extends Div implements BeforeEnterObserver {
 		deleteButton.addThemeVariants(ButtonVariant.LUMO_ERROR, ButtonVariant.LUMO_PRIMARY);
 		deleteButton.addClickListener(e -> onDeleteClicked());
 
-        viewParticipantsButton = new Button("Ver participantes");
-        viewParticipantsButton.addClickListener(e -> openParticipantsDialog());
+		viewParticipantsButton = new Button("Ver participantes");
+		viewParticipantsButton.addClickListener(e -> openParticipantsDialog());
 
-        sortearPanelistasButton = new Button("Sortear participantes");
-        sortearPanelistasButton.addClickListener(e -> openSortearPanelistasDialog());
+		sortearPanelistasButton = new Button("Sortear participantes");
+		sortearPanelistasButton.addClickListener(e -> openSortearPanelistasDialog());
 
-        sendSurveysButton = new Button("Enviar encuestas");
-        sendSurveysButton.addClickListener(e -> sendSurveysAction());
+		sendSurveysButton = new Button("Enviar encuestas");
+		sendSurveysButton.addClickListener(e -> sendSurveysAction());
 
-        sendReminderButton = new Button("Enviar recordatorio");
-        sendReminderButton.addClickListener(e -> sendReminderAction());
-        
+		sendReminderButton = new Button("Enviar recordatorio");
+		sendReminderButton.addClickListener(e -> sendReminderAction());
+
 		// Configurar columnas del Grid PRIMERO
 		grid.addColumn(Survey::getName).setHeader("Nombre").setKey("name").setAutoWidth(true);
 		grid.addColumn(Survey::getInitDate).setHeader("Fecha de Inicio").setKey("initDate").setAutoWidth(true);
@@ -139,7 +137,7 @@ public class SurveysView extends Div implements BeforeEnterObserver {
 		// editorLayoutDiv.setVisible(false); // Se maneja después de add(mainLayout)
 
 		nuevaEncuestaButton = new Button("Nueva Encuesta");
-		nuevaEncuestaButton.getStyle().set("margin-left", "18px");  
+		nuevaEncuestaButton.getStyle().set("margin-left", "18px");
 
 		VerticalLayout mainLayout = new VerticalLayout(nuevaEncuestaButton, splitLayout);
 		mainLayout.setSizeFull();
@@ -172,7 +170,6 @@ public class SurveysView extends Div implements BeforeEnterObserver {
 		toolFilter.setItemLabelGenerator(Tool::name);
 		toolFilter.setClearButtonVisible(true);
 
-
 		// Añadir listeners para refrescar el grid
 		nameFilter.addValueChangeListener(e -> grid.getDataProvider().refreshAll());
 		initDateFilter.addValueChangeListener(e -> grid.getDataProvider().refreshAll());
@@ -186,7 +183,8 @@ public class SurveysView extends Div implements BeforeEnterObserver {
 			String linkVal = linkFilter.getValue();
 			Tool toolVal = toolFilter.getValue();
 
-			return surveyService.list(VaadinSpringDataHelpers.toSpringPageRequest(query), nameVal, initDateVal, linkVal, toolVal)
+			return surveyService
+					.list(VaadinSpringDataHelpers.toSpringPageRequest(query), nameVal, initDateVal, linkVal, toolVal)
 					.stream();
 		});
 
@@ -204,7 +202,7 @@ public class SurveysView extends Div implements BeforeEnterObserver {
 		// Configure Form
 		binder = new BeanValidationBinder<>(Survey.class);
 
-		// Bind fields. This is where you'd define e.g. validation rules 
+		// Bind fields. This is where you'd define e.g. validation rules
 		binder.bindInstanceFields(this);
 
 		cancel.addClickListener(e -> {
@@ -241,7 +239,7 @@ public class SurveysView extends Div implements BeforeEnterObserver {
 		Optional<Long> surveyId = event.getRouteParameters().get(SURVEY_ID).map(Long::parseLong);
 		if (surveyId.isPresent()) {
 			// Cargar la encuesta. La carga de participaciones dependerá de la configuración
-            // EAGER/LAZY o se puede hacer explícitamente si es necesario más adelante.
+			// EAGER/LAZY o se puede hacer explícitamente si es necesario más adelante.
 			Optional<Survey> surveyFromBackend = surveyService.get(surveyId.get());
 			if (surveyFromBackend.isPresent()) {
 				populateForm(surveyFromBackend.get());
@@ -277,9 +275,9 @@ public class SurveysView extends Div implements BeforeEnterObserver {
 		link = new TextField("Enlace");
 		tool = new ComboBox<>("Herramienta");
 		tool.setItems(Tool.values());
-		tool.setItemLabelGenerator(Tool::name); 
-		formLayout.add(name, initDate, link, tool, viewParticipantsButton, sortearPanelistasButton, sendSurveysButton, sendReminderButton);
-
+		tool.setItemLabelGenerator(Tool::name);
+		formLayout.add(name, initDate, link, tool, viewParticipantsButton, sortearPanelistasButton, sendSurveysButton,
+				sendReminderButton);
 
 		editorDiv.add(formLayout);
 		createButtonLayout(editorLayoutDiv);
@@ -292,7 +290,7 @@ public class SurveysView extends Div implements BeforeEnterObserver {
 		buttonLayout.setClassName("button-layout");
 		cancel.addThemeVariants(ButtonVariant.LUMO_TERTIARY);
 		save.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
-		buttonLayout.add(save, deleteButton, cancel); 
+		buttonLayout.add(save, deleteButton, cancel);
 		editorLayoutDiv.add(buttonLayout);
 	}
 
@@ -319,20 +317,20 @@ public class SurveysView extends Div implements BeforeEnterObserver {
 		binder.readBean(this.survey);
 
 		if (deleteButton != null) {
-			 deleteButton.setEnabled(value != null && value.getId() != null);
+			deleteButton.setEnabled(value != null && value.getId() != null);
 		}
-        if (viewParticipantsButton != null) {
-            viewParticipantsButton.setEnabled(value != null && value.getId() != null);
-        }
-        if (sortearPanelistasButton != null) {
-            sortearPanelistasButton.setEnabled(value != null && value.getId() != null);
-        }
-        if (sendSurveysButton != null) {
-            sendSurveysButton.setEnabled(value != null && value.getId() != null);
-        }
-        if (sendReminderButton != null) {
-            sendReminderButton.setEnabled(value != null && value.getId() != null);
-        }
+		if (viewParticipantsButton != null) {
+			viewParticipantsButton.setEnabled(value != null && value.getId() != null);
+		}
+		if (sortearPanelistasButton != null) {
+			sortearPanelistasButton.setEnabled(value != null && value.getId() != null);
+		}
+		if (sendSurveysButton != null) {
+			sendSurveysButton.setEnabled(value != null && value.getId() != null);
+		}
+		if (sendReminderButton != null) {
+			sendReminderButton.setEnabled(value != null && value.getId() != null);
+		}
 	}
 
 	private void clearForm() {
@@ -343,313 +341,334 @@ public class SurveysView extends Div implements BeforeEnterObserver {
 		if (deleteButton != null) {
 			deleteButton.setEnabled(false);
 		}
-        if (viewParticipantsButton != null) {
-            viewParticipantsButton.setEnabled(false);
-        }
-        if (sortearPanelistasButton != null) {
-            sortearPanelistasButton.setEnabled(false);
-        }
-        if (sendSurveysButton != null) {
-            sendSurveysButton.setEnabled(false);
-        }
-        if (sendReminderButton != null) {
-            sendReminderButton.setEnabled(false);
-        }
+		if (viewParticipantsButton != null) {
+			viewParticipantsButton.setEnabled(false);
+		}
+		if (sortearPanelistasButton != null) {
+			sortearPanelistasButton.setEnabled(false);
+		}
+		if (sendSurveysButton != null) {
+			sendSurveysButton.setEnabled(false);
+		}
+		if (sendReminderButton != null) {
+			sendReminderButton.setEnabled(false);
+		}
 	}
 
-    private void sendSurveysAction() {
-        if (this.survey == null || this.survey.getId() == null) {
-            Notification.show("Por favor, seleccione una encuesta.", 3000, Notification.Position.MIDDLE);
-            return;
-        }
+	private void sendSurveysAction() {
+		if (this.survey == null || this.survey.getId() == null) {
+			Notification.show("Por favor, seleccione una encuesta.", 3000, Notification.Position.MIDDLE);
+			return;
+		}
 
-        Optional<Survey> surveyOpt = surveyService.getWithParticipations(this.survey.getId());
-        if (surveyOpt.isEmpty()) {
-            Notification.show("Encuesta no encontrada.", 3000, Notification.Position.MIDDLE);
-            return;
-        }
+		Optional<Survey> surveyOpt = surveyService.getWithParticipations(this.survey.getId());
+		if (surveyOpt.isEmpty()) {
+			Notification.show("Encuesta no encontrada.", 3000, Notification.Position.MIDDLE);
+			return;
+		}
 
-        Survey currentSurveyWithParticipations = surveyOpt.get();
-        Set<SurveyPanelistParticipation> participations = currentSurveyWithParticipations.getParticipations();
+		Survey currentSurveyWithParticipations = surveyOpt.get();
+		Set<SurveyPanelistParticipation> participations = currentSurveyWithParticipations.getParticipations();
 
-        if (participations == null || participations.isEmpty()) {
-            Notification.show("No hay panelistas asignados a esta encuesta.", 3000, Notification.Position.MIDDLE);
-            return;
-        }
+		if (participations == null || participations.isEmpty()) {
+			Notification.show("No hay panelistas asignados a esta encuesta.", 3000, Notification.Position.MIDDLE);
+			return;
+		}
 
-        int tasksCreated = 0;
-        for (SurveyPanelistParticipation participation : participations) {
-            // Panelist panelist = participation.getPanelist(); // No longer needed directly for MessageTask
-            // if (panelist != null) { // Check if participation itself is valid if necessary
-            if (participation != null && participation.getPanelist() != null) { // Ensure participation and its panelist are not null
-                MessageTask mt = new MessageTask();
-                mt.setJobType(JobType.ALCHEMER_INVITE);
-                mt.setCreated(LocalDateTime.now());
-                mt.setStatus(MessageTaskStatus.PENDING);
-                mt.setSurveyPanelistParticipation(participation); // Set the participation
-                mt.setSurvey(currentSurveyWithParticipations); // Associate survey
-                messageTaskService.save(mt);
-                tasksCreated++;
-            }
-        }
-        Notification.show(tasksCreated + " tareas de mensaje creadas para los panelistas.", 6000, Notification.Position.MIDDLE);
-    }
+		int tasksCreated = 0;
+		for (SurveyPanelistParticipation participation : participations) {
+			// Panelist panelist = participation.getPanelist(); // No longer needed directly
+			// for MessageTask
+			// if (panelist != null) { // Check if participation itself is valid if
+			// necessary
+			if (participation != null && participation.getPanelist() != null) { // Ensure participation and its panelist
+																				// are not null
+				MessageTask mt = new MessageTask();
+				mt.setJobType(JobType.ALCHEMER_INVITE);
+				mt.setCreated(LocalDateTime.now());
+				mt.setStatus(MessageTaskStatus.PENDING);
+				mt.setSurveyPanelistParticipation(participation); // Set the participation
+				mt.setSurvey(currentSurveyWithParticipations); // Associate survey
+				messageTaskService.save(mt);
+				tasksCreated++;
+			}
+		}
+		Notification.show(tasksCreated + " tareas de mensaje creadas para los panelistas.", 6000,
+				Notification.Position.MIDDLE);
+	}
 
-    private void sendReminderAction() {
-        if (this.survey == null || this.survey.getId() == null) {
-            Notification.show("Por favor, seleccione una encuesta.", 3000, Notification.Position.MIDDLE);
-            return;
-        }
+	private void sendReminderAction() {
+		if (this.survey == null || this.survey.getId() == null) {
+			Notification.show("Por favor, seleccione una encuesta.", 3000, Notification.Position.MIDDLE);
+			return;
+		}
 
-        Optional<Survey> surveyOpt = surveyService.getWithParticipations(this.survey.getId());
-        if (surveyOpt.isEmpty()) {
-            Notification.show("Encuesta no encontrada.", 3000, Notification.Position.MIDDLE);
-            return;
-        }
+		Optional<Survey> surveyOpt = surveyService.getWithParticipations(this.survey.getId());
+		if (surveyOpt.isEmpty()) {
+			Notification.show("Encuesta no encontrada.", 3000, Notification.Position.MIDDLE);
+			return;
+		}
 
-        Survey currentSurveyWithParticipations = surveyOpt.get();
-        Set<SurveyPanelistParticipation> participations = currentSurveyWithParticipations.getParticipations();
+		Survey currentSurveyWithParticipations = surveyOpt.get();
+		Set<SurveyPanelistParticipation> participations = currentSurveyWithParticipations.getParticipations();
 
-        if (participations == null || participations.isEmpty()) {
-            Notification.show("No hay panelistas asignados a esta encuesta para enviar recordatorios.", 3000, Notification.Position.MIDDLE);
-            return;
-        }
+		if (participations == null || participations.isEmpty()) {
+			Notification.show("No hay panelistas asignados a esta encuesta para enviar recordatorios.", 3000,
+					Notification.Position.MIDDLE);
+			return;
+		}
 
-        int tasksCreated = 0;
-        for (SurveyPanelistParticipation participation : participations) {
-            // Panelist panelist = participation.getPanelist(); // No longer needed directly for MessageTask
-            // if (panelist != null) { // Check if participation itself is valid if necessary
-            if (participation != null && participation.getPanelist() != null) { // Ensure participation and its panelist are not null
-                MessageTask mt = new MessageTask();
-                mt.setJobType(JobType.ALCHEMER_REMINDER);
-                mt.setCreated(LocalDateTime.now());
-                mt.setStatus(MessageTaskStatus.PENDING); // Assuming PENDING exists
-                mt.setSurveyPanelistParticipation(participation); // Set the participation
-                mt.setSurvey(currentSurveyWithParticipations); // Associate survey
-                messageTaskService.save(mt);
-                tasksCreated++;
-            }
-        }
-        Notification.show(tasksCreated + " tareas de recordatorio creadas para los panelistas.", 6000, Notification.Position.MIDDLE);
-    }
+		int tasksCreated = 0;
+		MessageTask mt = new MessageTask();
+		mt.setJobType(JobType.ALCHEMER_REMINDER);
+		mt.setCreated(LocalDateTime.now());
+		mt.setStatus(MessageTaskStatus.PENDING); // Assuming PENDING exists
+		mt.setSurvey(currentSurveyWithParticipations); // Associate survey
+		messageTaskService.save(mt);
+		tasksCreated++;
+		Notification.show(tasksCreated + " tareas de recordatorio creadas para los panelistas.", 6000,
+				Notification.Position.MIDDLE);
+	}
 
-    private void openSortearPanelistasDialog() {
-        if (this.survey == null || this.survey.getId() == null) {
-            Notification.show("No hay encuesta seleccionada para sortear panelistas.", 3000, Notification.Position.MIDDLE);
-            return;
-        }
+	private void openSortearPanelistasDialog() {
+		if (this.survey == null || this.survey.getId() == null) {
+			Notification.show("No hay encuesta seleccionada para sortear panelistas.", 3000,
+					Notification.Position.MIDDLE);
+			return;
+		}
 
-        Dialog sorteoDialog = new Dialog();
-        sorteoDialog.setHeaderTitle("Sortear Panelistas para: " + this.survey.getName());
-        sorteoDialog.setWidth("500px");
+		Dialog sorteoDialog = new Dialog();
+		sorteoDialog.setHeaderTitle("Sortear Panelistas para: " + this.survey.getName());
+		sorteoDialog.setWidth("500px");
 
-        VerticalLayout dialogLayout = new VerticalLayout();
+		VerticalLayout dialogLayout = new VerticalLayout();
 
-        ComboBox<Panel> panelComboBox = new ComboBox<>("Seleccionar Panel");
-        panelComboBox.setItems(panelService.findAll());
-        panelComboBox.setItemLabelGenerator(Panel::getName);
-        panelComboBox.setAllowCustomValue(true); // As requested
+		ComboBox<Panel> panelComboBox = new ComboBox<>("Seleccionar Panel");
+		panelComboBox.setItems(panelService.findAll());
+		panelComboBox.setItemLabelGenerator(Panel::getName);
+		panelComboBox.setAllowCustomValue(true); // As requested
 		panelComboBox.addCustomValueSetListener(e -> {
 			String customValue = e.getDetail();
-			// This is a basic handler. In a real app, you might try to find a panel by this custom name,
-            // or provide an option to create a new one if it doesn't exist.
-            // For now, if a custom value is entered that doesn't match an item,
-            // it will likely just result in panelComboBox.getValue() being null unless it matches an existing name.
-            // A more robust solution would involve checking if customValue matches any existing Panel names
-            // or guiding the user. For now, we keep it simple as the main interaction is selection.
-			Notification.show("Valor personalizado '" + customValue + "' ingresado. Si no coincide con un panel existente, no se seleccionará.", 3500, Position.MIDDLE);
+			// This is a basic handler. In a real app, you might try to find a panel by this
+			// custom name,
+			// or provide an option to create a new one if it doesn't exist.
+			// For now, if a custom value is entered that doesn't match an item,
+			// it will likely just result in panelComboBox.getValue() being null unless it
+			// matches an existing name.
+			// A more robust solution would involve checking if customValue matches any
+			// existing Panel names
+			// or guiding the user. For now, we keep it simple as the main interaction is
+			// selection.
+			Notification.show(
+					"Valor personalizado '" + customValue
+							+ "' ingresado. Si no coincide con un panel existente, no se seleccionará.",
+					3500, Position.MIDDLE);
 		});
 
+		IntegerField cantidadPanelistasField = new IntegerField("Cantidad de Panelistas a Sortear");
+		cantidadPanelistasField.setPlaceholder("Ingrese un número entero");
+		cantidadPanelistasField.setStepButtonsVisible(true);
+		cantidadPanelistasField.setMin(1); // Panelists count must be at least 1
 
-        IntegerField cantidadPanelistasField = new IntegerField("Cantidad de Panelistas a Sortear");
-        cantidadPanelistasField.setPlaceholder("Ingrese un número entero");
-        cantidadPanelistasField.setStepButtonsVisible(true);
-        cantidadPanelistasField.setMin(1); // Panelists count must be at least 1
+		dialogLayout.add(panelComboBox, cantidadPanelistasField);
+		sorteoDialog.add(dialogLayout);
 
-        dialogLayout.add(panelComboBox, cantidadPanelistasField);
-        sorteoDialog.add(dialogLayout);
+		Button cancelButton = new Button("Cancelar", e -> sorteoDialog.close());
+		cancelButton.addThemeVariants(ButtonVariant.LUMO_TERTIARY);
 
-        Button cancelButton = new Button("Cancelar", e -> sorteoDialog.close());
-        cancelButton.addThemeVariants(ButtonVariant.LUMO_TERTIARY);
+		Button doSortearButton = new Button("Sortear Panelistas", e -> {
+			Panel selectedPanel = panelComboBox.getValue();
+			Integer numToDraw = cantidadPanelistasField.getValue();
 
-        Button doSortearButton = new Button("Sortear Panelistas", e -> {
-            Panel selectedPanel = panelComboBox.getValue();
-            Integer numToDraw = cantidadPanelistasField.getValue();
+			if (selectedPanel == null) {
+				Notification.show("Por favor, seleccione un panel.", 3000, Position.MIDDLE);
+				return;
+			}
+			if (numToDraw == null || numToDraw <= 0) {
+				Notification.show("Por favor, ingrese una cantidad válida de panelistas a sortear.", 3000,
+						Position.MIDDLE);
+				return;
+			}
 
-            if (selectedPanel == null) {
-                Notification.show("Por favor, seleccione un panel.", 3000, Position.MIDDLE);
-                return;
-            }
-            if (numToDraw == null || numToDraw <= 0) {
-                Notification.show("Por favor, ingrese una cantidad válida de panelistas a sortear.", 3000, Position.MIDDLE);
-                return;
-            }
+			// Fetch the panel with its panelists
+			Optional<Panel> panelWithPanelistsOpt = panelService.getWithPanelists(selectedPanel.getId());
+			if (panelWithPanelistsOpt.isEmpty()) {
+				Notification.show("No se pudo cargar el panel seleccionado.", 3000, Position.MIDDLE);
+				return;
+			}
+			Panel panelWithPanelists = panelWithPanelistsOpt.get();
+			Set<Panelist> panelistsFromPanelSet = panelWithPanelists.getPanelists();
 
-            // Fetch the panel with its panelists
-            Optional<Panel> panelWithPanelistsOpt = panelService.getWithPanelists(selectedPanel.getId());
-            if (panelWithPanelistsOpt.isEmpty()) {
-                Notification.show("No se pudo cargar el panel seleccionado.", 3000, Position.MIDDLE);
-                return;
-            }
-            Panel panelWithPanelists = panelWithPanelistsOpt.get();
-            Set<Panelist> panelistsFromPanelSet = panelWithPanelists.getPanelists();
+			if (panelistsFromPanelSet == null || panelistsFromPanelSet.isEmpty()) {
+				Notification.show("El panel seleccionado no tiene panelistas.", 3000, Position.MIDDLE);
+				return;
+			}
 
-            if (panelistsFromPanelSet == null || panelistsFromPanelSet.isEmpty()) {
-                Notification.show("El panel seleccionado no tiene panelistas.", 3000, Position.MIDDLE);
-                return;
-            }
+			List<Panelist> panelistsList = new ArrayList<>(panelistsFromPanelSet);
 
-            List<Panelist> panelistsList = new ArrayList<>(panelistsFromPanelSet);
+			if (panelistsList.size() < numToDraw) {
+				Notification.show("El panel seleccionado solo tiene " + panelistsList.size()
+						+ " panelistas. No se pueden sortear " + numToDraw + ".", 5000, Position.MIDDLE);
+				return;
+			}
 
-            if (panelistsList.size() < numToDraw) {
-                Notification.show("El panel seleccionado solo tiene " + panelistsList.size() + " panelistas. No se pueden sortear " + numToDraw + ".", 5000, Position.MIDDLE);
-                return;
-            }
+			Collections.shuffle(panelistsList);
+			List<Panelist> selectedPanelists = panelistsList.subList(0, numToDraw);
 
-            Collections.shuffle(panelistsList);
-            List<Panelist> selectedPanelists = panelistsList.subList(0, numToDraw);
+			int createdCount = 0;
+			try {
+				for (Panelist panelist : selectedPanelists) {
+					SurveyPanelistParticipation participation = new SurveyPanelistParticipation();
+					participation.setSurvey(this.survey);
+					participation.setPanelist(panelist);
+					participation.setDateIncluded(LocalDate.now());
+					participation.setCompleted(false);
+					participationService.save(participation);
+					createdCount++;
+				}
+				Notification.show(createdCount + " participaciones de panelistas creadas exitosamente.", 3000,
+						Position.BOTTOM_START);
+				sorteoDialog.close();
+			} catch (Exception ex) {
+				Notification.show("Error al crear participaciones: " + ex.getMessage(), 5000, Position.MIDDLE)
+						.addThemeVariants(NotificationVariant.LUMO_ERROR);
+			}
+		});
+		doSortearButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
 
-            int createdCount = 0;
-            try {
-                for (Panelist panelist : selectedPanelists) {
-                    SurveyPanelistParticipation participation = new SurveyPanelistParticipation();
-                    participation.setSurvey(this.survey);
-                    participation.setPanelist(panelist);
-                    participation.setDateIncluded(LocalDate.now());
-                    participation.setCompleted(false);
-                    participationService.save(participation);
-                    createdCount++;
-                }
-                Notification.show(createdCount + " participaciones de panelistas creadas exitosamente.", 3000, Position.BOTTOM_START);
-                sorteoDialog.close();
-            } catch (Exception ex) {
-                Notification.show("Error al crear participaciones: " + ex.getMessage(), 5000, Position.MIDDLE)
-                        .addThemeVariants(NotificationVariant.LUMO_ERROR);
-            }
-        });
-        doSortearButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
+		sorteoDialog.getFooter().add(cancelButton, doSortearButton);
 
-        sorteoDialog.getFooter().add(cancelButton, doSortearButton);
+		sorteoDialog.open();
+	}
 
-        sorteoDialog.open();
-    }
+	private void openParticipantsDialog() {
+		if (this.survey == null || this.survey.getId() == null) {
+			Notification.show("No hay encuesta seleccionada.", 3000, Notification.Position.MIDDLE);
+			return;
+		}
 
-    private void openParticipantsDialog() {
-        if (this.survey == null || this.survey.getId() == null) {
-            Notification.show("No hay encuesta seleccionada.", 3000, Notification.Position.MIDDLE);
-            return;
-        }
+		// Cargar las participaciones para la encuesta actual
+		// Esto asume que tienes un método en participationService para obtener
+		// participaciones por Survey ID
+		// o que la relación Survey -> SurveyPanelistParticipation está configurada como
+		// EAGER
+		// o se carga explícitamente al obtener la encuesta.
+		// Para ser explícitos, podríamos hacer:
+		// List<SurveyPanelistParticipation> participations =
+		// participationService.findBySurveyId(this.survey.getId());
+		// O, si la entidad Survey ya tiene las participaciones (por carga EAGER o JOIN
+		// FETCH previo):
+		Survey currentSurvey = surveyService.getWithParticipations(this.survey.getId()).orElse(null); // Changed to
+																										// getWithParticipations
+		if (currentSurvey == null || currentSurvey.getParticipations() == null
+				|| currentSurvey.getParticipations().isEmpty()) {
+			Notification.show("No hay participaciones para esta encuesta.", 3000, Notification.Position.MIDDLE);
+			return;
+		}
 
-        // Cargar las participaciones para la encuesta actual
-        // Esto asume que tienes un método en participationService para obtener participaciones por Survey ID
-        // o que la relación Survey -> SurveyPanelistParticipation está configurada como EAGER
-        // o se carga explícitamente al obtener la encuesta.
-        // Para ser explícitos, podríamos hacer:
-        // List<SurveyPanelistParticipation> participations = participationService.findBySurveyId(this.survey.getId());
-        // O, si la entidad Survey ya tiene las participaciones (por carga EAGER o JOIN FETCH previo):
-        Survey currentSurvey = surveyService.getWithParticipations(this.survey.getId()).orElse(null); // Changed to getWithParticipations
-        if (currentSurvey == null || currentSurvey.getParticipations() == null || currentSurvey.getParticipations().isEmpty()) {
-            Notification.show("No hay participaciones para esta encuesta.", 3000, Notification.Position.MIDDLE);
-            return;
-        }
+		Dialog dialog = new Dialog();
+		dialog.setHeaderTitle("Participaciones de la Encuesta: " + currentSurvey.getName());
+		dialog.setWidth("80%");
+		dialog.setHeight("70%");
 
+		Grid<SurveyPanelistParticipation> participationsGrid = new Grid<>(SurveyPanelistParticipation.class, false);
+		participationsGrid.addColumn(participation -> participation.getPanelist().getFirstName())
+				.setHeader("Nombre Panelista").setSortable(true).setKey("panelistFirstName");
+		participationsGrid.addColumn(participation -> participation.getPanelist().getLastName())
+				.setHeader("Apellido Panelista").setSortable(true).setKey("panelistLastName");
+		participationsGrid.addColumn(participation -> participation.getPanelist().getEmail())
+				.setHeader("Email Panelista").setSortable(true).setKey("panelistEmail"); // Added Email column
+		Grid.Column<SurveyPanelistParticipation> dateIncludedColumn = participationsGrid
+				.addColumn(SurveyPanelistParticipation::getDateIncluded).setHeader("Fecha Inclusión").setSortable(true)
+				.setKey("dateIncluded");
+		Grid.Column<SurveyPanelistParticipation> dateSentColumn = participationsGrid
+				.addColumn(SurveyPanelistParticipation::getDateSent).setHeader("Fecha Ult. Envío").setSortable(true)
+				.setKey("dateSent");
+		Grid.Column<SurveyPanelistParticipation> completedColumn = participationsGrid
+				.addColumn(SurveyPanelistParticipation::isCompleted).setHeader("Completada").setSortable(true)
+				.setKey("completed");
 
-        Dialog dialog = new Dialog();
-        dialog.setHeaderTitle("Participaciones de la Encuesta: " + currentSurvey.getName());
-        dialog.setWidth("80%");
-        dialog.setHeight("70%");
+		// Add filters
+		HeaderRow filterRow = participationsGrid.appendHeaderRow();
 
-        Grid<SurveyPanelistParticipation> participationsGrid = new Grid<>(SurveyPanelistParticipation.class, false);
-        participationsGrid.addColumn(participation -> participation.getPanelist().getFirstName()).setHeader("Nombre Panelista").setSortable(true).setKey("panelistFirstName");
-        participationsGrid.addColumn(participation -> participation.getPanelist().getLastName()).setHeader("Apellido Panelista").setSortable(true).setKey("panelistLastName");
-        participationsGrid.addColumn(participation -> participation.getPanelist().getEmail()).setHeader("Email Panelista").setSortable(true).setKey("panelistEmail"); // Added Email column
-        Grid.Column<SurveyPanelistParticipation> dateIncludedColumn = participationsGrid.addColumn(SurveyPanelistParticipation::getDateIncluded).setHeader("Fecha Inclusión").setSortable(true).setKey("dateIncluded");
-        Grid.Column<SurveyPanelistParticipation> dateSentColumn = participationsGrid.addColumn(SurveyPanelistParticipation::getDateSent).setHeader("Fecha Ult. Envío").setSortable(true).setKey("dateSent");
-        Grid.Column<SurveyPanelistParticipation> completedColumn = participationsGrid.addColumn(SurveyPanelistParticipation::isCompleted).setHeader("Completada").setSortable(true).setKey("completed");
+		TextField panelistFirstNameFilter = new TextField();
+		panelistFirstNameFilter.setPlaceholder("Filtrar...");
+		panelistFirstNameFilter.setClearButtonVisible(true);
+		filterRow.getCell(participationsGrid.getColumnByKey("panelistFirstName")).setComponent(panelistFirstNameFilter);
 
+		TextField panelistLastNameFilter = new TextField();
+		panelistLastNameFilter.setPlaceholder("Filtrar...");
+		panelistLastNameFilter.setClearButtonVisible(true);
+		filterRow.getCell(participationsGrid.getColumnByKey("panelistLastName")).setComponent(panelistLastNameFilter);
 
-        // Add filters
-        HeaderRow filterRow = participationsGrid.appendHeaderRow();
+		TextField panelistEmailFilter = new TextField(); // Added Email filter
+		panelistEmailFilter.setPlaceholder("Filtrar...");
+		panelistEmailFilter.setClearButtonVisible(true);
+		filterRow.getCell(participationsGrid.getColumnByKey("panelistEmail")).setComponent(panelistEmailFilter);
 
-        TextField panelistFirstNameFilter = new TextField();
-        panelistFirstNameFilter.setPlaceholder("Filtrar...");
-        panelistFirstNameFilter.setClearButtonVisible(true);
-        filterRow.getCell(participationsGrid.getColumnByKey("panelistFirstName")).setComponent(panelistFirstNameFilter);
+		DatePicker dateIncludedFilter = new DatePicker();
+		dateIncludedFilter.setPlaceholder("Filtrar Fecha");
+		dateIncludedFilter.setClearButtonVisible(true);
+		filterRow.getCell(dateIncludedColumn).setComponent(dateIncludedFilter);
 
-        TextField panelistLastNameFilter = new TextField();
-        panelistLastNameFilter.setPlaceholder("Filtrar...");
-        panelistLastNameFilter.setClearButtonVisible(true);
-        filterRow.getCell(participationsGrid.getColumnByKey("panelistLastName")).setComponent(panelistLastNameFilter);
+		DatePicker dateSentFilter = new DatePicker();
+		dateSentFilter.setPlaceholder("Filtrar Fecha");
+		dateSentFilter.setClearButtonVisible(true);
+		filterRow.getCell(dateSentColumn).setComponent(dateSentFilter);
 
-        TextField panelistEmailFilter = new TextField(); // Added Email filter
-        panelistEmailFilter.setPlaceholder("Filtrar...");
-        panelistEmailFilter.setClearButtonVisible(true);
-        filterRow.getCell(participationsGrid.getColumnByKey("panelistEmail")).setComponent(panelistEmailFilter);
+		ComboBox<String> completedFilter = new ComboBox<>();
+		completedFilter.setPlaceholder("Todos");
+		completedFilter.setItems("Sí", "No", "Todos");
+		completedFilter.setClearButtonVisible(true); // Though "Todos" acts as a clearer
+		filterRow.getCell(completedColumn).setComponent(completedFilter);
 
-        DatePicker dateIncludedFilter = new DatePicker();
-        dateIncludedFilter.setPlaceholder("Filtrar Fecha");
-        dateIncludedFilter.setClearButtonVisible(true);
-        filterRow.getCell(dateIncludedColumn).setComponent(dateIncludedFilter);
+		participationsGrid.setItems(query -> currentSurvey.getParticipations().stream().filter(participation -> {
+			// Panelist First Name Filter
+			boolean firstNameMatch = panelistFirstNameFilter.getValue() == null
+					|| panelistFirstNameFilter.getValue().isBlank() || participation.getPanelist().getFirstName()
+							.toLowerCase().contains(panelistFirstNameFilter.getValue().toLowerCase());
+			// Panelist Last Name Filter
+			boolean lastNameMatch = panelistLastNameFilter.getValue() == null
+					|| panelistLastNameFilter.getValue().isBlank() || participation.getPanelist().getLastName()
+							.toLowerCase().contains(panelistLastNameFilter.getValue().toLowerCase());
+			// Panelist Email Filter
+			boolean emailMatch = panelistEmailFilter.getValue() == null || panelistEmailFilter.getValue().isBlank()
+					|| participation.getPanelist().getEmail().toLowerCase()
+							.contains(panelistEmailFilter.getValue().toLowerCase());
+			// Date Included Filter
+			boolean dateIncludedMatch = dateIncludedFilter.getValue() == null
+					|| dateIncludedFilter.getValue().equals(participation.getDateIncluded());
+			// Date Sent Filter
+			boolean dateSentMatch = dateSentFilter.getValue() == null || (participation.getDateSent() != null
+					&& dateSentFilter.getValue().equals(participation.getDateSent()));
+			// Completed Filter
+			boolean completedMatch = true;
+			String completedValue = completedFilter.getValue();
+			if (completedValue != null && !completedValue.equals("Todos")) {
+				boolean isCompletedTarget = completedValue.equals("Sí");
+				completedMatch = participation.isCompleted() == isCompletedTarget;
+			}
+			return firstNameMatch && lastNameMatch && emailMatch && dateIncludedMatch && dateSentMatch
+					&& completedMatch; // Added emailMatch
+		}).skip(query.getOffset()).limit(query.getLimit()));
 
-        DatePicker dateSentFilter = new DatePicker();
-        dateSentFilter.setPlaceholder("Filtrar Fecha");
-        dateSentFilter.setClearButtonVisible(true);
-        filterRow.getCell(dateSentColumn).setComponent(dateSentFilter);
+		panelistFirstNameFilter.addValueChangeListener(e -> participationsGrid.getDataProvider().refreshAll());
+		panelistLastNameFilter.addValueChangeListener(e -> participationsGrid.getDataProvider().refreshAll());
+		panelistEmailFilter.addValueChangeListener(e -> participationsGrid.getDataProvider().refreshAll()); // Added
+																											// listener
+																											// for email
+																											// filter
+		dateIncludedFilter.addValueChangeListener(e -> participationsGrid.getDataProvider().refreshAll());
+		dateSentFilter.addValueChangeListener(e -> participationsGrid.getDataProvider().refreshAll());
+		completedFilter.addValueChangeListener(e -> participationsGrid.getDataProvider().refreshAll());
 
-        ComboBox<String> completedFilter = new ComboBox<>();
-        completedFilter.setPlaceholder("Todos");
-        completedFilter.setItems("Sí", "No", "Todos");
-        completedFilter.setClearButtonVisible(true); // Though "Todos" acts as a clearer
-        filterRow.getCell(completedColumn).setComponent(completedFilter);
+		dialog.add(participationsGrid);
+		Button closeButton = new Button("Cerrar", e -> dialog.close());
+		closeButton.addThemeVariants(ButtonVariant.LUMO_TERTIARY);
+		dialog.getFooter().add(closeButton);
 
-
-        participationsGrid.setItems(query -> currentSurvey.getParticipations().stream()
-                .filter(participation -> {
-                    // Panelist First Name Filter
-                    boolean firstNameMatch = panelistFirstNameFilter.getValue() == null ||
-                                             panelistFirstNameFilter.getValue().isBlank() ||
-                                             participation.getPanelist().getFirstName().toLowerCase().contains(panelistFirstNameFilter.getValue().toLowerCase());
-                    // Panelist Last Name Filter
-                    boolean lastNameMatch = panelistLastNameFilter.getValue() == null ||
-                                            panelistLastNameFilter.getValue().isBlank() ||
-                                            participation.getPanelist().getLastName().toLowerCase().contains(panelistLastNameFilter.getValue().toLowerCase());
-                    // Panelist Email Filter
-                    boolean emailMatch = panelistEmailFilter.getValue() == null ||
-                                         panelistEmailFilter.getValue().isBlank() ||
-                                         participation.getPanelist().getEmail().toLowerCase().contains(panelistEmailFilter.getValue().toLowerCase());
-                    // Date Included Filter
-                    boolean dateIncludedMatch = dateIncludedFilter.getValue() == null ||
-                                                dateIncludedFilter.getValue().equals(participation.getDateIncluded());
-                    // Date Sent Filter
-                    boolean dateSentMatch = dateSentFilter.getValue() == null ||
-                                            (participation.getDateSent() != null && dateSentFilter.getValue().equals(participation.getDateSent()));
-                    // Completed Filter
-                    boolean completedMatch = true;
-                    String completedValue = completedFilter.getValue();
-                    if (completedValue != null && !completedValue.equals("Todos")) {
-                        boolean isCompletedTarget = completedValue.equals("Sí");
-                        completedMatch = participation.isCompleted() == isCompletedTarget;
-                    }
-                    return firstNameMatch && lastNameMatch && emailMatch && dateIncludedMatch && dateSentMatch && completedMatch; // Added emailMatch
-                })
-                .skip(query.getOffset())
-                .limit(query.getLimit())
-        );
-
-        panelistFirstNameFilter.addValueChangeListener(e -> participationsGrid.getDataProvider().refreshAll());
-        panelistLastNameFilter.addValueChangeListener(e -> participationsGrid.getDataProvider().refreshAll());
-        panelistEmailFilter.addValueChangeListener(e -> participationsGrid.getDataProvider().refreshAll()); // Added listener for email filter
-        dateIncludedFilter.addValueChangeListener(e -> participationsGrid.getDataProvider().refreshAll());
-        dateSentFilter.addValueChangeListener(e -> participationsGrid.getDataProvider().refreshAll());
-        completedFilter.addValueChangeListener(e -> participationsGrid.getDataProvider().refreshAll());
-
-        dialog.add(participationsGrid);
-        Button closeButton = new Button("Cerrar", e -> dialog.close());
-        closeButton.addThemeVariants(ButtonVariant.LUMO_TERTIARY);
-        dialog.getFooter().add(closeButton);
-
-        dialog.open();
-    }
+		dialog.open();
+	}
 
 	private void onDeleteClicked() {
 		if (this.survey == null || this.survey.getId() == null) {
@@ -660,7 +679,7 @@ public class SurveysView extends Div implements BeforeEnterObserver {
 		com.vaadin.flow.component.confirmdialog.ConfirmDialog dialog = new com.vaadin.flow.component.confirmdialog.ConfirmDialog();
 		dialog.setHeader("Confirmar Eliminación");
 		dialog.setText("¿Está seguro de que desea eliminar la encuesta '" + this.survey.getName() + "'?");
-		
+
 		dialog.setConfirmText("Eliminar");
 		dialog.setConfirmButtonTheme("error primary");
 		dialog.setCancelText("Cancelar");
@@ -673,11 +692,12 @@ public class SurveysView extends Div implements BeforeEnterObserver {
 				Notification.show("Encuesta eliminada correctamente.", 3000, Notification.Position.BOTTOM_START);
 				UI.getCurrent().navigate(SurveysView.class);
 			} catch (org.springframework.dao.DataIntegrityViolationException ex) {
-				Notification.show("No se puede eliminar la encuesta. Es posible que esté siendo referenciada por otras entidades.", 5000, Notification.Position.MIDDLE)
-					.addThemeVariants(NotificationVariant.LUMO_ERROR);
+				Notification.show(
+						"No se puede eliminar la encuesta. Es posible que esté siendo referenciada por otras entidades.",
+						5000, Notification.Position.MIDDLE).addThemeVariants(NotificationVariant.LUMO_ERROR);
 			} catch (Exception ex) {
-				Notification.show("Ocurrió un error al intentar eliminar la encuesta: " + ex.getMessage(), 5000, Notification.Position.MIDDLE)
-					.addThemeVariants(NotificationVariant.LUMO_ERROR);
+				Notification.show("Ocurrió un error al intentar eliminar la encuesta: " + ex.getMessage(), 5000,
+						Notification.Position.MIDDLE).addThemeVariants(NotificationVariant.LUMO_ERROR);
 			}
 		});
 		dialog.open();
