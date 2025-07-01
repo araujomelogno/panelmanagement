@@ -22,8 +22,12 @@ public class MessageTaskService {
         return repository.save(messageTask);
     }
 
-    public List<MessageTask> findAllByJobTypeAndStatus(JobType jobType, MessageTaskStatus status) {
+    public List<MessageTask> findAllByJobTypeAndStatus(JobType jobType, MessageTaskS tatus status) {
         return repository.findAllByJobTypeAndStatus(jobType, status);
+    }
+
+    public List<MessageTask> findAll() {
+        return repository.findAll();
     }
 
     // Optional: Add other common service methods like list, get, delete if needed for future use.
