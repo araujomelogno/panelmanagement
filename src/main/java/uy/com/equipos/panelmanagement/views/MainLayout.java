@@ -85,12 +85,18 @@ public class MainLayout extends AppLayout {
                     }
                 });
 
-        // Add "Configuración" with "Usuarios" as a sub-item
+        // Add "Configuración" with "Usuarios" and "Tareas" as sub-items
         SideNavItem configuracionItem = new SideNavItem("Configuración");
         configuracionItem.setPrefixComponent(new Icon("vaadin", "tools"));
+
         SideNavItem usuariosItem = new SideNavItem("Usuarios", "users");
         usuariosItem.setPrefixComponent(new Icon("vaadin", "users"));
         configuracionItem.addItem(usuariosItem);
+
+        SideNavItem tareasItem = new SideNavItem("Tareas", "messagetasks");
+        tareasItem.setPrefixComponent(new Icon("vaadin", "envelope-o")); // Icon for "Tareas"
+        configuracionItem.addItem(tareasItem); // Add "Tareas" under "Configuración"
+
         nav.addItem(configuracionItem);
 
         return nav;
