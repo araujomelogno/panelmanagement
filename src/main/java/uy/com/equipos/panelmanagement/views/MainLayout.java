@@ -73,14 +73,22 @@ public class MainLayout extends AppLayout {
     private SideNav createNavigation() {
         SideNav nav = new SideNav();
 
+        // Add other menu items, excluding "Usuarios"
         List<MenuEntry> menuEntries = MenuConfiguration.getMenuEntries();
-        menuEntries.forEach(entry -> {
-            if (entry.icon() != null) {
-                nav.addItem(new SideNavItem(entry.title(), entry.path(), new SvgIcon(entry.icon())));
-            } else {
-                nav.addItem(new SideNavItem(entry.title(), entry.path()));
-            }
-        });
+        menuEntries.stream()
+                .filter(entry -> !entry.title().equals("Usuarios"))
+                .forEach(entry -> {
+                    if (entry.icon() != null) {
+                        nav.addItem(new SideNavItem(entry.title(), entry.path(), new SvgIcon(entry.icon())));
+                    } else {
+                        nav.addItem(new SideNavItem(entry.title(), entry.path()));
+                    }
+                });
+
+        // Add "Configuración" with "Usuarios" as a sub-item
+        SideNavItem configuracionItem = new SideNavItem("Configuración");
+        configuracionItem.addItem(new SideNavItem("Usuarios", "usuarios")); // Assuming "usuarios" is the path
+        nav.addItem(configuracionItem);
 
         return nav;
     }
