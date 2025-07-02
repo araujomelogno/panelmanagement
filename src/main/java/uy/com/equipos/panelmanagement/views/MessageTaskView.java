@@ -25,9 +25,10 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.HashMap; // Added for filter map
 import java.util.List;
-import java.util.Map; // Added for filter map
+import java.util.Map;
 import java.util.Objects;
-import java.util.function.Predicate; // Added for Predicate
+import java.util.function.Predicate;
+import com.vaadin.flow.function.SerializablePredicate; // Added for SerializablePredicate
 
 @PageTitle("Tareas")
 @Route(value = "messagetasks", layout = MainLayout.class)
@@ -36,7 +37,7 @@ public class MessageTaskView extends Div implements HasComponents, HasStyle {
 
     private Grid<MessageTask> grid = new Grid<>(MessageTask.class, false);
     private GridListDataView<MessageTask> gridListDataView;
-    private final Map<String, Predicate<MessageTask>> activeFilters = new HashMap<>();
+    private final Map<String, SerializablePredicate<MessageTask>> activeFilters = new HashMap<>();
 
     private final MessageTaskService messageTaskService;
 
@@ -97,7 +98,7 @@ public class MessageTaskView extends Div implements HasComponents, HasStyle {
             if (selectedDate == null) {
                 activeFilters.remove(filterKey);
             } else {
-                activeFilters.put(filterKey, (Predicate<MessageTask> & java.io.Serializable) task -> {
+                activeFilters.put(filterKey, (SerializablePredicate<MessageTask>) task -> {
                     if (task.getCreated() == null) return false;
                     return task.getCreated().toLocalDate().equals(selectedDate);
                 });
@@ -118,7 +119,7 @@ public class MessageTaskView extends Div implements HasComponents, HasStyle {
             if (selectedValue == null) {
                 activeFilters.remove(filterKey);
             } else {
-                activeFilters.put(filterKey, (Predicate<MessageTask> & java.io.Serializable) task -> {
+                activeFilters.put(filterKey, (SerializablePredicate<MessageTask>) task -> {
                     E taskValue = valueProvider.apply(task);
                     return taskValue != null && taskValue.equals(selectedValue);
                 });
@@ -139,7 +140,7 @@ public class MessageTaskView extends Div implements HasComponents, HasStyle {
             if (filterValue.isEmpty()) {
                 activeFilters.remove(filterKey);
             } else {
-                activeFilters.put(filterKey, (Predicate<MessageTask> & java.io.Serializable) task ->
+                activeFilters.put(filterKey, (SerializablePredicate<MessageTask>) task ->
                     Objects.toString(valueProvider.apply(task), "").toLowerCase().contains(filterValue)
                 );
             }
@@ -152,14 +153,12 @@ public class MessageTaskView extends Div implements HasComponents, HasStyle {
         if (gridListDataView == null) {
             return;
         }
-        // Ensure the combined predicate is serializable
-        Predicate<MessageTask> combinedFilter = activeFilters.values().stream()
-            .reduce((java.io.Serializable & Predicate<MessageTask>) Predicate::and)
-            .orElse((java.io.Serializable & Predicate<MessageTask>) task -> true); // If no filters, show all (must also be serializable)
 
-        // The setFilter method expects a SerializablePredicate.
-        // Our combinedFilter should now conform if all individual predicates were serializable.
-        gridListDataView.setFilter((com.vaadin.flow.function.SerializablePredicate<MessageTask>) combinedFilter);
+        SerializablePredicate<MessageTask> combinedFilter = activeFilters.values().stream()
+            .reduce(SerializablePredicate::and)
+            .orElse(task -> true); // This lambda is intrinsically serializable if it captures no non-serializable state
+
+        gridListDataView.setFilter(combinedFilter);
     }
 
     // Functional interface for accessing property values, needed for createTextFieldFilter
