@@ -52,33 +52,37 @@ public class MessageTaskView extends Div implements HasComponents, HasStyle {
     }
 
     private void configureGrid() {
+        // Define columns with keys first
+        grid.addColumn(MessageTask::getId).setHeader("Id").setAutoWidth(true).setSortable(true).setKey("id");
+        grid.addColumn(MessageTask::getJobType).setHeader("Job Type").setAutoWidth(true).setSortable(true).setKey("jobType");
+        grid.addColumn(MessageTask::getCreated).setHeader("Created").setAutoWidth(true).setSortable(true).setKey("created");
+        grid.addColumn(MessageTask::getStatus).setHeader("Status").setAutoWidth(true).setSortable(true).setKey("status");
+        grid.addColumn(mt -> mt.getSurveyPanelistParticipation() != null ? mt.getSurveyPanelistParticipation().getId() : null)
+            .setHeader("Survey Panelist Participation Id").setAutoWidth(true).setSortable(true).setKey("participationId");
+        grid.addColumn(mt -> mt.getSurvey() != null ? mt.getSurvey().getName() : null)
+            .setHeader("Survey").setAutoWidth(true).setSortable(true).setKey("surveyName");
+
+        // Append the filter row
         HeaderRow filterRow = grid.appendHeaderRow();
 
-        Grid.Column<MessageTask> idColumn = grid.addColumn(MessageTask::getId).setHeader("Id").setAutoWidth(true).setSortable(true);
-        TextField idFilter = createTextFieldFilter("id", MessageTask::getId);
-        filterRow.getCell(idColumn).setComponent(idFilter);
+        // Create and assign filters to the header row using column keys
+        TextField idFilter = createTextFieldFilter("id_filter_key", MessageTask::getId); // Changed filterKey to avoid conflict with column key if map keys are column keys
+        filterRow.getCell(grid.getColumnByKey("id")).setComponent(idFilter);
 
-        Grid.Column<MessageTask> jobTypeColumn = grid.addColumn(MessageTask::getJobType).setHeader("Job Type").setAutoWidth(true).setSortable(true);
-        ComboBox<JobType> jobTypeComboBox = createComboBoxFilter("jobType", JobType.class, JobType.values(), MessageTask::getJobType);
-        filterRow.getCell(jobTypeColumn).setComponent(jobTypeComboBox);
+        ComboBox<JobType> jobTypeComboBox = createComboBoxFilter("jobType_filter_key", JobType.class, JobType.values(), MessageTask::getJobType);
+        filterRow.getCell(grid.getColumnByKey("jobType")).setComponent(jobTypeComboBox);
 
-        Grid.Column<MessageTask> createdColumn = grid.addColumn(MessageTask::getCreated).setHeader("Created").setAutoWidth(true).setSortable(true);
-        DatePicker createdDatePicker = createDatePickerFilter("createdDate");
-        filterRow.getCell(createdColumn).setComponent(createdDatePicker);
+        DatePicker createdDatePicker = createDatePickerFilter("createdDate_filter_key");
+        filterRow.getCell(grid.getColumnByKey("created")).setComponent(createdDatePicker);
 
-        Grid.Column<MessageTask> statusColumn = grid.addColumn(MessageTask::getStatus).setHeader("Status").setAutoWidth(true).setSortable(true);
-        ComboBox<MessageTaskStatus> statusComboBox = createComboBoxFilter("status", MessageTaskStatus.class, MessageTaskStatus.values(), MessageTask::getStatus);
-        filterRow.getCell(statusColumn).setComponent(statusComboBox);
+        ComboBox<MessageTaskStatus> statusComboBox = createComboBoxFilter("status_filter_key", MessageTaskStatus.class, MessageTaskStatus.values(), MessageTask::getStatus);
+        filterRow.getCell(grid.getColumnByKey("status")).setComponent(statusComboBox);
 
-        Grid.Column<MessageTask> participationIdColumn = grid.addColumn(mt -> mt.getSurveyPanelistParticipation() != null ? mt.getSurveyPanelistParticipation().getId() : null)
-            .setHeader("Survey Panelist Participation Id").setAutoWidth(true).setSortable(true);
-        TextField participationIdFilter = createTextFieldFilter("participationId", mt -> mt.getSurveyPanelistParticipation() != null ? mt.getSurveyPanelistParticipation().getId() : "");
-        filterRow.getCell(participationIdColumn).setComponent(participationIdFilter);
+        TextField participationIdFilter = createTextFieldFilter("participationId_filter_key", mt -> mt.getSurveyPanelistParticipation() != null ? mt.getSurveyPanelistParticipation().getId() : "");
+        filterRow.getCell(grid.getColumnByKey("participationId")).setComponent(participationIdFilter);
 
-        Grid.Column<MessageTask> surveyColumn = grid.addColumn(mt -> mt.getSurvey() != null ? mt.getSurvey().getName() : null)
-            .setHeader("Survey").setAutoWidth(true).setSortable(true);
-        TextField surveyFilter = createTextFieldFilter("surveyName", mt -> mt.getSurvey() != null ? mt.getSurvey().getName() : "");
-        filterRow.getCell(surveyColumn).setComponent(surveyFilter);
+        TextField surveyFilter = createTextFieldFilter("surveyName_filter_key", mt -> mt.getSurvey() != null ? mt.getSurvey().getName() : "");
+        filterRow.getCell(grid.getColumnByKey("surveyName")).setComponent(surveyFilter);
 
         grid.setSizeFull();
     }
