@@ -1,25 +1,5 @@
 package uy.com.equipos.panelmanagement.views;
 
-import com.vaadin.flow.component.HasComponents;
-import com.vaadin.flow.component.HasStyle;
-import com.vaadin.flow.component.grid.Grid;
-import com.vaadin.flow.component.grid.dataview.GridListDataView;
-import com.vaadin.flow.component.html.Div;
-import com.vaadin.flow.router.PageTitle;
-import com.vaadin.flow.router.Route;
-import jakarta.annotation.security.RolesAllowed;
-import org.springframework.beans.factory.annotation.Autowired;
-import uy.com.equipos.panelmanagement.data.MessageTask;
-import uy.com.equipos.panelmanagement.services.MessageTaskService;
-import uy.com.equipos.panelmanagement.data.JobType; // Required for JobType
-import uy.com.equipos.panelmanagement.data.MessageTaskStatus; // Required for MessageTaskStatus
-
-import com.vaadin.flow.component.textfield.TextField;
-import com.vaadin.flow.data.value.ValueChangeMode;
-import com.vaadin.flow.component.grid.HeaderRow;
-import com.vaadin.flow.component.datepicker.DatePicker; // Added for DatePicker
-import com.vaadin.flow.component.combobox.ComboBox; // Added for ComboBox
-
 import java.time.LocalDate; // Added for LocalDate comparison
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
@@ -27,8 +7,28 @@ import java.util.HashMap; // Added for filter map
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.function.Predicate;
+
+import org.springframework.beans.factory.annotation.Autowired;
+
+import com.vaadin.flow.component.HasComponents;
+import com.vaadin.flow.component.HasStyle;
+import com.vaadin.flow.component.combobox.ComboBox; // Added for ComboBox
+import com.vaadin.flow.component.datepicker.DatePicker; // Added for DatePicker
+import com.vaadin.flow.component.grid.Grid;
+import com.vaadin.flow.component.grid.HeaderRow;
+import com.vaadin.flow.component.grid.dataview.GridListDataView;
+import com.vaadin.flow.component.html.Div;
+import com.vaadin.flow.component.textfield.TextField;
+import com.vaadin.flow.data.value.ValueChangeMode;
 import com.vaadin.flow.function.SerializablePredicate; // Added for SerializablePredicate
+import com.vaadin.flow.router.PageTitle;
+import com.vaadin.flow.router.Route;
+
+import jakarta.annotation.security.RolesAllowed;
+import uy.com.equipos.panelmanagement.data.JobType; // Required for JobType
+import uy.com.equipos.panelmanagement.data.MessageTask;
+import uy.com.equipos.panelmanagement.data.MessageTaskStatus; // Required for MessageTaskStatus
+import uy.com.equipos.panelmanagement.services.MessageTaskService;
 
 @PageTitle("Tareas")
 @Route(value = "messagetasks", layout = MainLayout.class)
@@ -54,13 +54,13 @@ public class MessageTaskView extends Div implements HasComponents, HasStyle {
     private void configureGrid() {
         // Define columns with keys first
         grid.addColumn(MessageTask::getId).setHeader("Id").setAutoWidth(true).setSortable(true).setKey("id");
-        grid.addColumn(MessageTask::getJobType).setHeader("Job Type").setAutoWidth(true).setSortable(true).setKey("jobType");
-        grid.addColumn(MessageTask::getCreated).setHeader("Created").setAutoWidth(true).setSortable(true).setKey("created");
-        grid.addColumn(MessageTask::getStatus).setHeader("Status").setAutoWidth(true).setSortable(true).setKey("status");
-        grid.addColumn(mt -> mt.getSurveyPanelistParticipation() != null ? mt.getSurveyPanelistParticipation().getId() : null)
-            .setHeader("Survey Panelist Participation Id").setAutoWidth(true).setSortable(true).setKey("participationId");
+        grid.addColumn(MessageTask::getJobType).setHeader("Tarea").setAutoWidth(true).setSortable(true).setKey("jobType");
+        grid.addColumn(MessageTask::getCreated).setHeader("Creada").setAutoWidth(true).setSortable(true).setKey("created");
+        grid.addColumn(MessageTask::getStatus).setHeader("Estado").setAutoWidth(true).setSortable(true).setKey("status");
+        grid.addColumn(mt -> mt.getSurveyPanelistParticipation() != null ? mt.getSurveyPanelistParticipation().getPanelist().getFullName(): null)
+            .setHeader("Panelista").setAutoWidth(true).setSortable(true).setKey("panelist");
         grid.addColumn(mt -> mt.getSurvey() != null ? mt.getSurvey().getName() : null)
-            .setHeader("Survey").setAutoWidth(true).setSortable(true).setKey("surveyName");
+            .setHeader("Encuesta").setAutoWidth(true).setSortable(true).setKey("surveyName");
 
         // Append the filter row
         HeaderRow filterRow = grid.appendHeaderRow();
@@ -79,7 +79,7 @@ public class MessageTaskView extends Div implements HasComponents, HasStyle {
         filterRow.getCell(grid.getColumnByKey("status")).setComponent(statusComboBox);
 
         TextField participationIdFilter = createTextFieldFilter("participationId_filter_key", mt -> mt.getSurveyPanelistParticipation() != null ? mt.getSurveyPanelistParticipation().getId() : "");
-        filterRow.getCell(grid.getColumnByKey("participationId")).setComponent(participationIdFilter);
+        filterRow.getCell(grid.getColumnByKey("panelist")).setComponent(participationIdFilter);
 
         TextField surveyFilter = createTextFieldFilter("surveyName_filter_key", mt -> mt.getSurvey() != null ? mt.getSurvey().getName() : "");
         filterRow.getCell(grid.getColumnByKey("surveyName")).setComponent(surveyFilter);

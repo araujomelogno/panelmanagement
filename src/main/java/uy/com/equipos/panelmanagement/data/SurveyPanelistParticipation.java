@@ -35,6 +35,7 @@ public class SurveyPanelistParticipation extends AbstractEntity {
         this.survey = survey;
     }
 
+    
     public Panelist getPanelist() {
         return panelist;
     }
