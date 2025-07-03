@@ -163,9 +163,9 @@ public class PanelistsView extends Div implements BeforeEnterObserver {
 		// grid.addColumn(Panelist::getDateOfBirth).setHeader("Fecha de Nacimiento").setKey("dateOfBirth")
 		// .setAutoWidth(true); // Removed
 		// grid.addColumn(Panelist::getOccupation).setHeader("Ocupación").setKey("occupation").setAutoWidth(true); // Removed
-		grid.addColumn(Panelist::getLastContacted).setHeader("Último Contacto").setKey("lastContacted")
+		grid.addColumn(Panelist::getLastContacted).setHeader("Último encuesta enviada").setKey("lastContacted")
 				.setAutoWidth(true);
-		grid.addColumn(Panelist::getLastInterviewed).setHeader("Última Encuesta").setKey("lastInterviewed")
+		grid.addColumn(Panelist::getLastInterviewed).setHeader("Última encuesta completa").setKey("lastInterviewed")
 				.setAutoWidth(true);
 		grid.addThemeVariants(GridVariant.LUMO_NO_BORDER);
 
@@ -355,9 +355,9 @@ public class PanelistsView extends Div implements BeforeEnterObserver {
 		phone = new TextField("Teléfono");
 		// dateOfBirth = new DatePicker("Fecha de Nacimiento"); // Removed
 		// occupation = new TextField("Ocupación"); // Removed
-		lastContacted = new DatePicker("Último Contacto");
+		lastContacted = new DatePicker("Último encuesta enviada");
 		lastContacted.setReadOnly(true);
-		lastInterviewed = new DatePicker("Última Encueesta");
+		lastInterviewed = new DatePicker("Última encuesta completa");
 		lastInterviewed.setReadOnly(true);
 		
 		// START: Add properties field - Removed
@@ -490,7 +490,7 @@ public class PanelistsView extends Div implements BeforeEnterObserver {
         toolFilterDialog.setItems(Tool.values());
         toolFilterDialog.setPlaceholder("Filtrar...");
         filterRow.getCell(surveysGrid.getColumnByKey("tool")).setComponent(toolFilterDialog);
-
+        
         // Use the freshly fetched panelist with initialized surveys
         surveysGrid.setItems(query -> currentPanelistWithSurveys.getSurveys().stream()
                 .filter(survey -> nameFilterDialog.getValue() == null || survey.getName().toLowerCase().contains(nameFilterDialog.getValue().toLowerCase()))

@@ -27,9 +27,7 @@ public class Panelist extends AbstractEntity {
 	private String lastName;
 	@Email
 	private String email;
-	private String phone;
-	// private LocalDate dateOfBirth; // Removed
-	// private String occupation; // Removed
+	private String phone; 
 	private LocalDate lastContacted;
 	private LocalDate lastInterviewed;
 

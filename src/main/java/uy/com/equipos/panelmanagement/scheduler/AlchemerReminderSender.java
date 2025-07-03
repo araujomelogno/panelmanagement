@@ -1,5 +1,6 @@
 package uy.com.equipos.panelmanagement.scheduler;
 
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
 import java.util.regex.Matcher;
@@ -102,6 +103,7 @@ public class AlchemerReminderSender {
 				if (reminderSent) {
 					log.info("Recordatorio enviado exitosamente para MessageTask ID: {}", task.getId());
 					task.setStatus(MessageTaskStatus.DONE);
+					
 				} else {
 					log.error("Error al enviar el recordatorio para MessageTask ID: {}", task.getId());
 					task.setStatus(MessageTaskStatus.ERROR);

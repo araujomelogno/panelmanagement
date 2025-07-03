@@ -582,7 +582,7 @@ public class SurveysView extends Div implements BeforeEnterObserver {
 				.addColumn(SurveyPanelistParticipation::getDateIncluded).setHeader("Fecha Inclusión").setSortable(true)
 				.setKey("dateIncluded");
 		Grid.Column<SurveyPanelistParticipation> dateSentColumn = participationsGrid
-				.addColumn(SurveyPanelistParticipation::getDateSent).setHeader("Fecha Ult. Envío").setSortable(true)
+				.addColumn(SurveyPanelistParticipation::getDateSent).setHeader("Fecha Envío").setSortable(true)
 				.setKey("dateSent");
 		Grid.Column<SurveyPanelistParticipation> completedColumn = participationsGrid
 				.addColumn(SurveyPanelistParticipation::isCompleted).setHeader("Completada").setSortable(true)

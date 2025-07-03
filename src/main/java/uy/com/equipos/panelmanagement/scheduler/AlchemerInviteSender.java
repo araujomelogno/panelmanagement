@@ -59,8 +59,8 @@ public class AlchemerInviteSender {
 		this.restTemplate = new RestTemplate();
 	}
 
-	//@Scheduled(cron = "*/30 * * * * *")
-	@Scheduled(cron = "0 */5 * * * *")
+	 @Scheduled(cron = "*/30 * * * * *")
+//	@Scheduled(cron = "0 */5 * * * *")
 	public void sendInvites() {
 		log.info("Iniciando tarea AlchemerInviteSender");
 		List<MessageTask> pendingTasks = messageTaskService.findAllByJobTypeAndStatus(JobType.ALCHEMER_INVITE,
@@ -114,18 +114,21 @@ public class AlchemerInviteSender {
 						continue;
 					}
 
-					
 				}
-				// 8. Enviar la invitación (solo envia si no lo envio antes) 
+				// 8. Enviar la invitación (solo envia si no lo envio antes)
 				boolean invitationSent = sendInvitation(surveyLink, contactId);
 
 				// 9. Si la invocación del paso anterior es exitosa
 				if (invitationSent) {
-					panelist.setLastContacted(LocalDate.now());
-					panelistService.save(panelist);
+					if (panelist.getLastContacted() == null) {
+						panelist.setLastContacted(LocalDate.now());
+						panelistService.save(panelist);
+					}
 
-					participation.setDateSent(LocalDate.now());
-					surveyPanelistParticipationService.save(participation);
+					if (participation.getDateSent() == null) {
+						participation.setDateSent(LocalDate.now());
+						surveyPanelistParticipationService.save(participation);
+					}
 
 					task.setStatus(MessageTaskStatus.DONE);
 					messageTaskService.save(task);
