@@ -47,10 +47,10 @@ public class PanelistService {
     //    return repository.findByIdWithParticipations(id);
     // }
 
+    // Renamed from findByIdWithSurveys to better reflect its action due to get() initializing participations
     @Transactional(readOnly = true)
-    public Optional<Panelist> findByIdWithSurveys(Long id) {
-        // The existing get() method already initializes participations,
-        // which is needed for getSurveys() to work correctly.
+    public Optional<Panelist> findByIdWithParticipations(Long id) {
+        // The existing get() method already initializes participations.
         return get(id);
     }
 

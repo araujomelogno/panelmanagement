@@ -447,65 +447,91 @@ public class PanelistsView extends Div implements BeforeEnterObserver {
             return;
         }
 
-        // Re-fetch the panelist with surveys initialized
-        Optional<Panelist> panelistOpt = panelistService.findByIdWithSurveys(this.panelist.getId());
+        // Re-fetch the panelist with participations explicitly loaded
+        Optional<Panelist> panelistOpt = panelistService.findByIdWithParticipations(this.panelist.getId());
 
         if (panelistOpt.isEmpty()) {
-            Notification.show("No se pudo cargar el panelista seleccionado.", 3000, Notification.Position.MIDDLE);
+            Notification.show("No se pudo cargar el panelista seleccionado o sus participaciones.", 3000, Notification.Position.MIDDLE);
             return;
         }
 
-        Panelist currentPanelistWithSurveys = panelistOpt.get();
+        Panelist currentPanelist = panelistOpt.get();
 
-        if (currentPanelistWithSurveys.getSurveys() == null || currentPanelistWithSurveys.getSurveys().isEmpty()) {
-            Notification.show("Este panelista no ha participado en encuestas.", 3000, Notification.Position.MIDDLE);
+        // Use getParticipations() which should be populated if Panelist entity and service layer handle it.
+        Set<uy.com.equipos.panelmanagement.data.SurveyPanelistParticipation> participations = currentPanelist.getParticipations();
+
+        if (participations == null || participations.isEmpty()) {
+            Notification.show("Este panelista no tiene participaciones en encuestas.", 3000, Notification.Position.MIDDLE);
             return;
         }
 
         Dialog dialog = new Dialog();
-        dialog.setHeaderTitle("Encuestas en las que participa: " + currentPanelistWithSurveys.getFirstName() + " " + currentPanelistWithSurveys.getLastName());
+        dialog.setHeaderTitle("Participaciones en Encuestas: " + currentPanelist.getFirstName() + " " + currentPanelist.getLastName());
         dialog.setWidth("80%");
         dialog.setHeight("70%");
 
-        Grid<Survey> surveysGrid = new Grid<>(Survey.class, false);
-        surveysGrid.addColumn(Survey::getName).setHeader("Nombre Encuesta").setSortable(true).setKey("name");
-        surveysGrid.addColumn(Survey::getInitDate).setHeader("Fecha Inicio").setSortable(true).setKey("initDate");
-        surveysGrid.addColumn(Survey::getLink).setHeader("Enlace").setSortable(true).setKey("link");
-        surveysGrid.addColumn(Survey::getTool).setHeader("Herramienta").setSortable(true).setKey("tool");
+        Grid<uy.com.equipos.panelmanagement.data.SurveyPanelistParticipation> participationGrid = new Grid<>(uy.com.equipos.panelmanagement.data.SurveyPanelistParticipation.class, false);
 
-        HeaderRow filterRow = surveysGrid.appendHeaderRow();
-        TextField nameFilterDialog = new TextField();
-        nameFilterDialog.setPlaceholder("Filtrar...");
-        filterRow.getCell(surveysGrid.getColumnByKey("name")).setComponent(nameFilterDialog);
+        // Define columns
+        Grid.Column<uy.com.equipos.panelmanagement.data.SurveyPanelistParticipation> surveyNameCol = participationGrid.addColumn(part -> part.getSurvey().getName())
+                .setHeader("Nombre de encuesta").setSortable(true).setKey("surveyName");
+        Grid.Column<uy.com.equipos.panelmanagement.data.SurveyPanelistParticipation> dateSentCol = participationGrid.addColumn(uy.com.equipos.panelmanagement.data.SurveyPanelistParticipation::getDateSent)
+                .setHeader("Fecha de envio").setSortable(true).setKey("dateSent");
+        Grid.Column<uy.com.equipos.panelmanagement.data.SurveyPanelistParticipation> completedCol = participationGrid.addComponentColumn(part -> {
+                    Checkbox checkbox = new Checkbox(part.isCompleted());
+                    checkbox.setReadOnly(true);
+                    return checkbox;
+                }).setHeader("Completa").setSortable(true).setKey("completed");
 
-        DatePicker initDateFilterDialog = new DatePicker();
-        initDateFilterDialog.setPlaceholder("Filtrar...");
-        filterRow.getCell(surveysGrid.getColumnByKey("initDate")).setComponent(initDateFilterDialog);
 
-        TextField linkFilterDialog = new TextField();
-        linkFilterDialog.setPlaceholder("Filtrar...");
-        filterRow.getCell(surveysGrid.getColumnByKey("link")).setComponent(linkFilterDialog);
+        // Filters
+        HeaderRow filterRow = participationGrid.appendHeaderRow();
 
-        ComboBox<Tool> toolFilterDialog = new ComboBox<>();
-        toolFilterDialog.setItems(Tool.values());
-        toolFilterDialog.setPlaceholder("Filtrar...");
-        filterRow.getCell(surveysGrid.getColumnByKey("tool")).setComponent(toolFilterDialog);
-        
-        // Use the freshly fetched panelist with initialized surveys
-        surveysGrid.setItems(query -> currentPanelistWithSurveys.getSurveys().stream()
-                .filter(survey -> nameFilterDialog.getValue() == null || survey.getName().toLowerCase().contains(nameFilterDialog.getValue().toLowerCase()))
-                .filter(survey -> initDateFilterDialog.getValue() == null || survey.getInitDate().equals(initDateFilterDialog.getValue()))
-                .filter(survey -> linkFilterDialog.getValue() == null || survey.getLink().toLowerCase().contains(linkFilterDialog.getValue().toLowerCase()))
-                .filter(survey -> toolFilterDialog.getValue() == null || survey.getTool().equals(toolFilterDialog.getValue()))
-                .skip(query.getOffset())
-                .limit(query.getLimit()));
+        TextField surveyNameFilter = new TextField();
+        surveyNameFilter.setPlaceholder("Filtrar...");
+        filterRow.getCell(surveyNameCol).setComponent(surveyNameFilter);
 
-        nameFilterDialog.addValueChangeListener(e -> surveysGrid.getDataProvider().refreshAll());
-        initDateFilterDialog.addValueChangeListener(e -> surveysGrid.getDataProvider().refreshAll());
-        linkFilterDialog.addValueChangeListener(e -> surveysGrid.getDataProvider().refreshAll());
-        toolFilterDialog.addValueChangeListener(e -> surveysGrid.getDataProvider().refreshAll());
+        DatePicker dateSentFilter = new DatePicker();
+        dateSentFilter.setPlaceholder("Filtrar...");
+        filterRow.getCell(dateSentCol).setComponent(dateSentFilter);
 
-        dialog.add(surveysGrid);
+        ComboBox<String> completedFilter = new ComboBox<>();
+        completedFilter.setItems("Todos", "Sí", "No");
+        completedFilter.setValue("Todos"); // Default to show all
+        completedFilter.setPlaceholder("Filtrar...");
+        filterRow.getCell(completedCol).setComponent(completedFilter);
+
+        // DataProvider
+        ListDataProvider<uy.com.equipos.panelmanagement.data.SurveyPanelistParticipation> dataProvider = new ListDataProvider<>(new ArrayList<>(participations));
+        participationGrid.setDataProvider(dataProvider);
+
+        // Filter logic
+        surveyNameFilter.addValueChangeListener(e -> dataProvider.refreshAll());
+        dateSentFilter.addValueChangeListener(e -> dataProvider.refreshAll());
+        completedFilter.addValueChangeListener(e -> dataProvider.refreshAll());
+
+        dataProvider.addFilter(participation -> {
+            boolean surveyNameMatch = true;
+            if (StringUtils.isNotBlank(surveyNameFilter.getValue())) {
+                surveyNameMatch = StringUtils.containsIgnoreCase(participation.getSurvey().getName(), surveyNameFilter.getValue());
+            }
+
+            boolean dateSentMatch = true;
+            if (dateSentFilter.getValue() != null) {
+                dateSentMatch = participation.getDateSent() != null && participation.getDateSent().equals(dateSentFilter.getValue());
+            }
+
+            boolean completedMatch = true;
+            String completedValue = completedFilter.getValue();
+            if (completedValue != null && !"Todos".equals(completedValue)) {
+                boolean expectedState = "Sí".equals(completedValue);
+                completedMatch = participation.isCompleted() == expectedState;
+            }
+
+            return surveyNameMatch && dateSentMatch && completedMatch;
+        });
+
+        dialog.add(participationGrid);
         Button closeButton = new Button("Cerrar", e -> dialog.close());
         closeButton.addThemeVariants(ButtonVariant.LUMO_TERTIARY);
         dialog.getFooter().add(closeButton);
