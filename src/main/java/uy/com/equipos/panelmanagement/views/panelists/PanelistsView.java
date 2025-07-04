@@ -87,11 +87,13 @@ public class PanelistsView extends Div implements BeforeEnterObserver {
 	// private TextField occupationFilter = new TextField(); // Removed
 	private DatePicker lastContactedFilter = new DatePicker();
 	private DatePicker lastInterviewedFilter = new DatePicker();
+    private TextField sourceFilter = new TextField(); // Added for source filter
 
 	private TextField firstName; 
 	private TextField lastName;
 	private TextField email;
 	private TextField phone;
+    private TextField source; // Added for editor form
 	// private DatePicker dateOfBirth; // Removed
 	// private TextField occupation; // Removed
 	private DatePicker lastContacted;
@@ -167,6 +169,7 @@ public class PanelistsView extends Div implements BeforeEnterObserver {
 				.setAutoWidth(true);
 		grid.addColumn(Panelist::getLastInterviewed).setHeader("Última encuesta completa").setKey("lastInterviewed")
 				.setAutoWidth(true);
+        grid.addColumn(Panelist::getSource).setHeader("Fuente").setKey("source").setAutoWidth(true); // Added source column
 		grid.addThemeVariants(GridVariant.LUMO_NO_BORDER);
 
 		// Create UI - SplitLayout
@@ -234,6 +237,7 @@ public class PanelistsView extends Div implements BeforeEnterObserver {
 		// occupationFilter.setPlaceholder("Filtrar por Ocupación"); // Removed
 		lastContactedFilter.setPlaceholder("Filtrar por Último Contacto");
 		lastInterviewedFilter.setPlaceholder("Filtrar por Última Encuesta");
+        sourceFilter.setPlaceholder("Filtrar por Fuente"); // Added placeholder for source filter
 
 		// Añadir listeners para refrescar el grid
 		firstNameFilter.addValueChangeListener(e -> grid.getDataProvider().refreshAll());
@@ -242,6 +246,7 @@ public class PanelistsView extends Div implements BeforeEnterObserver {
 		phoneFilter.addValueChangeListener(e -> grid.getDataProvider().refreshAll()); 
 		lastContactedFilter.addValueChangeListener(e -> grid.getDataProvider().refreshAll());
 		lastInterviewedFilter.addValueChangeListener(e -> grid.getDataProvider().refreshAll());
+        sourceFilter.addValueChangeListener(e -> grid.getDataProvider().refreshAll()); // Added listener for source filter
 
 		// Configurar el DataProvider del Grid
 		grid.setItems(query -> {
@@ -253,6 +258,7 @@ public class PanelistsView extends Div implements BeforeEnterObserver {
 			// String occupationVal = occupationFilter.getValue(); // Removed
 			LocalDate lastContactedVal = lastContactedFilter.getValue();
 			LocalDate lastInterviewedVal = lastInterviewedFilter.getValue();
+            String sourceVal = sourceFilter.getValue(); // Added source value
 
 			// Adjust the call to panelistService.list to exclude dateOfBirthVal and occupationVal
 			// This assumes the service method will be updated accordingly in a later step.
@@ -260,10 +266,42 @@ public class PanelistsView extends Div implements BeforeEnterObserver {
 			// or if the service method is overloaded or flexible.
 			// Based on the current plan, the service method signature would change.
 			// Let's assume the service method will be updated to:
-			// list(Pageable, String, String, String, String, LocalDate, LocalDate)
-			return panelistService.list(VaadinSpringDataHelpers.toSpringPageRequest(query),
-										firstNameVal, lastNameVal, emailVal, phoneVal, 
-										lastContactedVal, lastInterviewedVal).stream();
+			// list(Pageable, String, String, String, String, LocalDate, LocalDate, String)
+			// For now, I will modify the Specification within this lambda.
+			// The panelistService.list method using specific parameters will need to be updated or this will rely on a Specification-based list method.
+            // The current panelistService.list takes specific parameters. I will need to update it or use a Specification variant.
+            // For now, let's assume a Specification-based approach is preferred for flexibility.
+            // If panelistService.list(Pageable, Specification) exists and is used, this is fine.
+            // The existing code uses: panelistService.list(Pageable, String, String, String, String, LocalDate, LocalDate)
+            // This means I MUST update the service layer. I will do that in the next sub-step.
+            // For now, I will prepare the Specification here.
+
+            Specification<Panelist> spec = (root, cbQuery, cb) -> {
+                List<Predicate> predicates = new ArrayList<>();
+                if (StringUtils.isNotBlank(firstNameVal)) {
+                    predicates.add(cb.like(cb.lower(root.get("firstName")), "%" + firstNameVal.toLowerCase() + "%"));
+                }
+                if (StringUtils.isNotBlank(lastNameVal)) {
+                    predicates.add(cb.like(cb.lower(root.get("lastName")), "%" + lastNameVal.toLowerCase() + "%"));
+                }
+                if (StringUtils.isNotBlank(emailVal)) {
+                    predicates.add(cb.like(cb.lower(root.get("email")), "%" + emailVal.toLowerCase() + "%"));
+                }
+                if (StringUtils.isNotBlank(phoneVal)) {
+                    predicates.add(cb.like(cb.lower(root.get("phone")), "%" + phoneVal.toLowerCase() + "%"));
+                }
+                if (lastContactedVal != null) {
+                    predicates.add(cb.equal(root.get("lastContacted"), lastContactedVal));
+                }
+                if (lastInterviewedVal != null) {
+                    predicates.add(cb.equal(root.get("lastInterviewed"), lastInterviewedVal));
+                }
+                if (StringUtils.isNotBlank(sourceVal)) {
+                    predicates.add(cb.like(cb.lower(root.get("source")), "%" + sourceVal.toLowerCase() + "%"));
+                }
+                return cb.and(predicates.toArray(new Predicate[0]));
+            };
+            return panelistService.list(VaadinSpringDataHelpers.toSpringPageRequest(query), spec).stream();
 		});
 
 		// when a row is selected or deselected, populate form
@@ -353,6 +391,7 @@ public class PanelistsView extends Div implements BeforeEnterObserver {
 		lastName = new TextField("Apellido");
 		email = new TextField("Correo Electrónico");
 		phone = new TextField("Teléfono");
+        source = new TextField("Fuente"); // Added source field to form
 		// dateOfBirth = new DatePicker("Fecha de Nacimiento"); // Removed
 		// occupation = new TextField("Ocupación"); // Removed
 		lastContacted = new DatePicker("Último encuesta enviada");
@@ -377,7 +416,7 @@ public class PanelistsView extends Div implements BeforeEnterObserver {
 				Notification.show("Por favor, seleccione un panelista primero.", 3000, Notification.Position.MIDDLE);
 			}
 		});
-		formLayout.add(firstName, lastName, email, phone, lastContacted, lastInterviewed); // Removed dateOfBirth, occupation
+		formLayout.add(firstName, lastName, email, phone, source, lastContacted, lastInterviewed); // Added source, Removed dateOfBirth, occupation
 		formLayout.add(gestionarPropiedadesButton, viewParticipatingPanelsButton, viewParticipatingSurveysButton); // Added viewParticipatingSurveysButton
 
 		editorDiv.add(formLayout);
@@ -410,6 +449,7 @@ public class PanelistsView extends Div implements BeforeEnterObserver {
 		// headerRow.getCell(grid.getColumnByKey("occupation")).setComponent(occupationFilter); // Removed
 		headerRow.getCell(grid.getColumnByKey("lastContacted")).setComponent(lastContactedFilter);
 		headerRow.getCell(grid.getColumnByKey("lastInterviewed")).setComponent(lastInterviewedFilter);
+        headerRow.getCell(grid.getColumnByKey("source")).setComponent(sourceFilter); // Added source filter to header
 	}
 
 	private void refreshGrid() {
