@@ -19,4 +19,6 @@ public interface SurveyRepository extends JpaRepository<Survey, Long>, JpaSpecif
     // Option 2: Using @EntityGraph (alternative, choose one)
     // @EntityGraph(attributePaths = { "participations" })
     // Optional<Survey> findById(Long id);
+
+    Optional<Survey> findByAlchemerSurveyId(String alchemerSurveyId);
 }
