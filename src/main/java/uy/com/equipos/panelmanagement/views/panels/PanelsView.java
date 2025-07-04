@@ -87,10 +87,8 @@ public class PanelsView extends Div implements BeforeEnterObserver {
 	private final PanelistPropertyCodeRepository panelistPropertyCodeRepository;
 	private final PanelistService panelistService; // Added
 
-	public PanelsView(PanelService panelService,
-						PanelistPropertyService panelistPropertyService,
-						PanelistPropertyCodeRepository panelistPropertyCodeRepository,
-						PanelistService panelistService) { // Added
+	public PanelsView(PanelService panelService, PanelistPropertyService panelistPropertyService,
+			PanelistPropertyCodeRepository panelistPropertyCodeRepository, PanelistService panelistService) { // Added
 		this.panelService = panelService;
 		this.panelistPropertyService = panelistPropertyService;
 		this.panelistPropertyCodeRepository = panelistPropertyCodeRepository;
@@ -107,27 +105,27 @@ public class PanelsView extends Div implements BeforeEnterObserver {
 		addPanelistsButton.addClickListener(e -> {
 			if (this.panel != null && this.panel.getId() != null) {
 				// Guardar una referencia al diálogo de filtro para poder cerrarlo después.
-				PanelistPropertyFilterDialog filterDialog = new PanelistPropertyFilterDialog(
-						panelistPropertyService,
-						panelistPropertyCodeRepository,
-						this.panelService, // globalPanelService
-						panelistService,    // panelistService
-						this.panel,         // currentPanel
+				PanelistPropertyFilterDialog filterDialog = new PanelistPropertyFilterDialog(panelistPropertyService,
+						panelistPropertyCodeRepository, this.panelService, // globalPanelService
+						panelistService, // panelistService
+						this.panel, // currentPanel
 						filterCriteria -> { // SearchListener implementation
-							// Este es el comportamiento que PanelistPropertyFilterDialog tenía antes internamente.
+							// Este es el comportamiento que PanelistPropertyFilterDialog tenía antes
+							// internamente.
 							// Ahora lo llamamos desde el listener.
-							PanelistSelectionDialog selectionDialog = new PanelistSelectionDialog(
-									this.panelService,      // PanelService for Panel
-									this.panelistService,   // PanelistService for Panelist
-									this.panel,             // currentPanel
-									filterCriteria,         // los criterios del primer diálogo
-									null                    // ownerDialog es null, ya que el primer diálogo se cierra solo.
+							PanelistSelectionDialog selectionDialog = new PanelistSelectionDialog(this.panelService, // PanelService
+																														// for
+																														// Panel
+									this.panelistService, // PanelistService for Panelist
+									this.panel, // currentPanel
+									filterCriteria, // los criterios del primer diálogo
+									null // ownerDialog es null, ya que el primer diálogo se cierra solo.
 							);
 							selectionDialog.open();
-							// PanelistPropertyFilterDialog se cierra a sí mismo después de invocar el SearchListener,
+							// PanelistPropertyFilterDialog se cierra a sí mismo después de invocar el
+							// SearchListener,
 							// por lo que no necesitamos cerrar filterDialog aquí explícitamente.
-						}
-				);
+						});
 				filterDialog.open();
 
 			} else {
@@ -146,8 +144,10 @@ public class PanelsView extends Div implements BeforeEnterObserver {
 		});
 
 		// Configurar columnas del Grid PRIMERO
-		grid.addColumn(Panel::getName).setHeader("Nombre").setKey("name").setAutoWidth(true);
-		grid.addColumn(Panel::getCreated).setHeader("Creado").setKey("created").setAutoWidth(true);
+		grid.addColumn(Panel::getName).setHeader("Nombre").setKey("name").setAutoWidth(true).setSortable(true);
+		;
+		grid.addColumn(Panel::getCreated).setHeader("Creado").setKey("created").setAutoWidth(true).setSortable(true);
+		;
 		LitRenderer<Panel> activeRenderer = LitRenderer.<Panel>of(
 				"<vaadin-icon icon='vaadin:${item.icon}' style='width: var(--lumo-icon-size-s); height: var(--lumo-icon-size-s); color: ${item.color};'></vaadin-icon>")
 				.withProperty("icon", panelItem -> panelItem.isActive() ? "check" : "minus")
@@ -165,7 +165,7 @@ public class PanelsView extends Div implements BeforeEnterObserver {
 		// editorLayoutDiv.setVisible(false); // Se maneja después de add(mainLayout)
 
 		nuevoPanelButton = new Button("Nuevo Panel");
-		nuevoPanelButton.getStyle().set("margin-left", "18px"); 
+		nuevoPanelButton.getStyle().set("margin-left", "18px");
 
 		VerticalLayout mainLayout = new VerticalLayout(nuevoPanelButton, splitLayout);
 		mainLayout.setSizeFull();
@@ -300,7 +300,7 @@ public class PanelsView extends Div implements BeforeEnterObserver {
 		name = new TextField("Nombre");
 		created = new DatePicker("Fecha de Creación");
 		active = new Checkbox("Activo");
-		formLayout.add(name, created, active,addPanelistsButton, viewPanelistsButton);
+		formLayout.add(name, created, active, addPanelistsButton, viewPanelistsButton);
 
 		editorDiv.add(formLayout);
 		createButtonLayout(editorLayoutDiv);
@@ -313,7 +313,7 @@ public class PanelsView extends Div implements BeforeEnterObserver {
 		buttonLayout.setClassName("button-layout");
 		cancel.addThemeVariants(ButtonVariant.LUMO_TERTIARY);
 		save.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
-		buttonLayout.add( save, deleteButton, cancel); 
+		buttonLayout.add(save, deleteButton, cancel);
 		editorLayoutDiv.add(buttonLayout);
 	}
 
@@ -372,7 +372,7 @@ public class PanelsView extends Div implements BeforeEnterObserver {
 		com.vaadin.flow.component.confirmdialog.ConfirmDialog dialog = new com.vaadin.flow.component.confirmdialog.ConfirmDialog();
 		dialog.setHeader("Confirmar Eliminación");
 		dialog.setText("¿Está seguro de que desea eliminar el panel '" + this.panel.getName() + "'?");
-		
+
 		dialog.setConfirmText("Eliminar");
 		dialog.setConfirmButtonTheme("error primary");
 		dialog.setCancelText("Cancelar");
@@ -385,11 +385,12 @@ public class PanelsView extends Div implements BeforeEnterObserver {
 				Notification.show("Panel eliminado correctamente.", 3000, Notification.Position.BOTTOM_START);
 				UI.getCurrent().navigate(PanelsView.class);
 			} catch (org.springframework.dao.DataIntegrityViolationException ex) {
-				Notification.show("No se puede eliminar el panel. Es posible que esté siendo referenciado por otras entidades.", 5000, Notification.Position.MIDDLE)
-					.addThemeVariants(NotificationVariant.LUMO_ERROR);
+				Notification.show(
+						"No se puede eliminar el panel. Es posible que esté siendo referenciado por otras entidades.",
+						5000, Notification.Position.MIDDLE).addThemeVariants(NotificationVariant.LUMO_ERROR);
 			} catch (Exception ex) {
-				Notification.show("Ocurrió un error al intentar eliminar el panel: " + ex.getMessage(), 5000, Notification.Position.MIDDLE)
-					.addThemeVariants(NotificationVariant.LUMO_ERROR);
+				Notification.show("Ocurrió un error al intentar eliminar el panel: " + ex.getMessage(), 5000,
+						Notification.Position.MIDDLE).addThemeVariants(NotificationVariant.LUMO_ERROR);
 			}
 		});
 		dialog.open();
@@ -397,7 +398,8 @@ public class PanelsView extends Div implements BeforeEnterObserver {
 
 	private void showPanelistsDialog() {
 		if (this.panel != null && this.panel.getId() != null) {
-			ViewPanelistsDialog dialog = new ViewPanelistsDialog(this.panel, this.panelService, this.panelistService); // Added panelistService
+			ViewPanelistsDialog dialog = new ViewPanelistsDialog(this.panel, this.panelService, this.panelistService); // Added
+																														// panelistService
 			dialog.open();
 		} else {
 			Notification.show("No hay un panel seleccionado.", 3000, Notification.Position.MIDDLE);

@@ -122,9 +122,10 @@ public class SurveysView extends Div implements BeforeEnterObserver {
 		sendReminderButton.addClickListener(e -> sendReminderAction());
 
 		// Configurar columnas del Grid PRIMERO
-		grid.addColumn(Survey::getName).setHeader("Nombre").setKey("name").setAutoWidth(true);
-		grid.addColumn(Survey::getInitDate).setHeader("Fecha de Inicio").setKey("initDate").setAutoWidth(true);
-		grid.addColumn(Survey::getLink).setHeader("Enlace").setKey("link").setAutoWidth(true);
+		grid.addColumn(Survey::getName).setHeader("Nombre").setKey("name").setAutoWidth(true).setSortable(true);
+		grid.addColumn(Survey::getInitDate).setHeader("Fecha de Inicio").setKey("initDate").setAutoWidth(true)
+				.setSortable(true);
+		grid.addColumn(Survey::getLink).setHeader("Enlace").setKey("link").setAutoWidth(true).setSortable(true);
 		grid.addColumn(Survey::getTool).setHeader("Herramienta").setKey("tool").setAutoWidth(true);
 		grid.addThemeVariants(GridVariant.LUMO_NO_BORDER);
 
