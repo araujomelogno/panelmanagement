@@ -2,7 +2,7 @@ package uy.com.equipos.panelmanagement.webhook.dto;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 
-public class ContactDto {
+public class AlchemerSurveyCompletionContactDto {
 
     @JsonProperty("Email")
     private String email;

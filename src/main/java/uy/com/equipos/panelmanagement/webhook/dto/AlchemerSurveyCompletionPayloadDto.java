@@ -2,12 +2,12 @@ package uy.com.equipos.panelmanagement.webhook.dto;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 
-public class WebhookPayloadDto {
+public class AlchemerSurveyCompletionPayloadDto {
 
     @JsonProperty("webhook_name")
     private String webhookName;
 
-    private WebhookDataDto data;
+    private AlchemerSurveyCompletionDataDto data;
 
     // Getters and Setters
     public String getWebhookName() {
@@ -18,11 +18,11 @@ public class WebhookPayloadDto {
         this.webhookName = webhookName;
     }
 
-    public WebhookDataDto getData() {
+    public AlchemerSurveyCompletionDataDto getData() {
         return data;
     }
 
-    public void setData(WebhookDataDto data) {
+    public void setData(AlchemerSurveyCompletionDataDto data) {
         this.data = data;
     }
 }

@@ -1,6 +1,6 @@
 package uy.com.equipos.panelmanagement.webhook.dto;
 
-public class UrlVariablesDto {
+public class AlchemerSurveyCompletionUrlVariablesDto {
 
     private String sguid;
 

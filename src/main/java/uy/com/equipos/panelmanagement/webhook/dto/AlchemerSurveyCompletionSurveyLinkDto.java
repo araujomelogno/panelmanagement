@@ -1,6 +1,6 @@
 package uy.com.equipos.panelmanagement.webhook.dto;
 
-public class SurveyLinkDto {
+public class AlchemerSurveyCompletionSurveyLinkDto {
 
     private int id;
     private String type;

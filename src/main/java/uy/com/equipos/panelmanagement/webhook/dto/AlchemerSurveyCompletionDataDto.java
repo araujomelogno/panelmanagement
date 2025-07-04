@@ -2,7 +2,7 @@ package uy.com.equipos.panelmanagement.webhook.dto;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 
-public class WebhookDataDto {
+public class AlchemerSurveyCompletionDataDto {
 
     @JsonProperty("is_test")
     private boolean isTest;
@@ -20,12 +20,12 @@ public class WebhookDataDto {
     private String responseStatus;
 
     @JsonProperty("url_variables")
-    private UrlVariablesDto urlVariables;
+    private AlchemerSurveyCompletionUrlVariablesDto urlVariables;
 
     @JsonProperty("survey_link")
-    private SurveyLinkDto surveyLink;
+    private AlchemerSurveyCompletionSurveyLinkDto surveyLink;
 
-    private ContactDto contact;
+    private AlchemerSurveyCompletionContactDto contact;
 
     // Getters and Setters
     public boolean isTest() {
@@ -68,27 +68,27 @@ public class WebhookDataDto {
         this.responseStatus = responseStatus;
     }
 
-    public UrlVariablesDto getUrlVariables() {
+    public AlchemerSurveyCompletionUrlVariablesDto getUrlVariables() {
         return urlVariables;
     }
 
-    public void setUrlVariables(UrlVariablesDto urlVariables) {
+    public void setUrlVariables(AlchemerSurveyCompletionUrlVariablesDto urlVariables) {
         this.urlVariables = urlVariables;
     }
 
-    public SurveyLinkDto getSurveyLink() {
+    public AlchemerSurveyCompletionSurveyLinkDto getSurveyLink() {
         return surveyLink;
     }
 
-    public void setSurveyLink(SurveyLinkDto surveyLink) {
+    public void setSurveyLink(AlchemerSurveyCompletionSurveyLinkDto surveyLink) {
         this.surveyLink = surveyLink;
     }
 
-    public ContactDto getContact() {
+    public AlchemerSurveyCompletionContactDto getContact() {
         return contact;
     }
 
-    public void setContact(ContactDto contact) {
+    public void setContact(AlchemerSurveyCompletionContactDto contact) {
         this.contact = contact;
     }
 }

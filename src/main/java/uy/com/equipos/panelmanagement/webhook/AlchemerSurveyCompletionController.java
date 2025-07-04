@@ -16,22 +16,22 @@ import uy.com.equipos.panelmanagement.data.Survey;
 import uy.com.equipos.panelmanagement.data.SurveyPanelistParticipation;
 import uy.com.equipos.panelmanagement.data.SurveyPanelistParticipationRepository;
 import uy.com.equipos.panelmanagement.data.SurveyRepository;
-import uy.com.equipos.panelmanagement.webhook.dto.WebhookPayloadDto;
+import uy.com.equipos.panelmanagement.webhook.dto.AlchemerSurveyCompletionPayloadDto;
 
 import java.time.LocalDate; // Changed from LocalDateTime to LocalDate
 import java.util.Optional;
 
 @RestController
 @RequestMapping("/api/webhook")
-public class WebhookController {
+public class AlchemerSurveyCompletionController {
 
-    private static final Logger logger = LoggerFactory.getLogger(WebhookController.class);
+    private static final Logger logger = LoggerFactory.getLogger(AlchemerSurveyCompletionController.class);
 
     private final SurveyRepository surveyRepository;
     private final PanelistRepository panelistRepository;
     private final SurveyPanelistParticipationRepository surveyPanelistParticipationRepository;
 
-    public WebhookController(SurveyRepository surveyRepository,
+    public AlchemerSurveyCompletionController(SurveyRepository surveyRepository,
                              PanelistRepository panelistRepository,
                              SurveyPanelistParticipationRepository surveyPanelistParticipationRepository) {
         this.surveyRepository = surveyRepository;
@@ -41,7 +41,7 @@ public class WebhookController {
 
     @PostMapping("/survey-response")
     @Transactional // Important for database operations
-    public ResponseEntity<String> handleSurveyResponse(@RequestBody WebhookPayloadDto payload) {
+    public ResponseEntity<String> handleSurveyResponse(@RequestBody AlchemerSurveyCompletionPayloadDto payload) {
         if (payload == null || payload.getData() == null || payload.getData().getContact() == null) {
             logger.warn("Received incomplete payload");
             return ResponseEntity.badRequest().body("Incomplete payload: 'data' or 'contact' field is missing.");

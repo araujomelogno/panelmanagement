@@ -15,7 +15,12 @@ import uy.com.equipos.panelmanagement.data.Survey;
 import uy.com.equipos.panelmanagement.data.SurveyPanelistParticipation;
 import uy.com.equipos.panelmanagement.data.SurveyPanelistParticipationRepository;
 import uy.com.equipos.panelmanagement.data.SurveyRepository;
-import uy.com.equipos.panelmanagement.webhook.dto.*;
+import uy.com.equipos.panelmanagement.webhook.dto.AlchemerSurveyCompletionContactDto;
+import uy.com.equipos.panelmanagement.webhook.dto.AlchemerSurveyCompletionDataDto;
+import uy.com.equipos.panelmanagement.webhook.dto.AlchemerSurveyCompletionPayloadDto;
+import uy.com.equipos.panelmanagement.webhook.dto.AlchemerSurveyCompletionSurveyLinkDto;
+import uy.com.equipos.panelmanagement.webhook.dto.AlchemerSurveyCompletionUrlVariablesDto;
+
 
 import java.time.LocalDate;
 import java.util.Optional;
@@ -31,7 +36,7 @@ import org.springframework.test.context.ActiveProfiles;
 @SpringBootTest
 @AutoConfigureMockMvc
 @ActiveProfiles("test")
-public class WebhookControllerTest {
+public class AlchemerSurveyCompletionControllerTest {
 
     @Autowired
     private MockMvc mockMvc;
@@ -48,18 +53,18 @@ public class WebhookControllerTest {
     @MockBean
     private SurveyPanelistParticipationRepository surveyPanelistParticipationRepository;
 
-    private WebhookPayloadDto createValidPayload() {
-        WebhookPayloadDto payload = new WebhookPayloadDto();
+    private AlchemerSurveyCompletionPayloadDto createValidPayload() {
+        AlchemerSurveyCompletionPayloadDto payload = new AlchemerSurveyCompletionPayloadDto();
         payload.setWebhookName("On Response Received");
 
-        WebhookDataDto data = new WebhookDataDto();
+        AlchemerSurveyCompletionDataDto data = new AlchemerSurveyCompletionDataDto();
         data.setSurveyId(8378285); // Este ID se convertirá a String "8378285"
         data.setTest(false);
         data.setSessionId("test-session-id");
         data.setAccountId(12345);
         data.setResponseStatus("Complete");
 
-        ContactDto contact = new ContactDto();
+        AlchemerSurveyCompletionContactDto contact = new AlchemerSurveyCompletionContactDto();
         contact.setEmail("test@example.com");
         contact.setFirstName("Test");
         contact.setLastName("User");
@@ -67,8 +72,8 @@ public class WebhookControllerTest {
 
         // UrlVariablesDto y SurveyLinkDto pueden ser nulos o tener valores por defecto
         // si no son cruciales para la lógica principal que estamos probando aquí.
-        data.setUrlVariables(new UrlVariablesDto());
-        data.setSurveyLink(new SurveyLinkDto());
+        data.setUrlVariables(new AlchemerSurveyCompletionUrlVariablesDto());
+        data.setSurveyLink(new AlchemerSurveyCompletionSurveyLinkDto());
 
         payload.setData(data);
         return payload;
@@ -76,7 +81,7 @@ public class WebhookControllerTest {
 
     @Test
     void handleSurveyResponse_success() throws Exception {
-        WebhookPayloadDto payload = createValidPayload();
+        AlchemerSurveyCompletionPayloadDto payload = createValidPayload();
         String alchemerSurveyId = String.valueOf(payload.getData().getSurveyId());
         String email = payload.getData().getContact().getEmail();
 
@@ -112,7 +117,7 @@ public class WebhookControllerTest {
 
     @Test
     void handleSurveyResponse_surveyNotFound() throws Exception {
-        WebhookPayloadDto payload = createValidPayload();
+        AlchemerSurveyCompletionPayloadDto payload = createValidPayload();
         String alchemerSurveyId = String.valueOf(payload.getData().getSurveyId());
 
         when(surveyRepository.findByAlchemerSurveyId(alchemerSurveyId)).thenReturn(Optional.empty());
@@ -130,7 +135,7 @@ public class WebhookControllerTest {
 
     @Test
     void handleSurveyResponse_panelistNotFound() throws Exception {
-        WebhookPayloadDto payload = createValidPayload();
+        AlchemerSurveyCompletionPayloadDto payload = createValidPayload();
         String alchemerSurveyId = String.valueOf(payload.getData().getSurveyId());
         String email = payload.getData().getContact().getEmail();
 
@@ -153,7 +158,7 @@ public class WebhookControllerTest {
 
     @Test
     void handleSurveyResponse_participationNotFound() throws Exception {
-        WebhookPayloadDto payload = createValidPayload();
+        AlchemerSurveyCompletionPayloadDto payload = createValidPayload();
         String alchemerSurveyId = String.valueOf(payload.getData().getSurveyId());
         String email = payload.getData().getContact().getEmail();
 
@@ -180,7 +185,7 @@ public class WebhookControllerTest {
 
     @Test
     void handleSurveyResponse_payloadMissingData() throws Exception {
-        WebhookPayloadDto payload = createValidPayload();
+        AlchemerSurveyCompletionPayloadDto payload = createValidPayload();
         payload.setData(null); // Simulate missing data
 
         mockMvc.perform(MockMvcRequestBuilders.post("/api/webhook/survey-response")
@@ -192,7 +197,7 @@ public class WebhookControllerTest {
 
     @Test
     void handleSurveyResponse_payloadMissingContact() throws Exception {
-        WebhookPayloadDto payload = createValidPayload();
+        AlchemerSurveyCompletionPayloadDto payload = createValidPayload();
         payload.getData().setContact(null); // Simulate missing contact
 
         mockMvc.perform(MockMvcRequestBuilders.post("/api/webhook/survey-response")
@@ -204,7 +209,7 @@ public class WebhookControllerTest {
 
     @Test
     void handleSurveyResponse_payloadMissingEmail() throws Exception {
-        WebhookPayloadDto payload = createValidPayload();
+        AlchemerSurveyCompletionPayloadDto payload = createValidPayload();
         payload.getData().getContact().setEmail(null); // Simulate missing email
 
         mockMvc.perform(MockMvcRequestBuilders.post("/api/webhook/survey-response")
@@ -216,7 +221,7 @@ public class WebhookControllerTest {
 
     @Test
     void handleSurveyResponse_alreadyCompleted() throws Exception {
-        WebhookPayloadDto payload = createValidPayload();
+        AlchemerSurveyCompletionPayloadDto payload = createValidPayload();
         String alchemerSurveyId = String.valueOf(payload.getData().getSurveyId());
         String email = payload.getData().getContact().getEmail();
 
