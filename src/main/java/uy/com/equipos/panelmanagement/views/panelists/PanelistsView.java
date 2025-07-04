@@ -48,6 +48,7 @@ import com.vaadin.flow.router.Menu;
 import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
 import com.vaadin.flow.spring.data.VaadinSpringDataHelpers;
+import org.springframework.data.jpa.domain.Specification; // Added import for Specification
 
 import jakarta.annotation.security.PermitAll;
 import uy.com.equipos.panelmanagement.data.Panel;
