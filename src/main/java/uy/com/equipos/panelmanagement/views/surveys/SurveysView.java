@@ -221,7 +221,8 @@ public class SurveysView extends Div implements BeforeEnterObserver {
 				// Extract and set alchemerSurveyId from link
 				String surveyLink = this.survey.getLink();
 				if (surveyLink != null && !surveyLink.isEmpty()) {
-					// Example link: https://app.alchemer.com/invite/messages/id/8378285/link/24121332
+					// Example link:
+					// https://app.alchemer.com/invite/messages/id/8378285/link/24121332
 					// Regex to find .../id/THIS_PART/link/...
 					java.util.regex.Pattern pattern = java.util.regex.Pattern.compile("/id/(\\d+)/link/");
 					java.util.regex.Matcher matcher = pattern.matcher(surveyLink);
@@ -586,7 +587,7 @@ public class SurveysView extends Div implements BeforeEnterObserver {
 
 		Dialog dialog = new Dialog();
 		dialog.setHeaderTitle("Participaciones de la Encuesta: " + currentSurvey.getName());
-		dialog.setWidth("80%");
+		dialog.setWidth("90%");
 		dialog.setHeight("70%");
 
 		Grid<SurveyPanelistParticipation> participationsGrid = new Grid<>(SurveyPanelistParticipation.class, false);
@@ -602,6 +603,9 @@ public class SurveysView extends Div implements BeforeEnterObserver {
 		Grid.Column<SurveyPanelistParticipation> dateSentColumn = participationsGrid
 				.addColumn(SurveyPanelistParticipation::getDateSent).setHeader("Fecha Envío").setSortable(true)
 				.setKey("dateSent");
+		Grid.Column<SurveyPanelistParticipation> dateCompletedColumn = participationsGrid
+				.addColumn(SurveyPanelistParticipation::getDateCompleted).setHeader("Fecha completa").setSortable(true)
+				.setKey("dateCompleted");
 		Grid.Column<SurveyPanelistParticipation> completedColumn = participationsGrid
 				.addColumn(SurveyPanelistParticipation::isCompleted).setHeader("Completada").setSortable(true)
 				.setKey("completed");
@@ -634,6 +638,11 @@ public class SurveysView extends Div implements BeforeEnterObserver {
 		dateSentFilter.setClearButtonVisible(true);
 		filterRow.getCell(dateSentColumn).setComponent(dateSentFilter);
 
+		DatePicker dateCompletedFilter = new DatePicker();
+		dateCompletedFilter.setPlaceholder("Filtrar Fecha");
+		dateCompletedFilter.setClearButtonVisible(true);
+		filterRow.getCell(dateCompletedColumn).setComponent(dateCompletedFilter);
+
 		ComboBox<String> completedFilter = new ComboBox<>();
 		completedFilter.setPlaceholder("Todos");
 		completedFilter.setItems("Sí", "No", "Todos");
@@ -659,6 +668,11 @@ public class SurveysView extends Div implements BeforeEnterObserver {
 			// Date Sent Filter
 			boolean dateSentMatch = dateSentFilter.getValue() == null || (participation.getDateSent() != null
 					&& dateSentFilter.getValue().equals(participation.getDateSent()));
+
+			// Date completed Filter
+			boolean dateCompletedMatch = dateCompletedFilter.getValue() == null
+					|| (participation.getDateCompleted() != null
+							&& dateCompletedFilter.getValue().equals(participation.getDateCompleted()));
 			// Completed Filter
 			boolean completedMatch = true;
 			String completedValue = completedFilter.getValue();
@@ -667,7 +681,7 @@ public class SurveysView extends Div implements BeforeEnterObserver {
 				completedMatch = participation.isCompleted() == isCompletedTarget;
 			}
 			return firstNameMatch && lastNameMatch && emailMatch && dateIncludedMatch && dateSentMatch
-					&& completedMatch; // Added emailMatch
+					&& dateCompletedMatch && completedMatch; // Added emailMatch
 		}).skip(query.getOffset()).limit(query.getLimit()));
 
 		panelistFirstNameFilter.addValueChangeListener(e -> participationsGrid.getDataProvider().refreshAll());
@@ -678,6 +692,7 @@ public class SurveysView extends Div implements BeforeEnterObserver {
 																											// filter
 		dateIncludedFilter.addValueChangeListener(e -> participationsGrid.getDataProvider().refreshAll());
 		dateSentFilter.addValueChangeListener(e -> participationsGrid.getDataProvider().refreshAll());
+		dateCompletedFilter.addValueChangeListener(e -> participationsGrid.getDataProvider().refreshAll());
 		completedFilter.addValueChangeListener(e -> participationsGrid.getDataProvider().refreshAll());
 
 		dialog.add(participationsGrid);

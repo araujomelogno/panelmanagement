@@ -25,21 +25,20 @@ import java.util.Optional;
 @RequestMapping("/api/webhook")
 public class AlchemerSurveyCompletionController {
 
-    private static final Logger logger = LoggerFactory.getLogger(AlchemerSurveyCompletionController.class);
+	private static final Logger logger = LoggerFactory.getLogger(AlchemerSurveyCompletionController.class);
 
-    private final SurveyRepository surveyRepository;
-    private final PanelistRepository panelistRepository;
-    private final SurveyPanelistParticipationRepository surveyPanelistParticipationRepository;
+	private final SurveyRepository surveyRepository;
+	private final PanelistRepository panelistRepository;
+	private final SurveyPanelistParticipationRepository surveyPanelistParticipationRepository;
 
-    public AlchemerSurveyCompletionController(SurveyRepository surveyRepository,
-                             PanelistRepository panelistRepository,
-                             SurveyPanelistParticipationRepository surveyPanelistParticipationRepository) {
-        this.surveyRepository = surveyRepository;
-        this.panelistRepository = panelistRepository;
-        this.surveyPanelistParticipationRepository = surveyPanelistParticipationRepository;
-    }
+	public AlchemerSurveyCompletionController(SurveyRepository surveyRepository, PanelistRepository panelistRepository,
+			SurveyPanelistParticipationRepository surveyPanelistParticipationRepository) {
+		this.surveyRepository = surveyRepository;
+		this.panelistRepository = panelistRepository;
+		this.surveyPanelistParticipationRepository = surveyPanelistParticipationRepository;
+	}
 
-    @PostMapping("/survey-response")
+	@PostMapping("/survey-response")
     @Transactional // Important for database operations
     public ResponseEntity<String> handleSurveyResponse(@RequestBody AlchemerSurveyCompletionPayloadDto payload) {
         if (payload == null || payload.getData() == null || payload.getData().getContact() == null) {
@@ -71,7 +70,11 @@ public class AlchemerSurveyCompletionController {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Panelist not found for email: " + email);
         }
         Panelist panelist = panelistOpt.get();
-
+        
+        if(panelist.getLastInterviewCompleted()==null || panelist.getLastInterviewCompleted().isBefore(LocalDate.now())){
+        	panelist.setLastInterviewCompleted(LocalDate.now());
+        	this.panelistRepository.save(panelist);
+        }
         Optional<SurveyPanelistParticipation> participationOpt =
                 surveyPanelistParticipationRepository.findBySurveyAndPanelist(survey, panelist);
 

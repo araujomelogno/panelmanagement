@@ -5,8 +5,6 @@ import java.util.HashSet;
 import java.util.Set;
 import java.util.stream.Collectors; // Added for stream operations
 
-import uy.com.equipos.panelmanagement.data.Survey; // Added to reference Survey type
-
 // PanelistPropertyValue is in the same package
 
 import jakarta.persistence.CascadeType;
@@ -29,7 +27,7 @@ public class Panelist extends AbstractEntity {
 	private String email;
 	private String phone; 
 	private LocalDate lastContacted;
-	private LocalDate lastInterviewed;
+	private LocalDate lastInterviewCompleted;
 	private String source;
 
 	// Standard getters and setters for the above fields...
@@ -83,12 +81,12 @@ public class Panelist extends AbstractEntity {
 		this.lastContacted = lastContacted;
 	}
 
-	public LocalDate getLastInterviewed() {
-		return lastInterviewed;
+	public LocalDate getLastInterviewCompleted() {
+		return lastInterviewCompleted;
 	}
 
-	public void setLastInterviewed(LocalDate lastInterviewed) {
-		this.lastInterviewed = lastInterviewed;
+	public void setLastInterviewCompleted(LocalDate lastInterviewed) {
+		this.lastInterviewCompleted = lastInterviewed;
 	}
 
 	public String getSource() {

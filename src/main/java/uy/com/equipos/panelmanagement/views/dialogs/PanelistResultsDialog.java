@@ -49,7 +49,7 @@ public class PanelistResultsDialog extends Dialog {
         grid.addColumn(Panelist::getEmail).setHeader("Correo Electrónico").setAutoWidth(true);
         grid.addColumn(Panelist::getPhone).setHeader("Teléfono").setAutoWidth(true);
         grid.addColumn(Panelist::getLastContacted).setHeader("Último Contacto").setAutoWidth(true);
-        grid.addColumn(Panelist::getLastInterviewed).setHeader("Última Entrevista").setAutoWidth(true);
+        grid.addColumn(Panelist::getLastInterviewCompleted).setHeader("Última Entrevista").setAutoWidth(true);
 
         // Si se quieren mostrar las propiedades que se usaron para filtrar, se puede hacer aquí.
         // Por ejemplo, añadir columnas dinámicamente basadas en filterCriteria.keySet()
