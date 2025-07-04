@@ -14,4 +14,5 @@ public interface PanelistRepository extends JpaRepository<Panelist, Long>, JpaSp
     // @Query("SELECT p FROM Panelist p LEFT JOIN FETCH p.participations WHERE p.id = :id")
     // Optional<Panelist> findByIdWithParticipations(@Param("id") Long id);
 
+    Optional<Panelist> findByEmail(String email);
 }
