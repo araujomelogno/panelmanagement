@@ -30,6 +30,7 @@ public class Panelist extends AbstractEntity {
 	private String phone; 
 	private LocalDate lastContacted;
 	private LocalDate lastInterviewed;
+	private String source;
 
 	// Standard getters and setters for the above fields...
 	public String getFirstName() {
@@ -88,6 +89,14 @@ public class Panelist extends AbstractEntity {
 
 	public void setLastInterviewed(LocalDate lastInterviewed) {
 		this.lastInterviewed = lastInterviewed;
+	}
+
+	public String getSource() {
+		return source;
+	}
+
+	public void setSource(String source) {
+		this.source = source;
 	}
 
 	@OneToMany(mappedBy = "panelist", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.EAGER)

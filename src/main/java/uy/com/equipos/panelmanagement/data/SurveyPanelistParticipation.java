@@ -26,6 +26,7 @@ public class SurveyPanelistParticipation extends AbstractEntity {
     private LocalDate dateIncluded;
     private LocalDate dateSent;
     private boolean completed;
+    private LocalDate dateCompleted;
 
     public Survey getSurvey() {
         return survey;
@@ -66,6 +67,14 @@ public class SurveyPanelistParticipation extends AbstractEntity {
 
     public void setCompleted(boolean completed) {
         this.completed = completed;
+    }
+
+    public LocalDate getDateCompleted() {
+        return dateCompleted;
+    }
+
+    public void setDateCompleted(LocalDate dateCompleted) {
+        this.dateCompleted = dateCompleted;
     }
 
     @OneToMany(mappedBy = "surveyPanelistParticipation", cascade = CascadeType.ALL, orphanRemoval = true)
