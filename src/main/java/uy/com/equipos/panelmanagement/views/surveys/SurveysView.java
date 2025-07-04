@@ -217,6 +217,23 @@ public class SurveysView extends Div implements BeforeEnterObserver {
 					this.survey = new Survey();
 				}
 				binder.writeBean(this.survey);
+
+				// Extract and set alchemerSurveyId from link
+				String surveyLink = this.survey.getLink();
+				if (surveyLink != null && !surveyLink.isEmpty()) {
+					// Example link: https://app.alchemer.com/invite/messages/id/8378285/link/24121332
+					// Regex to find .../id/THIS_PART/link/...
+					java.util.regex.Pattern pattern = java.util.regex.Pattern.compile("/id/(\\d+)/link/");
+					java.util.regex.Matcher matcher = pattern.matcher(surveyLink);
+					if (matcher.find()) {
+						this.survey.setAlchemerSurveyId(matcher.group(1));
+					} else {
+						this.survey.setAlchemerSurveyId(null); // Or empty string, depending on desired behavior
+					}
+				} else {
+					this.survey.setAlchemerSurveyId(null); // Or empty string
+				}
+
 				surveyService.save(this.survey);
 				clearForm();
 				refreshGrid();

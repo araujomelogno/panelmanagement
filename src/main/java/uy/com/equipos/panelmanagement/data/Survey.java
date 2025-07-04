@@ -24,6 +24,8 @@ public class Survey extends AbstractEntity {
     @OneToMany(mappedBy = "survey")
     private Set<SurveyPanelistParticipation> participations = new HashSet<>();
 
+    private String alchemerSurveyId;
+
     public String getName() {
         return name;
     }
@@ -57,6 +59,14 @@ public class Survey extends AbstractEntity {
 
     public void setParticipations(Set<SurveyPanelistParticipation> participations) {
         this.participations = participations;
+    }
+
+    public String getAlchemerSurveyId() {
+        return alchemerSurveyId;
+    }
+
+    public void setAlchemerSurveyId(String alchemerSurveyId) {
+        this.alchemerSurveyId = alchemerSurveyId;
     }
 
     // The relationship from Survey to MessageTask is now indirect via SurveyPanelistParticipation.
