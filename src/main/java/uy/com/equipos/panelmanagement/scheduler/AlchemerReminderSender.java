@@ -23,10 +23,10 @@ import org.springframework.web.client.RestTemplate;
 import org.springframework.web.util.UriComponentsBuilder;
 
 import uy.com.equipos.panelmanagement.data.JobType;
-import uy.com.equipos.panelmanagement.data.MessageTask;
-import uy.com.equipos.panelmanagement.data.MessageTaskStatus;
+import uy.com.equipos.panelmanagement.data.Task;
+import uy.com.equipos.panelmanagement.data.TaskStatus;
 import uy.com.equipos.panelmanagement.data.Survey;
-import uy.com.equipos.panelmanagement.services.MessageTaskService;
+import uy.com.equipos.panelmanagement.services.TaskService;
 
 @Component
 @EnableScheduling
@@ -34,7 +34,7 @@ public class AlchemerReminderSender {
 
 	private static final Logger log = LoggerFactory.getLogger(AlchemerReminderSender.class);
 
-	private final MessageTaskService messageTaskService;
+	private final TaskService messageTaskService;
 	private final RestTemplate restTemplate;
 
 	@Value("${alchemer.api.token}")
@@ -45,7 +45,7 @@ public class AlchemerReminderSender {
 
 	private static final String ALCHEMER_API_BASE_URL = "https://api.alchemer.com";
 
-	public AlchemerReminderSender(MessageTaskService messageTaskService) {
+	public AlchemerReminderSender(TaskService messageTaskService) {
 		this.messageTaskService = messageTaskService;
 		this.restTemplate = new RestTemplate();
 	}
@@ -54,18 +54,18 @@ public class AlchemerReminderSender {
 	@Scheduled(cron = "30 * * * * *")
 	public void sendReminders() {
 		log.info("Iniciando tarea AlchemerReminderSender");
-		List<MessageTask> pendingTasks = messageTaskService.findAllByJobTypeAndStatus(JobType.ALCHEMER_REMINDER,
-				MessageTaskStatus.PENDING);
+		List<Task> pendingTasks = messageTaskService.findAllByJobTypeAndStatus(JobType.ALCHEMER_REMINDER,
+				TaskStatus.PENDING);
 
 		log.info("Se encontraron {} tareas pendientes de envío de recordatorios.", pendingTasks.size());
 
-		for (MessageTask task : pendingTasks) {
+		for (Task task : pendingTasks) {
 			try {
 				log.info("Procesando MessageTask ID: {} para envío de recordatorio.", task.getId());
 				Survey survey = task.getSurvey();
 				if (survey == null || survey.getLink() == null || survey.getLink().isEmpty()) {
 					log.error("Survey o Survey Link no encontrado para MessageTask ID: {}", task.getId());
-					task.setStatus(MessageTaskStatus.ERROR);
+					task.setStatus(TaskStatus.ERROR);
 					messageTaskService.save(task);
 					continue;
 				}
@@ -78,7 +78,7 @@ public class AlchemerReminderSender {
 				if (surveyId == null || campaignId == null) {
 					log.error("No se pudo extraer SurveyID o CampaignID del link {} para MessageTask ID: {}",
 							surveyLink, task.getId());
-					task.setStatus(MessageTaskStatus.ERROR);
+					task.setStatus(TaskStatus.ERROR);
 					messageTaskService.save(task);
 					continue;
 				}
@@ -91,7 +91,7 @@ public class AlchemerReminderSender {
 					log.error(
 							"No se pudo obtener EmailMessageID de tipo 'reminder' para SurveyID: {}, CampaignID: {}. MessageTask ID: {}",
 							surveyId, campaignId, task.getId());
-					task.setStatus(MessageTaskStatus.ERROR);
+					task.setStatus(TaskStatus.ERROR);
 					messageTaskService.save(task);
 					continue;
 				}
@@ -102,16 +102,16 @@ public class AlchemerReminderSender {
 
 				if (reminderSent) {
 					log.info("Recordatorio enviado exitosamente para MessageTask ID: {}", task.getId());
-					task.setStatus(MessageTaskStatus.DONE);
+					task.setStatus(TaskStatus.DONE);
 					
 				} else {
 					log.error("Error al enviar el recordatorio para MessageTask ID: {}", task.getId());
-					task.setStatus(MessageTaskStatus.ERROR);
+					task.setStatus(TaskStatus.ERROR);
 				}
 				messageTaskService.save(task);
 			} catch (Exception e) {
 				log.error("Error procesando MessageTask ID: {}. Error: {}", task.getId(), e.getMessage(), e);
-				task.setStatus(MessageTaskStatus.ERROR);
+				task.setStatus(TaskStatus.ERROR);
 				messageTaskService.save(task);
 			}
 		}

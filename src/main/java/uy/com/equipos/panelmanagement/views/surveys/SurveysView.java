@@ -43,15 +43,15 @@ import com.vaadin.flow.spring.data.VaadinSpringDataHelpers;
 
 import jakarta.annotation.security.PermitAll;
 import uy.com.equipos.panelmanagement.data.JobType;
-import uy.com.equipos.panelmanagement.data.MessageTask;
-import uy.com.equipos.panelmanagement.data.MessageTaskStatus;
+import uy.com.equipos.panelmanagement.data.Task;
+import uy.com.equipos.panelmanagement.data.TaskStatus;
 import uy.com.equipos.panelmanagement.data.Panel;
 import uy.com.equipos.panelmanagement.data.Panelist;
 // import uy.com.equipos.panelmanagement.data.Panelist; // Ya no se usa directamente aquí
 import uy.com.equipos.panelmanagement.data.Survey;
 import uy.com.equipos.panelmanagement.data.SurveyPanelistParticipation; // Nueva importación
 import uy.com.equipos.panelmanagement.data.Tool;
-import uy.com.equipos.panelmanagement.services.MessageTaskService; // Nueva importación
+import uy.com.equipos.panelmanagement.services.TaskService; // Nueva importación
 import uy.com.equipos.panelmanagement.services.PanelService;
 import uy.com.equipos.panelmanagement.services.SurveyPanelistParticipationService; // Nueva importación
 import uy.com.equipos.panelmanagement.services.SurveyService;
@@ -95,10 +95,10 @@ public class SurveysView extends Div implements BeforeEnterObserver {
 	private final SurveyService surveyService;
 	private final SurveyPanelistParticipationService participationService; // Nuevo servicio
 	private final PanelService panelService; // Service for Panel entities
-	private final MessageTaskService messageTaskService; // Service for MessageTask entities
+	private final TaskService messageTaskService; // Service for MessageTask entities
 
 	public SurveysView(SurveyService surveyService, SurveyPanelistParticipationService participationService,
-			PanelService panelService, MessageTaskService messageTaskService) {
+			PanelService panelService, TaskService messageTaskService) {
 		this.surveyService = surveyService;
 		this.participationService = participationService; // Inyectar nuevo servicio
 		this.panelService = panelService; // Inyectar PanelService
@@ -414,10 +414,10 @@ public class SurveysView extends Div implements BeforeEnterObserver {
 			// necessary
 			if (participation != null && participation.getPanelist() != null) { // Ensure participation and its panelist
 																				// are not null
-				MessageTask mt = new MessageTask();
+				Task mt = new Task();
 				mt.setJobType(JobType.ALCHEMER_INVITE);
 				mt.setCreated(LocalDateTime.now());
-				mt.setStatus(MessageTaskStatus.PENDING);
+				mt.setStatus(TaskStatus.PENDING);
 				mt.setSurveyPanelistParticipation(participation); // Set the participation
 				mt.setSurvey(currentSurveyWithParticipations); // Associate survey
 				messageTaskService.save(mt);
@@ -450,10 +450,10 @@ public class SurveysView extends Div implements BeforeEnterObserver {
 		}
 
 		int tasksCreated = 0;
-		MessageTask mt = new MessageTask();
+		Task mt = new Task();
 		mt.setJobType(JobType.ALCHEMER_REMINDER);
 		mt.setCreated(LocalDateTime.now());
-		mt.setStatus(MessageTaskStatus.PENDING); // Assuming PENDING exists
+		mt.setStatus(TaskStatus.PENDING); // Assuming PENDING exists
 		mt.setSurvey(currentSurveyWithParticipations); // Associate survey
 		messageTaskService.save(mt);
 		tasksCreated++;

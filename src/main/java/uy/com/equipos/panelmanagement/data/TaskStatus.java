@@ -1,6 +1,6 @@
 package uy.com.equipos.panelmanagement.data;
 
-public enum MessageTaskStatus {
+public enum TaskStatus {
     PENDING,
     DONE,
     ERROR

@@ -10,7 +10,7 @@ import jakarta.persistence.ManyToOne;
 import jakarta.validation.constraints.NotNull;
 
 @Entity
-public class MessageTask extends AbstractEntity {
+public class Task extends AbstractEntity {
 
     @NotNull
     @Enumerated(EnumType.STRING)
@@ -21,7 +21,7 @@ public class MessageTask extends AbstractEntity {
 
     @NotNull
     @Enumerated(EnumType.STRING)
-    private MessageTaskStatus status;
+    private TaskStatus status;
 
     
     @ManyToOne
@@ -49,11 +49,11 @@ public class MessageTask extends AbstractEntity {
         this.created = created;
     }
 
-    public MessageTaskStatus getStatus() {
+    public TaskStatus getStatus() {
         return status;
     }
 
-    public void setStatus(MessageTaskStatus status) {
+    public void setStatus(TaskStatus status) {
         this.status = status;
     }
 

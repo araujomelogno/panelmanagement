@@ -24,11 +24,11 @@ import org.springframework.web.client.RestTemplate;
 import org.springframework.web.util.UriComponentsBuilder;
 
 import uy.com.equipos.panelmanagement.data.JobType;
-import uy.com.equipos.panelmanagement.data.MessageTask;
-import uy.com.equipos.panelmanagement.data.MessageTaskStatus;
+import uy.com.equipos.panelmanagement.data.Task;
+import uy.com.equipos.panelmanagement.data.TaskStatus;
 import uy.com.equipos.panelmanagement.data.Panelist;
 import uy.com.equipos.panelmanagement.data.SurveyPanelistParticipation;
-import uy.com.equipos.panelmanagement.services.MessageTaskService;
+import uy.com.equipos.panelmanagement.services.TaskService;
 import uy.com.equipos.panelmanagement.services.PanelistService;
 import uy.com.equipos.panelmanagement.services.SurveyPanelistParticipationService;
 
@@ -38,7 +38,7 @@ public class AlchemerInviteSender {
 
 	private static final Logger log = LoggerFactory.getLogger(AlchemerInviteSender.class);
 
-	private final MessageTaskService messageTaskService;
+	private final TaskService messageTaskService;
 	private final SurveyPanelistParticipationService surveyPanelistParticipationService;
 	private final PanelistService panelistService;
 	private final RestTemplate restTemplate;
@@ -51,7 +51,7 @@ public class AlchemerInviteSender {
 
 	private static final String ALCHEMER_API_BASE_URL = "https://api.alchemer.com";
 
-	public AlchemerInviteSender(MessageTaskService messageTaskService,
+	public AlchemerInviteSender(TaskService messageTaskService,
 			SurveyPanelistParticipationService surveyPanelistParticipationService, PanelistService panelistService) {
 		this.messageTaskService = messageTaskService;
 		this.surveyPanelistParticipationService = surveyPanelistParticipationService;
@@ -63,10 +63,10 @@ public class AlchemerInviteSender {
 //	@Scheduled(cron = "0 */5 * * * *")
 	public void sendInvites() {
 		log.info("Iniciando tarea AlchemerInviteSender");
-		List<MessageTask> pendingTasks = messageTaskService.findAllByJobTypeAndStatus(JobType.ALCHEMER_INVITE,
-				MessageTaskStatus.PENDING);
+		List<Task> pendingTasks = messageTaskService.findAllByJobTypeAndStatus(JobType.ALCHEMER_INVITE,
+				TaskStatus.PENDING);
 
-		for (MessageTask task : pendingTasks) {
+		for (Task task : pendingTasks) {
 			try {
 				log.info("Procesando MessageTask ID: {}", task.getId());
 				Optional<SurveyPanelistParticipation> participationOpt = surveyPanelistParticipationService
@@ -74,7 +74,7 @@ public class AlchemerInviteSender {
 
 				if (participationOpt.isEmpty()) {
 					log.error("No se encontró SurveyPanelistParticipation para MessageTask ID: {}", task.getId());
-					task.setStatus(MessageTaskStatus.ERROR);
+					task.setStatus(TaskStatus.ERROR);
 					messageTaskService.save(task);
 					continue;
 				}
@@ -82,7 +82,7 @@ public class AlchemerInviteSender {
 				SurveyPanelistParticipation participation = participationOpt.get();
 				if (participation.getSurvey() == null || participation.getSurvey().getLink() == null) {
 					log.error("Survey o Survey Link no encontrado para Participation ID: {}", participation.getId());
-					task.setStatus(MessageTaskStatus.ERROR);
+					task.setStatus(TaskStatus.ERROR);
 					messageTaskService.save(task);
 					continue;
 				}
@@ -90,7 +90,7 @@ public class AlchemerInviteSender {
 
 				if (participation.getPanelist() == null) {
 					log.error("Panelist no encontrado para Participation ID: {}", participation.getId());
-					task.setStatus(MessageTaskStatus.ERROR);
+					task.setStatus(TaskStatus.ERROR);
 					messageTaskService.save(task);
 					continue;
 				}
@@ -109,7 +109,7 @@ public class AlchemerInviteSender {
 						log.error(
 								"No se pudo obtener o crear el ContactID para el email: {} en la campaña del survey link: {}",
 								email, surveyLink);
-						task.setStatus(MessageTaskStatus.ERROR);
+						task.setStatus(TaskStatus.ERROR);
 						messageTaskService.save(task);
 						continue;
 					}
@@ -130,18 +130,18 @@ public class AlchemerInviteSender {
 						surveyPanelistParticipationService.save(participation);
 					}
 
-					task.setStatus(MessageTaskStatus.DONE);
+					task.setStatus(TaskStatus.DONE);
 					messageTaskService.save(task);
 					log.info("Invitación enviada exitosamente para MessageTask ID: {}", task.getId());
 				} else {
 					log.error("Error al enviar la invitación para MessageTask ID: {}", task.getId());
-					task.setStatus(MessageTaskStatus.ERROR);
+					task.setStatus(TaskStatus.ERROR);
 					messageTaskService.save(task);
 				}
 
 			} catch (Exception e) {
 				log.error("Error procesando MessageTask ID: {}. Error: {}", task.getId(), e.getMessage(), e);
-				task.setStatus(MessageTaskStatus.ERROR);
+				task.setStatus(TaskStatus.ERROR);
 				messageTaskService.save(task);
 			}
 		}

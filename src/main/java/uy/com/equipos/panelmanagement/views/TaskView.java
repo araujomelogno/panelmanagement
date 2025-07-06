@@ -28,23 +28,23 @@ import com.vaadin.flow.router.Route;
 
 import jakarta.annotation.security.RolesAllowed;
 import uy.com.equipos.panelmanagement.data.JobType; // Required for JobType
-import uy.com.equipos.panelmanagement.data.MessageTask;
-import uy.com.equipos.panelmanagement.data.MessageTaskStatus; // Required for MessageTaskStatus
-import uy.com.equipos.panelmanagement.services.MessageTaskService;
+import uy.com.equipos.panelmanagement.data.Task;
+import uy.com.equipos.panelmanagement.data.TaskStatus; // Required for MessageTaskStatus
+import uy.com.equipos.panelmanagement.services.TaskService;
 
 @PageTitle("Tareas")
-@Route(value = "messagetasks", layout = MainLayout.class)
+@Route(value = "tasks", layout = MainLayout.class)
 @RolesAllowed("ADMIN")
-public class MessageTaskView extends Div implements HasComponents, HasStyle {
+public class TaskView extends Div implements HasComponents, HasStyle {
 
-    private Grid<MessageTask> grid = new Grid<>(MessageTask.class, false);
-    private GridListDataView<MessageTask> gridListDataView;
-    private final Map<String, SerializablePredicate<MessageTask>> activeFilters = new HashMap<>();
+    private Grid<Task> grid = new Grid<>(Task.class, false);
+    private GridListDataView<Task> gridListDataView;
+    private final Map<String, SerializablePredicate<Task>> activeFilters = new HashMap<>();
 
-    private final MessageTaskService messageTaskService;
+    private final TaskService messageTaskService;
 
     @Autowired
-    public MessageTaskView(MessageTaskService messageTaskService) {
+    public TaskView(TaskService messageTaskService) {
         this.messageTaskService = messageTaskService;
         addClassNames("message-task-view");
         setSizeFull();
@@ -55,10 +55,10 @@ public class MessageTaskView extends Div implements HasComponents, HasStyle {
 
     private void configureGrid() {
         // Define columns with keys first
-        grid.addColumn(MessageTask::getId).setHeader("Id").setAutoWidth(true).setSortable(true).setKey("id");
-        grid.addColumn(MessageTask::getJobType).setHeader("Tarea").setAutoWidth(true).setSortable(true).setKey("jobType");
-        grid.addColumn(MessageTask::getCreated).setHeader("Creada").setAutoWidth(true).setSortable(true).setKey("created");
-        grid.addColumn(MessageTask::getStatus).setHeader("Estado").setAutoWidth(true).setSortable(true).setKey("status");
+        grid.addColumn(Task::getId).setHeader("Id").setAutoWidth(true).setSortable(true).setKey("id");
+        grid.addColumn(Task::getJobType).setHeader("Tarea").setAutoWidth(true).setSortable(true).setKey("jobType");
+        grid.addColumn(Task::getCreated).setHeader("Creada").setAutoWidth(true).setSortable(true).setKey("created");
+        grid.addColumn(Task::getStatus).setHeader("Estado").setAutoWidth(true).setSortable(true).setKey("status");
         grid.addColumn(mt -> mt.getSurveyPanelistParticipation() != null ? mt.getSurveyPanelistParticipation().getPanelist().getFullName(): null)
             .setHeader("Panelista").setAutoWidth(true).setSortable(true).setKey("panelist");
         grid.addColumn(mt -> mt.getSurvey() != null ? mt.getSurvey().getName() : null)
@@ -68,16 +68,16 @@ public class MessageTaskView extends Div implements HasComponents, HasStyle {
         HeaderRow filterRow = grid.appendHeaderRow();
 
         // Create and assign filters to the header row using column keys
-        TextField idFilter = createTextFieldFilter("id_filter_key", MessageTask::getId); // Changed filterKey to avoid conflict with column key if map keys are column keys
+        TextField idFilter = createTextFieldFilter("id_filter_key", Task::getId); // Changed filterKey to avoid conflict with column key if map keys are column keys
         filterRow.getCell(grid.getColumnByKey("id")).setComponent(idFilter);
 
-        ComboBox<JobType> jobTypeComboBox = createComboBoxFilter("jobType_filter_key", JobType.class, JobType.values(), MessageTask::getJobType);
+        ComboBox<JobType> jobTypeComboBox = createComboBoxFilter("jobType_filter_key", JobType.class, JobType.values(), Task::getJobType);
         filterRow.getCell(grid.getColumnByKey("jobType")).setComponent(jobTypeComboBox);
 
         DatePicker createdDatePicker = createDatePickerFilter("createdDate_filter_key");
         filterRow.getCell(grid.getColumnByKey("created")).setComponent(createdDatePicker);
 
-        ComboBox<MessageTaskStatus> statusComboBox = createComboBoxFilter("status_filter_key", MessageTaskStatus.class, MessageTaskStatus.values(), MessageTask::getStatus);
+        ComboBox<TaskStatus> statusComboBox = createComboBoxFilter("status_filter_key", TaskStatus.class, TaskStatus.values(), Task::getStatus);
         filterRow.getCell(grid.getColumnByKey("status")).setComponent(statusComboBox);
 
         TextField participationIdFilter = createTextFieldFilter("participationId_filter_key", mt -> mt.getSurveyPanelistParticipation() != null ? mt.getSurveyPanelistParticipation().getId() : "");
@@ -118,7 +118,7 @@ public class MessageTaskView extends Div implements HasComponents, HasStyle {
             if (selectedDate == null) {
                 activeFilters.remove(filterKey);
             } else {
-                activeFilters.put(filterKey, (SerializablePredicate<MessageTask>) task -> {
+                activeFilters.put(filterKey, (SerializablePredicate<Task>) task -> {
                     if (task.getCreated() == null) return false;
                     return task.getCreated().toLocalDate().equals(selectedDate);
                 });
@@ -128,7 +128,7 @@ public class MessageTaskView extends Div implements HasComponents, HasStyle {
         return datePicker;
     }
 
-    private <E extends Enum<E>> ComboBox<E> createComboBoxFilter(String filterKey, Class<E> enumClass, E[] enumValues, ValueProvider<MessageTask, E> valueProvider) {
+    private <E extends Enum<E>> ComboBox<E> createComboBoxFilter(String filterKey, Class<E> enumClass, E[] enumValues, ValueProvider<Task, E> valueProvider) {
         ComboBox<E> comboBox = new ComboBox<>();
         comboBox.setWidthFull();
         comboBox.setPlaceholder("Filter by " + enumClass.getSimpleName());
@@ -139,7 +139,7 @@ public class MessageTaskView extends Div implements HasComponents, HasStyle {
             if (selectedValue == null) {
                 activeFilters.remove(filterKey);
             } else {
-                activeFilters.put(filterKey, (SerializablePredicate<MessageTask>) task -> {
+                activeFilters.put(filterKey, (SerializablePredicate<Task>) task -> {
                     E taskValue = valueProvider.apply(task);
                     return taskValue != null && taskValue.equals(selectedValue);
                 });
@@ -149,7 +149,7 @@ public class MessageTaskView extends Div implements HasComponents, HasStyle {
         return comboBox;
     }
 
-    private TextField createTextFieldFilter(String filterKey, ValueProvider<MessageTask, ?> valueProvider) {
+    private TextField createTextFieldFilter(String filterKey, ValueProvider<Task, ?> valueProvider) {
         TextField filterField = new TextField();
         filterField.setWidthFull();
         filterField.setPlaceholder("Filter");
@@ -160,7 +160,7 @@ public class MessageTaskView extends Div implements HasComponents, HasStyle {
             if (filterValue.isEmpty()) {
                 activeFilters.remove(filterKey);
             } else {
-                activeFilters.put(filterKey, (SerializablePredicate<MessageTask>) task ->
+                activeFilters.put(filterKey, (SerializablePredicate<Task>) task ->
                     Objects.toString(valueProvider.apply(task), "").toLowerCase().contains(filterValue)
                 );
             }
@@ -174,7 +174,7 @@ public class MessageTaskView extends Div implements HasComponents, HasStyle {
             return;
         }
 
-        SerializablePredicate<MessageTask> combinedFilter = activeFilters.values().stream()
+        SerializablePredicate<Task> combinedFilter = activeFilters.values().stream()
             .reduce(SerializablePredicate::and)
             .orElse(task -> true); // This lambda is intrinsically serializable if it captures no non-serializable state
 
@@ -188,7 +188,7 @@ public class MessageTaskView extends Div implements HasComponents, HasStyle {
     }
 
     private void loadGridData() {
-        List<MessageTask> messageTasks = messageTaskService.findAll();
+        List<Task> messageTasks = messageTaskService.findAll();
         gridListDataView = grid.setItems(messageTasks);
         // Re-apply filters when data is loaded, if any filters were set previously
         // This is more relevant if filters are persisted or set before data loading.
