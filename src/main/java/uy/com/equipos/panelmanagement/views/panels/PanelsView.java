@@ -1,6 +1,7 @@
 package uy.com.equipos.panelmanagement.views.panels;
 
 import java.time.LocalDate;
+import java.util.Locale;
 import java.util.Optional;
 
 import org.springframework.orm.ObjectOptimisticLockingFailureException;
@@ -190,7 +191,13 @@ public class PanelsView extends Div implements BeforeEnterObserver {
 		// Configurar placeholders para filtros (ya deberían estar inicializados como
 		// miembros de clase)
 		nameFilter.setPlaceholder("Filtrar por Nombre");
-		createdFilter.setPlaceholder("Filtrar por Fecha de Creación");
+
+		createdFilter.setPlaceholder("dd/MM/yyyy");
+		createdFilter.setLocale(new Locale("es", "UY"));
+		DatePicker.DatePickerI18n cfI18n = new DatePicker.DatePickerI18n();
+		cfI18n.setDateFormat("dd/MM/yyyy");
+		createdFilter.setI18n(cfI18n);
+
 		activeFilter.setPlaceholder("Filtrar por Estado");
 		activeFilter.setItems("Todos", "Activo", "Inactivo"); // Estos ya están en español o son universales
 		activeFilter.setValue("Todos");
@@ -299,6 +306,10 @@ public class PanelsView extends Div implements BeforeEnterObserver {
 		FormLayout formLayout = new FormLayout();
 		name = new TextField("Nombre");
 		created = new DatePicker("Fecha de Creación");
+		created.setLocale(new Locale("es", "UY"));
+		DatePicker.DatePickerI18n cI18n = new DatePicker.DatePickerI18n();
+		cI18n.setDateFormat("dd/MM/yyyy");
+		created.setI18n(cI18n);
 		active = new Checkbox("Activo");
 		formLayout.add(name, created, active, addPanelistsButton, viewPanelistsButton);
 

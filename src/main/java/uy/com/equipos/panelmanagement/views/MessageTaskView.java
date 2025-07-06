@@ -3,10 +3,12 @@ package uy.com.equipos.panelmanagement.views;
 import java.time.LocalDate; // Added for LocalDate comparison
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.Collections;
 import java.util.HashMap; // Added for filter map
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Locale;
 
 import org.springframework.beans.factory.annotation.Autowired;
 
@@ -95,7 +97,21 @@ public class MessageTaskView extends Div implements HasComponents, HasStyle {
     private DatePicker createDatePickerFilter(String filterKey) {
         DatePicker datePicker = new DatePicker();
         datePicker.setWidthFull();
-        datePicker.setPlaceholder("Filter by date");
+        // Apply Spanish locale for dd/MM/yyyy format
+        // Create a custom I18n object for DatePicker
+        DatePicker.DatePickerI18n dpI18n = new DatePicker.DatePickerI18n();
+        dpI18n.setDateFormat("dd/MM/yyyy");
+        // You can customize other i18n properties here if needed
+        // For example, month names, weekdays, etc.
+        // dpI18n.setMonthNames(List.of("Enero", "Febrero", ..., "Diciembre"));
+        // dpI18n.setWeekdays(List.of("Domingo", "Lunes", ..., "Sábado"));
+        // dpI18n.setToday("Hoy");
+        // dpI18n.setCancel("Cancelar");
+        // dpI18n.setFirstDayOfWeek(1); // Monday
+
+        datePicker.setI18n(dpI18n);
+        datePicker.setLocale(new Locale("es", "UY")); // Spanish, Uruguay for dd/MM/yyyy
+        datePicker.setPlaceholder("dd/MM/yyyy");
         datePicker.setClearButtonVisible(true);
         datePicker.addValueChangeListener(event -> {
             LocalDate selectedDate = event.getValue();
