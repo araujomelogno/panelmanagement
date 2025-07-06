@@ -10,6 +10,10 @@ public class AlchemerSurveyCompletionDataDto {
     @JsonProperty("session_id")
     private String sessionId;
 
+    @JsonProperty("response_id")
+    private int responseId;
+
+    
     @JsonProperty("account_id")
     private int accountId;
 
@@ -91,4 +95,12 @@ public class AlchemerSurveyCompletionDataDto {
     public void setContact(AlchemerSurveyCompletionContactDto contact) {
         this.contact = contact;
     }
+
+	public int getResponseId() {
+		return responseId;
+	}
+
+	public void setResponseId(int responseId) {
+		this.responseId = responseId;
+	}
 }

@@ -1,5 +1,8 @@
 package uy.com.equipos.panelmanagement.webhook;
 
+import java.time.LocalDate; // Changed from LocalDateTime to LocalDate
+import java.util.Optional;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
@@ -17,9 +20,6 @@ import uy.com.equipos.panelmanagement.data.SurveyPanelistParticipation;
 import uy.com.equipos.panelmanagement.data.SurveyPanelistParticipationRepository;
 import uy.com.equipos.panelmanagement.data.SurveyRepository;
 import uy.com.equipos.panelmanagement.webhook.dto.AlchemerSurveyCompletionPayloadDto;
-
-import java.time.LocalDate; // Changed from LocalDateTime to LocalDate
-import java.util.Optional;
 
 @RestController
 @RequestMapping("/api/webhook")
@@ -91,6 +91,7 @@ public class AlchemerSurveyCompletionController {
             return ResponseEntity.ok("Participation already marked as completed. No update performed.");
         }
 
+        
         participation.setCompleted(true);
         participation.setDateCompleted(LocalDate.now()); // Using LocalDate as per entity definition
 
