@@ -5,6 +5,7 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Locale;
 import java.util.Optional;
 import java.util.Set;
 
@@ -164,7 +165,13 @@ public class SurveysView extends Div implements BeforeEnterObserver {
 
 		// Configurar placeholders para filtros
 		nameFilter.setPlaceholder("Filtrar por Nombre");
-		initDateFilter.setPlaceholder("Filtrar por Fecha de Inicio");
+
+		initDateFilter.setPlaceholder("dd/MM/yyyy");
+		initDateFilter.setLocale(new Locale("es", "UY"));
+		DatePicker.DatePickerI18n idfI18n = new DatePicker.DatePickerI18n();
+		idfI18n.setDateFormat("dd/MM/yyyy");
+		initDateFilter.setI18n(idfI18n);
+
 		linkFilter.setPlaceholder("Filtrar por Enlace");
 		toolFilter.setPlaceholder("Filtrar por Herramienta");
 		toolFilter.setItems(Tool.values());
@@ -291,6 +298,11 @@ public class SurveysView extends Div implements BeforeEnterObserver {
 		FormLayout formLayout = new FormLayout();
 		name = new TextField("Nombre");
 		initDate = new DatePicker("Fecha de Inicio");
+		initDate.setLocale(new Locale("es", "UY"));
+		DatePicker.DatePickerI18n idI18n = new DatePicker.DatePickerI18n();
+		idI18n.setDateFormat("dd/MM/yyyy");
+		initDate.setI18n(idI18n);
+
 		link = new TextField("Enlace");
 		tool = new ComboBox<>("Herramienta");
 		tool.setItems(Tool.values());
@@ -629,17 +641,29 @@ public class SurveysView extends Div implements BeforeEnterObserver {
 		filterRow.getCell(participationsGrid.getColumnByKey("panelistEmail")).setComponent(panelistEmailFilter);
 
 		DatePicker dateIncludedFilter = new DatePicker();
-		dateIncludedFilter.setPlaceholder("Filtrar Fecha");
+		dateIncludedFilter.setPlaceholder("dd/MM/yyyy");
+		dateIncludedFilter.setLocale(new Locale("es", "UY"));
+		DatePicker.DatePickerI18n difI18n = new DatePicker.DatePickerI18n();
+		difI18n.setDateFormat("dd/MM/yyyy");
+		dateIncludedFilter.setI18n(difI18n);
 		dateIncludedFilter.setClearButtonVisible(true);
 		filterRow.getCell(dateIncludedColumn).setComponent(dateIncludedFilter);
 
 		DatePicker dateSentFilter = new DatePicker();
-		dateSentFilter.setPlaceholder("Filtrar Fecha");
+		dateSentFilter.setPlaceholder("dd/MM/yyyy");
+		dateSentFilter.setLocale(new Locale("es", "UY"));
+		DatePicker.DatePickerI18n dsfI18n = new DatePicker.DatePickerI18n();
+		dsfI18n.setDateFormat("dd/MM/yyyy");
+		dateSentFilter.setI18n(dsfI18n);
 		dateSentFilter.setClearButtonVisible(true);
 		filterRow.getCell(dateSentColumn).setComponent(dateSentFilter);
 
 		DatePicker dateCompletedFilter = new DatePicker();
-		dateCompletedFilter.setPlaceholder("Filtrar Fecha");
+		dateCompletedFilter.setPlaceholder("dd/MM/yyyy");
+		dateCompletedFilter.setLocale(new Locale("es", "UY"));
+		DatePicker.DatePickerI18n dcfI18n = new DatePicker.DatePickerI18n();
+		dcfI18n.setDateFormat("dd/MM/yyyy");
+		dateCompletedFilter.setI18n(dcfI18n);
 		dateCompletedFilter.setClearButtonVisible(true);
 		filterRow.getCell(dateCompletedColumn).setComponent(dateCompletedFilter);
 

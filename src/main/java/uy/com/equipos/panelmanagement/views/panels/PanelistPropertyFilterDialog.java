@@ -2,6 +2,7 @@ package uy.com.equipos.panelmanagement.views.panels;
 
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 
 import com.vaadin.flow.component.Component;
@@ -179,8 +180,13 @@ public class PanelistPropertyFilterDialog extends Dialog {
                 ((TextField) editorComponent).setPlaceholder("Valor de texto...");
                 break;
             case FECHA:
-                editorComponent = new DatePicker();
-                ((DatePicker) editorComponent).setPlaceholder("Seleccione fecha...");
+                DatePicker datePicker = new DatePicker();
+                datePicker.setPlaceholder("dd/MM/yyyy");
+                datePicker.setLocale(new Locale("es", "UY"));
+                DatePicker.DatePickerI18n dpI18n = new DatePicker.DatePickerI18n();
+                dpI18n.setDateFormat("dd/MM/yyyy");
+                datePicker.setI18n(dpI18n);
+                editorComponent = datePicker;
                 break;
             case NUMERO:
                 // Usar TextField para números, se puede añadir validación o máscara si es necesario.

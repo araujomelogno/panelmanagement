@@ -6,6 +6,7 @@ import java.util.ArrayList;
 import java.util.HashMap; // Added
 import java.util.HashSet;
 import java.util.List; // Make sure this is present
+import java.util.Locale;
 import java.util.Map; // Added
 import java.util.Optional;
 import java.util.Set;
@@ -237,8 +238,18 @@ public class PanelistsView extends Div implements BeforeEnterObserver {
 		// dateOfBirthFilter.setPlaceholder("Filtrar por Fecha de Nacimiento"); //
 		// Removed
 		// occupationFilter.setPlaceholder("Filtrar por Ocupación"); // Removed
-		lastContactedFilter.setPlaceholder("Filtrar por Último Contacto");
-		lastInterviewCompletedFilter.setPlaceholder("Filtrar por Última Encuesta");
+		lastContactedFilter.setPlaceholder("dd/MM/yyyy");
+		lastContactedFilter.setLocale(new Locale("es", "UY"));
+		DatePicker.DatePickerI18n lastContactedI18n = new DatePicker.DatePickerI18n();
+		lastContactedI18n.setDateFormat("dd/MM/yyyy");
+		lastContactedFilter.setI18n(lastContactedI18n);
+
+		lastInterviewCompletedFilter.setPlaceholder("dd/MM/yyyy");
+		lastInterviewCompletedFilter.setLocale(new Locale("es", "UY"));
+		DatePicker.DatePickerI18n lastInterviewCompletedI18n = new DatePicker.DatePickerI18n();
+		lastInterviewCompletedI18n.setDateFormat("dd/MM/yyyy");
+		lastInterviewCompletedFilter.setI18n(lastInterviewCompletedI18n);
+
 		sourceFilter.setPlaceholder("Filtrar por Fuente"); // Added placeholder for source filter
 
 		// Añadir listeners para refrescar el grid
@@ -409,8 +420,17 @@ public class PanelistsView extends Div implements BeforeEnterObserver {
 		// occupation = new TextField("Ocupación"); // Removed
 		lastContacted = new DatePicker("Último encuesta enviada");
 		lastContacted.setReadOnly(true);
+		lastContacted.setLocale(new Locale("es", "UY"));
+		DatePicker.DatePickerI18n lcI18n = new DatePicker.DatePickerI18n();
+		lcI18n.setDateFormat("dd/MM/yyyy");
+		lastContacted.setI18n(lcI18n);
+
 		lastInterviewCompleted = new DatePicker("Última encuesta completa");
 		lastInterviewCompleted.setReadOnly(true);
+		lastInterviewCompleted.setLocale(new Locale("es", "UY"));
+		DatePicker.DatePickerI18n licI18n = new DatePicker.DatePickerI18n();
+		licI18n.setDateFormat("dd/MM/yyyy");
+		lastInterviewCompleted.setI18n(licI18n);
 
 		// START: Add properties field - Removed
 		// propertiesField = new MultiSelectListBox<>(); // Removed
@@ -562,11 +582,19 @@ public class PanelistsView extends Div implements BeforeEnterObserver {
 		filterRow.getCell(surveyNameCol).setComponent(surveyNameFilter);
 
 		DatePicker dateSentFilter = new DatePicker();
-		dateSentFilter.setPlaceholder("Filtrar...");
+		dateSentFilter.setPlaceholder("dd/MM/yyyy");
+		dateSentFilter.setLocale(new Locale("es", "UY"));
+		DatePicker.DatePickerI18n dsfI18n = new DatePicker.DatePickerI18n();
+		dsfI18n.setDateFormat("dd/MM/yyyy");
+		dateSentFilter.setI18n(dsfI18n);
 		filterRow.getCell(dateSentCol).setComponent(dateSentFilter);
 
 		DatePicker dateCompletedFilter = new DatePicker();
-		dateCompletedFilter.setPlaceholder("Filtrar...");
+		dateCompletedFilter.setPlaceholder("dd/MM/yyyy");
+		dateCompletedFilter.setLocale(new Locale("es", "UY"));
+		DatePicker.DatePickerI18n dcfI18n = new DatePicker.DatePickerI18n();
+		dcfI18n.setDateFormat("dd/MM/yyyy");
+		dateCompletedFilter.setI18n(dcfI18n);
 		filterRow.getCell(dateCompletedCol).setComponent(dateCompletedFilter);
 
 		ComboBox<String> completedFilter = new ComboBox<>();
@@ -890,13 +918,24 @@ public class PanelistsView extends Div implements BeforeEnterObserver {
 			switch (type) {
 			case FECHA:
 				DatePicker datePicker = new DatePicker();
-				datePicker.setPlaceholder("Seleccione fecha...");
+				datePicker.setPlaceholder("dd/MM/yyyy");
+				datePicker.setLocale(new Locale("es", "UY"));
+				DatePicker.DatePickerI18n dpI18n = new DatePicker.DatePickerI18n();
+				dpI18n.setDateFormat("dd/MM/yyyy");
+				datePicker.setI18n(dpI18n);
 				if (existingValue != null && !existingValue.isEmpty()) {
 					try {
+						// Attempt to parse if it's in ISO format (yyyy-MM-dd) first
 						datePicker.setValue(LocalDate.parse(existingValue));
 					} catch (DateTimeParseException e) {
-						// Handle or log parsing error, maybe set to null
-						datePicker.setValue(null);
+						// If ISO parsing fails, try dd/MM/yyyy (though data should ideally be stored in ISO)
+						try {
+							DateTimeFormatter customFormatter = DateTimeFormatter.ofPattern("dd/MM/yyyy");
+							datePicker.setValue(LocalDate.parse(existingValue, customFormatter));
+						} catch (DateTimeParseException ex) {
+							// Handle or log parsing error, maybe set to null
+							datePicker.setValue(null);
+						}
 					}
 				}
 				editorComponent = datePicker;
