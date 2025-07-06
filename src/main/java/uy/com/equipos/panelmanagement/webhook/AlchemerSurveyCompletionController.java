@@ -1,6 +1,7 @@
 package uy.com.equipos.panelmanagement.webhook;
 
 import java.time.LocalDate; // Changed from LocalDateTime to LocalDate
+import java.time.LocalDateTime;
 import java.util.Optional;
 
 import org.slf4j.Logger;
@@ -19,6 +20,10 @@ import uy.com.equipos.panelmanagement.data.Survey;
 import uy.com.equipos.panelmanagement.data.SurveyPanelistParticipation;
 import uy.com.equipos.panelmanagement.data.SurveyPanelistParticipationRepository;
 import uy.com.equipos.panelmanagement.data.SurveyRepository;
+import uy.com.equipos.panelmanagement.data.Task;
+import uy.com.equipos.panelmanagement.data.TaskRepository;
+import uy.com.equipos.panelmanagement.data.JobType;
+import uy.com.equipos.panelmanagement.data.TaskStatus;
 import uy.com.equipos.panelmanagement.webhook.dto.AlchemerSurveyCompletionPayloadDto;
 
 @RestController
@@ -30,12 +35,14 @@ public class AlchemerSurveyCompletionController {
 	private final SurveyRepository surveyRepository;
 	private final PanelistRepository panelistRepository;
 	private final SurveyPanelistParticipationRepository surveyPanelistParticipationRepository;
+	private final TaskRepository taskRepository;
 
 	public AlchemerSurveyCompletionController(SurveyRepository surveyRepository, PanelistRepository panelistRepository,
-			SurveyPanelistParticipationRepository surveyPanelistParticipationRepository) {
+			SurveyPanelistParticipationRepository surveyPanelistParticipationRepository, TaskRepository taskRepository) {
 		this.surveyRepository = surveyRepository;
 		this.panelistRepository = panelistRepository;
 		this.surveyPanelistParticipationRepository = surveyPanelistParticipationRepository;
+		this.taskRepository = taskRepository;
 	}
 
 	@PostMapping("/survey-response")
@@ -99,6 +106,19 @@ public class AlchemerSurveyCompletionController {
 
         logger.info("Successfully updated participation. Survey internal_id: {}, Panelist internal_id: {}. Marked as completed on {}",
                     survey.getId(), panelist.getId(), participation.getDateCompleted());
-        return ResponseEntity.ok("Webhook processed successfully. Participation updated.");
+
+        // Create and save the new Task
+        Task task = new Task();
+        task.setJobType(JobType.ALCHEMER_ANSWER_RETRIEVAL);
+        task.setCreated(LocalDateTime.now());
+        task.setStatus(TaskStatus.PENDING);
+        task.setSurveyPanelistParticipation(participation);
+        task.setSurvey(survey); // survey object is already available from earlier in the method
+        taskRepository.save(task);
+
+        logger.info("Successfully created Task for answer retrieval. Task id: {}, Survey internal_id: {}, Panelist internal_id: {}",
+                    task.getId(), survey.getId(), panelist.getId());
+
+        return ResponseEntity.ok("Webhook processed successfully. Participation updated and task created.");
     }
 }
