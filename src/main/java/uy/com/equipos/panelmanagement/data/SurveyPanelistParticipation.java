@@ -80,11 +80,22 @@ public class SurveyPanelistParticipation extends AbstractEntity {
     @OneToMany(mappedBy = "surveyPanelistParticipation", cascade = CascadeType.ALL, orphanRemoval = true)
     private Set<Task> messageTasks = new HashSet<>();
 
+    @OneToMany(mappedBy = "surveyPanelistParticipation", cascade = CascadeType.ALL, orphanRemoval = true)
+    private Set<Answer> answers = new HashSet<>();
+
     public Set<Task> getMessageTasks() {
         return messageTasks;
     }
 
     public void setMessageTasks(Set<Task> messageTasks) {
         this.messageTasks = messageTasks;
+    }
+
+    public Set<Answer> getAnswers() {
+        return answers;
+    }
+
+    public void setAnswers(Set<Answer> answers) {
+        this.answers = answers;
     }
 }

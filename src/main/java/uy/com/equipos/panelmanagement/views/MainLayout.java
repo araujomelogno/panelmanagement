@@ -83,6 +83,11 @@ public class MainLayout extends AppLayout {
 			}
 		});
 
+		// Add "Respuestas"
+		SideNavItem answersItem = new SideNavItem("Respuestas", "answers");
+		answersItem.setPrefixComponent(new Icon("vaadin", "comments-o"));
+		nav.addItem(answersItem);
+
 		// Add "Configuración" with "Usuarios" and "Tareas" as sub-items
 		SideNavItem configuracionItem = new SideNavItem("Configuración");
 		configuracionItem.setPrefixComponent(new Icon("vaadin", "tools"));
