@@ -56,9 +56,11 @@ public class UsersView extends Div implements BeforeEnterObserver {
 	private TextField usernameFilter = new TextField(); // Changed from emailFilter
 
 	private TextField name;
+
 	private PasswordField passwordField; // Added for password
 	private TextField username; // Changed from email
 	private MultiSelectComboBox<Role> roles; // Added for roles
+
 
 	private final Button cancel = new Button("Cancelar");
 	private final Button save = new Button("Guardar");
@@ -173,6 +175,7 @@ public class UsersView extends Div implements BeforeEnterObserver {
 				}
 				binder.writeBean(this.user); // Changed from this.appUser
 
+
 				String plainPassword = passwordField.getValue();
 				userService.save(this.user, plainPassword); // Pass plain password to service
 
@@ -227,6 +230,7 @@ public class UsersView extends Div implements BeforeEnterObserver {
 
 		FormLayout formLayout = new FormLayout();
 		name = new TextField("Nombre");
+
 		username = new TextField("Username"); // Changed from email / "Correo Electrónico"
 		passwordField = new PasswordField("Contraseña");
 		passwordField.setHelperText("Dejar en blanco para no cambiar la contraseña actual al editar.");
@@ -271,6 +275,7 @@ public class UsersView extends Div implements BeforeEnterObserver {
 	private void populateForm(User value) { // Changed from AppUser
 		this.user = value; // Changed from this.appUser
 		binder.readBean(this.user); // Changed from this.appUser
+
 
 		// Clear password field when populating the form for an existing user
 		if (passwordField != null) {
