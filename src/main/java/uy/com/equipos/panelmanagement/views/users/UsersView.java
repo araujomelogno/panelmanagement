@@ -21,8 +21,11 @@ import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.splitlayout.SplitLayout;
 import com.vaadin.flow.component.textfield.TextField;
+import com.vaadin.flow.component.textfield.PasswordField; // Added for password
+import com.vaadin.flow.component.combobox.MultiSelectComboBox; // Added for roles
 import com.vaadin.flow.data.binder.BeanValidationBinder;
 import com.vaadin.flow.data.binder.ValidationException;
+import uy.com.equipos.panelmanagement.data.Role; // Added for roles
 import com.vaadin.flow.router.BeforeEnterEvent;
 import com.vaadin.flow.router.BeforeEnterObserver;
 import com.vaadin.flow.router.Menu;
@@ -53,8 +56,11 @@ public class UsersView extends Div implements BeforeEnterObserver {
 	private TextField usernameFilter = new TextField(); // Changed from emailFilter
 
 	private TextField name;
-	// private TextField password; // Password will be handled differently
+
+	private PasswordField passwordField; // Added for password
 	private TextField username; // Changed from email
+	private MultiSelectComboBox<Role> roles; // Added for roles
+
 
 	private final Button cancel = new Button("Cancelar");
 	private final Button save = new Button("Guardar");
@@ -168,7 +174,11 @@ public class UsersView extends Div implements BeforeEnterObserver {
 					this.user = new User(); // Changed from new AppUser()
 				}
 				binder.writeBean(this.user); // Changed from this.appUser
-				userService.save(this.user); // Changed from appUserService.save(this.appUser)
+
+
+				String plainPassword = passwordField.getValue();
+				userService.save(this.user, plainPassword); // Pass plain password to service
+
 				clearForm();
 				refreshGrid();
 				Notification.show("Datos actualizados");
@@ -220,9 +230,16 @@ public class UsersView extends Div implements BeforeEnterObserver {
 
 		FormLayout formLayout = new FormLayout();
 		name = new TextField("Nombre");
-		// password = new TextField("Contraseña"); // Removed
+
 		username = new TextField("Username"); // Changed from email / "Correo Electrónico"
-		formLayout.add(name, username); // Removed password
+		passwordField = new PasswordField("Contraseña");
+		passwordField.setHelperText("Dejar en blanco para no cambiar la contraseña actual al editar.");
+
+		roles = new MultiSelectComboBox<>("Roles");
+		roles.setItems(Role.values());
+		roles.setItemLabelGenerator(Role::name);
+
+		formLayout.add(name, username, passwordField, roles);
 
 		editorDiv.add(formLayout);
 		createButtonLayout(editorLayoutDiv);
@@ -259,13 +276,19 @@ public class UsersView extends Div implements BeforeEnterObserver {
 		this.user = value; // Changed from this.appUser
 		binder.readBean(this.user); // Changed from this.appUser
 
+
+		// Clear password field when populating the form for an existing user
+		if (passwordField != null) {
+			passwordField.clear();
+		}
+
 		if (deleteButton != null) { 
 			 deleteButton.setEnabled(value != null && value.getId() != null);
 		}
 	}
 
 	private void clearForm() {
-		populateForm(null);
+		populateForm(null); // This will also clear the password field
 		if (editorLayoutDiv != null) { // Buena práctica verificar nulidad
 			editorLayoutDiv.setVisible(false);
 		}
