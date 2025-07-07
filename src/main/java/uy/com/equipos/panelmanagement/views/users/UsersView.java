@@ -31,42 +31,44 @@ import com.vaadin.flow.router.Route;
 import com.vaadin.flow.spring.data.VaadinSpringDataHelpers;
 
 import jakarta.annotation.security.RolesAllowed;
-import uy.com.equipos.panelmanagement.data.AppUser;
-import uy.com.equipos.panelmanagement.services.AppUserService;
+import uy.com.equipos.panelmanagement.data.User;
+import uy.com.equipos.panelmanagement.services.UserService;
+import org.springframework.data.jpa.domain.Specification;
+
 
 @PageTitle("Usuarios")
-@Route("users/:appUserID?/:action?(edit)")
+@Route("users/:userID?/:action?(edit)")
 @Menu(order = 6, icon = LineAwesomeIconUrl.COLUMNS_SOLID)
 @RolesAllowed("ADMIN")
 public class UsersView extends Div implements BeforeEnterObserver {
 
-	private final String APPUSER_ID = "appUserID";
-	private final String APPUSER_EDIT_ROUTE_TEMPLATE = "users/%s/edit";
+	private final String USER_ID = "userID";
+	private final String USER_EDIT_ROUTE_TEMPLATE = "users/%s/edit";
 
-	private final Grid<AppUser> grid = new Grid<>(AppUser.class, false);
+	private final Grid<User> grid = new Grid<>(User.class, false);
 	private Div editorLayoutDiv; // Declarado como miembro de la clase
 
 	// Campos de filtro
 	private TextField nameFilter = new TextField();
-	private TextField emailFilter = new TextField();
+	private TextField usernameFilter = new TextField(); // Changed from emailFilter
 
 	private TextField name;
-	private TextField password;
-	private TextField email;
+	// private TextField password; // Password will be handled differently
+	private TextField username; // Changed from email
 
 	private final Button cancel = new Button("Cancelar");
 	private final Button save = new Button("Guardar");
 	private Button deleteButton; // Add this with other button declarations
 	private Button nuevoUsuarioButton;
 
-	private final BeanValidationBinder<AppUser> binder;
+	private final BeanValidationBinder<User> binder;
 
-	private AppUser appUser;
+	private User user; // Changed from appUser
 
-	private final AppUserService appUserService;
+	private final UserService userService; // Changed from appUserService
 
-	public UsersView(AppUserService appUserService) {
-		this.appUserService = appUserService;
+	public UsersView(UserService userService) { // Changed from appUserService
+		this.userService = userService; // Changed from appUserService
 		addClassNames("users-view");
 
 		// Initialize deleteButton EARLIER
@@ -75,9 +77,8 @@ public class UsersView extends Div implements BeforeEnterObserver {
 		deleteButton.addClickListener(e -> onDeleteClicked());
 
 		// Configurar columnas del Grid PRIMERO
-		grid.addColumn(AppUser::getName).setHeader("Nombre").setKey("name").setAutoWidth(true);
-		// grid.addColumn(AppUser::getPassword).setHeader("Contraseña").setAutoWidth(true);
-		grid.addColumn(AppUser::getEmail).setHeader("Correo Electrónico").setKey("email").setAutoWidth(true);
+		grid.addColumn(User::getName).setHeader("Nombre").setKey("name").setAutoWidth(true);
+		grid.addColumn(User::getUsername).setHeader("Username").setKey("username").setAutoWidth(true); // Changed from getEmail
 		grid.addThemeVariants(GridVariant.LUMO_NO_BORDER);
 
 		// Create UI - SplitLayout
@@ -89,7 +90,7 @@ public class UsersView extends Div implements BeforeEnterObserver {
 		// editorLayoutDiv.setVisible(false); // Se maneja después de add(mainLayout)
 
 		nuevoUsuarioButton = new Button("Nuevo Usuario");
-		nuevoUsuarioButton.getStyle().set("margin-left", "18px");   
+		nuevoUsuarioButton.getStyle().set("margin-left", "18px");
 
 		VerticalLayout mainLayout = new VerticalLayout(nuevoUsuarioButton, splitLayout);
 		mainLayout.setSizeFull();
@@ -104,7 +105,7 @@ public class UsersView extends Div implements BeforeEnterObserver {
 		// Listener para el botón "Nuevo Usuario"
 		nuevoUsuarioButton.addClickListener(click -> {
 			grid.asSingleSelect().clear();
-			populateForm(new AppUser());
+			populateForm(new User()); // Changed from new AppUser()
 			if (editorLayoutDiv != null) {
 				editorLayoutDiv.setVisible(true);
 			}
@@ -115,24 +116,35 @@ public class UsersView extends Div implements BeforeEnterObserver {
 
 		// Configurar placeholders para filtros
 		nameFilter.setPlaceholder("Filtrar por Nombre");
-		emailFilter.setPlaceholder("Filtrar por Correo Electrónico");
+		usernameFilter.setPlaceholder("Filtrar por Username"); // Changed from emailFilter
 
 		// Añadir listeners para refrescar el grid
 		nameFilter.addValueChangeListener(e -> grid.getDataProvider().refreshAll());
-		emailFilter.addValueChangeListener(e -> grid.getDataProvider().refreshAll());
+		usernameFilter.addValueChangeListener(e -> grid.getDataProvider().refreshAll()); // Changed from emailFilter
 
 		// Configurar el DataProvider del Grid
-		grid.setItems(query -> {
-			String nameVal = nameFilter.getValue();
-			String emailVal = emailFilter.getValue();
-			return appUserService.list(VaadinSpringDataHelpers.toSpringPageRequest(query), nameVal, emailVal).stream();
-		});
+        grid.setItems(query -> {
+            String nameVal = nameFilter.getValue();
+            String usernameVal = usernameFilter.getValue(); // Changed from emailVal
+
+            // Build Specification for filtering
+            Specification<User> spec = Specification.where(null);
+            if (nameVal != null && !nameVal.isEmpty()) {
+                spec = spec.and((root, q, cb) -> cb.like(cb.lower(root.get("name")), "%" + nameVal.toLowerCase() + "%"));
+            }
+            if (usernameVal != null && !usernameVal.isEmpty()) {
+                spec = spec.and((root, q, cb) -> cb.like(cb.lower(root.get("username")), "%" + usernameVal.toLowerCase() + "%"));
+            }
+
+            return userService.list(VaadinSpringDataHelpers.toSpringPageRequest(query), spec).stream(); // Changed from appUserService.list
+        });
+
 
 		// when a row is selected or deselected, populate form
 		grid.asSingleSelect().addValueChangeListener(event -> {
 			if (event.getValue() != null) {
 				editorLayoutDiv.setVisible(true);
-				UI.getCurrent().navigate(String.format(APPUSER_EDIT_ROUTE_TEMPLATE, event.getValue().getId()));
+				UI.getCurrent().navigate(String.format(USER_EDIT_ROUTE_TEMPLATE, event.getValue().getId())); // Changed from APPUSER_EDIT_ROUTE_TEMPLATE
 			} else {
 				clearForm(); // clearForm ahora también oculta el editor
 				UI.getCurrent().navigate(UsersView.class);
@@ -140,7 +152,7 @@ public class UsersView extends Div implements BeforeEnterObserver {
 		});
 
 		// Configure Form
-		binder = new BeanValidationBinder<>(AppUser.class);
+		binder = new BeanValidationBinder<>(User.class); // Changed from AppUser.class
 
 		// Bind fields. This is where you'd define e.g. validation rules
 		binder.bindInstanceFields(this);
@@ -152,11 +164,11 @@ public class UsersView extends Div implements BeforeEnterObserver {
 
 		save.addClickListener(e -> {
 			try {
-				if (this.appUser == null) {
-					this.appUser = new AppUser();
+				if (this.user == null) { // Changed from this.appUser
+					this.user = new User(); // Changed from new AppUser()
 				}
-				binder.writeBean(this.appUser);
-				appUserService.save(this.appUser);
+				binder.writeBean(this.user); // Changed from this.appUser
+				userService.save(this.user); // Changed from appUserService.save(this.appUser)
 				clearForm();
 				refreshGrid();
 				Notification.show("Datos actualizados");
@@ -176,14 +188,14 @@ public class UsersView extends Div implements BeforeEnterObserver {
 
 	@Override
 	public void beforeEnter(BeforeEnterEvent event) {
-		Optional<Long> appUserId = event.getRouteParameters().get(APPUSER_ID).map(Long::parseLong);
-		if (appUserId.isPresent()) {
-			Optional<AppUser> appUserFromBackend = appUserService.get(appUserId.get());
-			if (appUserFromBackend.isPresent()) {
-				populateForm(appUserFromBackend.get());
+		Optional<Long> userId = event.getRouteParameters().get(USER_ID).map(Long::parseLong); // Changed from appUserId / APPUSER_ID
+		if (userId.isPresent()) {
+			Optional<User> userFromBackend = userService.get(userId.get()); // Changed from appUserFromBackend / appUserService.get
+			if (userFromBackend.isPresent()) {
+				populateForm(userFromBackend.get());
 				editorLayoutDiv.setVisible(true);
 			} else {
-				Notification.show(String.format("El usuario solicitado no fue encontrado, ID = %s", appUserId.get()),
+				Notification.show(String.format("El usuario solicitado no fue encontrado, ID = %s", userId.get()), // Changed from appUserId.get()
 						3000, Notification.Position.BOTTOM_START);
 				// when a row is selected but the data is no longer available,
 				// refresh grid
@@ -208,9 +220,9 @@ public class UsersView extends Div implements BeforeEnterObserver {
 
 		FormLayout formLayout = new FormLayout();
 		name = new TextField("Nombre");
-		password = new TextField("Contraseña");
-		email = new TextField("Correo Electrónico");
-		formLayout.add(name, password, email);
+		// password = new TextField("Contraseña"); // Removed
+		username = new TextField("Username"); // Changed from email / "Correo Electrónico"
+		formLayout.add(name, username); // Removed password
 
 		editorDiv.add(formLayout);
 		createButtonLayout(editorLayoutDiv);
@@ -235,7 +247,7 @@ public class UsersView extends Div implements BeforeEnterObserver {
 
 		HeaderRow headerRow = grid.appendHeaderRow();
 		headerRow.getCell(grid.getColumnByKey("name")).setComponent(nameFilter);
-		headerRow.getCell(grid.getColumnByKey("email")).setComponent(emailFilter);
+		headerRow.getCell(grid.getColumnByKey("username")).setComponent(usernameFilter); // Changed from email / emailFilter
 	}
 
 	private void refreshGrid() {
@@ -243,9 +255,9 @@ public class UsersView extends Div implements BeforeEnterObserver {
 		grid.getDataProvider().refreshAll();
 	}
 
-	private void populateForm(AppUser value) {
-		this.appUser = value;
-		binder.readBean(this.appUser);
+	private void populateForm(User value) { // Changed from AppUser
+		this.user = value; // Changed from this.appUser
+		binder.readBean(this.user); // Changed from this.appUser
 
 		if (deleteButton != null) { 
 			 deleteButton.setEnabled(value != null && value.getId() != null);
@@ -263,14 +275,14 @@ public class UsersView extends Div implements BeforeEnterObserver {
 	}
 
 	private void onDeleteClicked() {
-		if (this.appUser == null || this.appUser.getId() == null) {
+		if (this.user == null || this.user.getId() == null) { // Changed from this.appUser
 			Notification.show("No hay usuario seleccionado para eliminar.", 3000, Notification.Position.MIDDLE);
 			return;
 		}
 
 		com.vaadin.flow.component.confirmdialog.ConfirmDialog dialog = new com.vaadin.flow.component.confirmdialog.ConfirmDialog();
 		dialog.setHeader("Confirmar Eliminación");
-		dialog.setText("¿Está seguro de que desea eliminar el usuario '" + this.appUser.getName() + "'?");
+		dialog.setText("¿Está seguro de que desea eliminar el usuario '" + this.user.getName() + "'?"); // Changed from this.appUser.getName()
 		
 		dialog.setConfirmText("Eliminar");
 		dialog.setConfirmButtonTheme("error primary");
@@ -278,7 +290,7 @@ public class UsersView extends Div implements BeforeEnterObserver {
 
 		dialog.addConfirmListener(event -> {
 			try {
-				appUserService.delete(this.appUser.getId());
+				userService.delete(this.user.getId()); // Changed from appUserService.delete(this.appUser.getId())
 				clearForm();
 				refreshGrid();
 				Notification.show("Usuario eliminado correctamente.", 3000, Notification.Position.BOTTOM_START);
