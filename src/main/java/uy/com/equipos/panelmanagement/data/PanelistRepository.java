@@ -15,4 +15,6 @@ public interface PanelistRepository extends JpaRepository<Panelist, Long>, JpaSp
     // Optional<Panelist> findByIdWithParticipations(@Param("id") Long id);
 
     Optional<Panelist> findByEmail(String email);
+
+    boolean existsByEmail(String email);
 }

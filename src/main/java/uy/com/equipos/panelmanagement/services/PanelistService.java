@@ -54,6 +54,11 @@ public class PanelistService {
         return get(id);
     }
 
+    @Transactional(readOnly = true)
+    public boolean existsByEmail(String email) {
+        return repository.existsByEmail(email);
+    }
+
     public Panelist save(Panelist entity) {
         return repository.save(entity);
     }

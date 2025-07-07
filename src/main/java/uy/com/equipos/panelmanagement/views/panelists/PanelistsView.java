@@ -354,7 +354,18 @@ public class PanelistsView extends Div implements BeforeEnterObserver {
 				if (this.panelist == null) {
 					this.panelist = new Panelist();
 				}
+
+				// Primero intentar escribir los datos del binder para asegurar que el email está disponible
 				binder.writeBean(this.panelist);
+
+				// Verificar si es un nuevo panelista y si el correo electrónico ya existe
+				if (this.panelist.getId() == null && this.panelist.getEmail() != null && !this.panelist.getEmail().isEmpty()) {
+					if (panelistService.existsByEmail(this.panelist.getEmail())) {
+						Notification.show("Ya existe un panelista con el correo electrónico: " + this.panelist.getEmail(), 5000, Notification.Position.MIDDLE)
+								.addThemeVariants(NotificationVariant.LUMO_ERROR);
+						return; // Detener el proceso de guardado
+					}
+				}
 
 				// Set<PanelistProperty> selectedProperties = propertiesField.getValue(); //
 				// Removed
