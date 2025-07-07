@@ -113,9 +113,12 @@ public class MainLayout extends AppLayout {
 			User user = maybeUser.get();
 
 			Avatar avatar = new Avatar(user.getName());
-			StreamResource resource = new StreamResource("profile-pic",
-					() -> new ByteArrayInputStream(user.getProfilePicture()));
-			avatar.setImageResource(resource);
+			byte[] profilePictureData = user.getProfilePicture();
+			if (profilePictureData != null) {
+				StreamResource resource = new StreamResource("profile-pic",
+						() -> new ByteArrayInputStream(profilePictureData));
+				avatar.setImageResource(resource);
+			}
 			avatar.setThemeName("xsmall");
 			avatar.getElement().setAttribute("tabindex", "-1");
 
