@@ -121,17 +121,34 @@ public class AlchemerAnswerRetriever {
                                     // Para este refactor, asumiremos que questionCode puede ser el ID de la pregunta si varname no está disponible.
                                     String questionCode = questionIdStr; // O buscar una alternativa si es necesario.
 
-                                    if (questionText != null && !questionText.isEmpty() && answerValue != null && !answerValue.isEmpty()) {
-                                        log.info("Pregunta encontrada: ID={}, Pregunta='{}', Respuesta='{}'", questionIdStr, questionText, answerValue);
-                                        Answer answer = new Answer();
-                                        answer.setQuestion(questionText);
-                                        answer.setQuestionCode(questionCode); // Usar el ID de la pregunta como código
-                                        answer.setAnswer(answerValue);
-                                        answer.setSurveyPanelistParticipation(participation);
-                                        answerService.save(answer);
-                                        log.info("Entidad Answer guardada para questionId: {}, participationId: {}", questionIdStr, participation.getId());
+                                    if (questionText != null && !questionText.isEmpty() && answerValue != null) { // Allow empty answerValue for updates
+                                        log.info("Procesando pregunta: ID={}, Pregunta='{}', Respuesta='{}'", questionIdStr, questionText, answerValue);
+
+                                        // Check if an answer already exists
+                                        Optional<Answer> existingAnswerOpt = answerService.findBySurveyPanelistParticipationAndQuestionCode(participation, questionCode);
+
+                                        if (existingAnswerOpt.isPresent()) {
+                                            // Update existing answer
+                                            Answer existingAnswer = existingAnswerOpt.get();
+                                            if (!existingAnswer.getAnswer().equals(answerValue)) {
+                                                existingAnswer.setAnswer(answerValue);
+                                                answerService.save(existingAnswer);
+                                                log.info("Entidad Answer actualizada para questionCode: {}, participationId: {}", questionCode, participation.getId());
+                                            } else {
+                                                log.info("Entidad Answer sin cambios para questionCode: {}, participationId: {}", questionCode, participation.getId());
+                                            }
+                                        } else {
+                                            // Create new answer
+                                            Answer newAnswer = new Answer();
+                                            newAnswer.setQuestion(questionText);
+                                            newAnswer.setQuestionCode(questionCode);
+                                            newAnswer.setAnswer(answerValue);
+                                            newAnswer.setSurveyPanelistParticipation(participation);
+                                            answerService.save(newAnswer);
+                                            log.info("Nueva entidad Answer guardada para questionCode: {}, participationId: {}", questionCode, participation.getId());
+                                        }
                                     } else {
-                                        log.warn("No se pudo obtener texto de pregunta o respuesta para la pregunta ID: {} en Survey ID: {}", questionIdStr, alchemerSurveyId);
+                                        log.warn("No se pudo obtener texto de pregunta o el valor de la respuesta es nulo (pero puede ser vacío) para la pregunta ID: {} en Survey ID: {}", questionIdStr, alchemerSurveyId);
                                         }
                                 } else {
                                     log.warn("Detalles de pregunta nulos para una entrada en survey_data. Survey ID: {}", alchemerSurveyId);

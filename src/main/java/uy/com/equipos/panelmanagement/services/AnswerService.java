@@ -33,4 +33,9 @@ public class AnswerService {
     public void deleteById(Long id) {
         answerRepository.deleteById(id);
     }
+
+    public Optional<Answer> findBySurveyPanelistParticipationAndQuestionCode(
+            uy.com.equipos.panelmanagement.data.SurveyPanelistParticipation participation, String questionCode) {
+        return answerRepository.findBySurveyPanelistParticipationAndQuestionCode(participation, questionCode);
+    }
 }
