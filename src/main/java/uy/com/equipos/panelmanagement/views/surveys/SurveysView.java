@@ -243,9 +243,10 @@ public class SurveysView extends Div implements BeforeEnterObserver {
 				}
 
 				surveyService.save(this.survey);
+				
+				Notification.show("Datos actualizados");
 				clearForm();
 				refreshGrid();
-				Notification.show("Datos actualizados");
 				UI.getCurrent().navigate(SurveysView.class);
 			} catch (ObjectOptimisticLockingFailureException exception) {
 				Notification n = Notification.show(
