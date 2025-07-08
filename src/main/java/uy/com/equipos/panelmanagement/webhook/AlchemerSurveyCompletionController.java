@@ -99,6 +99,7 @@ public class AlchemerSurveyCompletionController {
         }
 
         
+        participation.setResponseId(payload.getData().getResponseId());
         participation.setCompleted(true);
         participation.setDateCompleted(LocalDate.now()); // Using LocalDate as per entity definition
 

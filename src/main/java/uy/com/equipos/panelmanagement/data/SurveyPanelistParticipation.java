@@ -27,6 +27,7 @@ public class SurveyPanelistParticipation extends AbstractEntity {
     private LocalDate dateSent;
     private boolean completed;
     private LocalDate dateCompleted;
+    private Integer responseId;
 
     public Survey getSurvey() {
         return survey;
@@ -98,4 +99,12 @@ public class SurveyPanelistParticipation extends AbstractEntity {
     public void setAnswers(Set<Answer> answers) {
         this.answers = answers;
     }
+
+	public Integer getResponseId() {
+		return responseId;
+	}
+
+	public void setResponseId(Integer responseId) {
+		this.responseId = responseId;
+	}
 }
