@@ -1,5 +1,6 @@
 package uy.com.equipos.panelmanagement.views.panels;
 
+import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.confirmdialog.ConfirmDialog;
@@ -15,6 +16,7 @@ import uy.com.equipos.panelmanagement.data.Panel;
 import uy.com.equipos.panelmanagement.data.Panelist;
 import uy.com.equipos.panelmanagement.services.PanelService;
 import uy.com.equipos.panelmanagement.services.PanelistService; // Added
+import uy.com.equipos.panelmanagement.views.panelists.PanelistsView; // Added for navigation
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -70,6 +72,15 @@ public class ViewPanelistsDialog extends Dialog {
         Grid.Column<Panelist> firstNameColumn = grid.addColumn(Panelist::getFirstName).setHeader("Nombre").setSortable(true).setAutoWidth(true).setKey("firstName");
         Grid.Column<Panelist> lastNameColumn = grid.addColumn(Panelist::getLastName).setHeader("Apellido").setSortable(true).setAutoWidth(true).setKey("lastName");
         Grid.Column<Panelist> emailColumn = grid.addColumn(Panelist::getEmail).setHeader("Email").setSortable(true).setAutoWidth(true).setKey("email");
+
+        grid.addItemClickListener(event -> {
+            Panelist selectedPanelist = event.getItem();
+            if (selectedPanelist != null) {
+                this.close(); // Close the dialog
+                // Navigate to PanelistsView with the panelist ID for editing
+                UI.getCurrent().navigate(String.format(PanelistsView.PANELIST_EDIT_ROUTE_TEMPLATE, selectedPanelist.getId()));
+            }
+        });
 
         HeaderRow filterRow = grid.appendHeaderRow();
 
