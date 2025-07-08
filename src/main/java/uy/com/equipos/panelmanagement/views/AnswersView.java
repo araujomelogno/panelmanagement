@@ -43,18 +43,24 @@ public class AnswersView extends Div implements HasComponents, HasStyle {
     }
 
     private void configureGrid() {
-        grid.addColumn(Answer::getId).setHeader("Id").setAutoWidth(true).setSortable(true).setKey("id");
+        // Se elimina la columna Id
+        // grid.addColumn(Answer::getId).setHeader("Id").setAutoWidth(true).setSortable(true).setKey("id");
         grid.addColumn(Answer::getQuestion).setHeader("Pregunta").setAutoWidth(true).setSortable(true).setKey("question");
         grid.addColumn(Answer::getQuestionCode).setHeader("Código Pregunta").setAutoWidth(true).setSortable(true).setKey("questionCode");
         grid.addColumn(Answer::getAnswer).setHeader("Respuesta").setAutoWidth(true).setSortable(true).setKey("answer");
         grid.addColumn(answer -> answer.getSurveyPanelistParticipation() != null && answer.getSurveyPanelistParticipation().getPanelist() != null ?
                         answer.getSurveyPanelistParticipation().getPanelist().getFullName() : null)
                 .setHeader("Panelista").setAutoWidth(true).setSortable(true).setKey("panelist");
+        grid.addColumn(answer -> answer.getSurveyPanelistParticipation() != null && answer.getSurveyPanelistParticipation().getSurvey() != null ?
+                        answer.getSurveyPanelistParticipation().getSurvey().getName() : null)
+                .setHeader("Encuesta").setAutoWidth(true).setSortable(true).setKey("surveyName");
+
 
         HeaderRow filterRow = grid.appendHeaderRow();
 
-        TextField idFilter = createTextFieldFilter("id_filter", Answer::getId);
-        filterRow.getCell(grid.getColumnByKey("id")).setComponent(idFilter);
+        // Se elimina el filtro de Id
+        // TextField idFilter = createTextFieldFilter("id_filter", Answer::getId);
+        // filterRow.getCell(grid.getColumnByKey("id")).setComponent(idFilter);
 
         TextField questionFilter = createTextFieldFilter("question_filter", Answer::getQuestion);
         filterRow.getCell(grid.getColumnByKey("question")).setComponent(questionFilter);
@@ -69,6 +75,11 @@ public class AnswersView extends Div implements HasComponents, HasStyle {
             answer.getSurveyPanelistParticipation() != null && answer.getSurveyPanelistParticipation().getPanelist() != null ?
             answer.getSurveyPanelistParticipation().getPanelist().getFullName() : "");
         filterRow.getCell(grid.getColumnByKey("panelist")).setComponent(panelistFilter);
+
+        TextField surveyNameFilter = createTextFieldFilter("surveyName_filter", answer ->
+            answer.getSurveyPanelistParticipation() != null && answer.getSurveyPanelistParticipation().getSurvey() != null ?
+            answer.getSurveyPanelistParticipation().getSurvey().getName() : "");
+        filterRow.getCell(grid.getColumnByKey("surveyName")).setComponent(surveyNameFilter);
 
         grid.setSizeFull();
     }

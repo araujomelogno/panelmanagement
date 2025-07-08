@@ -75,7 +75,7 @@ import uy.com.equipos.panelmanagement.views.panels.PanelistPropertyFilterDialog;
 public class PanelistsView extends Div implements BeforeEnterObserver {
 
 	private final String PANELIST_ID = "panelistID";
-	private final String PANELIST_EDIT_ROUTE_TEMPLATE = "panelists/%s/edit";
+	public static final String PANELIST_EDIT_ROUTE_TEMPLATE = "panelists/%s/edit";
 
 	private final Grid<Panelist> grid = new Grid<>(Panelist.class, false);
 	private Div editorLayoutDiv; // Declarado como miembro de la clase
