@@ -373,10 +373,12 @@ public class PanelistsView extends Div implements BeforeEnterObserver {
 				// will be handled by PanelistPropertyValue logic later
 
 				panelistService.save(this.panelist);
-				clearForm();
-				refreshGrid();
-				Notification.show("Datos actualizados");
-				UI.getCurrent().navigate(PanelistsView.class);
+				Notification.show("Datos guardados");
+				// clearForm(); // Keep form open
+				// refreshGrid(); // Keep form data, refresh grid in background if necessary or let user do it manually
+				grid.getDataProvider().refreshItem(this.panelist, true); // Refresh only the updated/created item in the grid
+                                populateForm(this.panelist); // Re-populate to ensure button states are correct
+				// UI.getCurrent().navigate(PanelistsView.class); // Keep user on the edit view
 			} catch (ObjectOptimisticLockingFailureException exception) {
 				Notification n = Notification.show(
 						"Error al actualizar los datos. Otro usuario modificó el registro mientras usted realizaba cambios.");
