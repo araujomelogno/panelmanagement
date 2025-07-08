@@ -106,75 +106,42 @@ public class AlchemerAnswerRetriever {
 
                     if (Boolean.TRUE.equals(surveyResponse.get("result_ok"))) {
                         Map<String, Object> data = (Map<String, Object>) surveyResponse.get("data");
-                        if (data != null) {
-                            for (Map.Entry<String, Object> entry : data.entrySet()) {
-                                String key = entry.getKey();
-                                // Clave de ejemplo: survey_data.question[question_id="123",SKU="10001"]
-                                // O simplemente: question[123] o question(123)
-                                // Necesitamos un patron para extraer el ID de la pregunta
-                                if (key.contains("question") && entry.getValue() != null) {
-                                    String questionIdStr = extractQuestionId(key);
-                                    String answerValue = String.valueOf(entry.getValue());
+                    if (data != null && data.containsKey("survey_data")) {
+                        Map<String, Object> surveyData = (Map<String, Object>) data.get("survey_data");
+                        if (surveyData != null) {
+                            for (Map.Entry<String, Object> entry : surveyData.entrySet()) {
+                                Map<String, Object> questionDetails = (Map<String, Object>) entry.getValue();
+                                if (questionDetails != null) {
+                                    String questionText = String.valueOf(questionDetails.get("question"));
+                                    String answerValue = String.valueOf(questionDetails.get("answer"));
+                                    // El ID de la pregunta en este contexto es la clave de la entrada en surveyData
+                                    String questionIdStr = entry.getKey();
+                                    // El varname no está directamente en este nivel, se necesitaría si se quiere mantener questionCode
+                                    // Por ahora, podemos usar el ID como questionCode o dejarlo vacío si no es crucial.
+                                    // Para este refactor, asumiremos que questionCode puede ser el ID de la pregunta si varname no está disponible.
+                                    String questionCode = questionIdStr; // O buscar una alternativa si es necesario.
 
-                                    if (questionIdStr != null && !answerValue.isEmpty()) {
-                                        log.info("Pregunta encontrada: ID={}, Respuesta={}", questionIdStr, answerValue);
-                                        // Obtener detalles de la pregunta desde Alchemer
-                                        // https://api.alchemer.com/v5/survey/SURVEYID/surveyquestion/QUESTIONID
-                                        UriComponentsBuilder questionDetailUrlBuilder = UriComponentsBuilder.fromHttpUrl(ALCHEMER_API_BASE_URL)
-                                                .pathSegment("survey", alchemerSurveyId, "surveyquestion", questionIdStr)
-                                                .queryParam("api_token", apiToken)
-                                                .queryParam("api_token_secret", apiTokenSecret);
-                                        String questionDetailUrl = questionDetailUrlBuilder.toUriString();
-                                        log.info("Obteniendo detalles de la pregunta: {}", questionDetailUrl);
-
-                                        try {
-                                            ResponseEntity<Map> questionResponseEntity = restTemplate.getForEntity(questionDetailUrl, Map.class);
-                                            if (questionResponseEntity.getStatusCode() == HttpStatus.OK && questionResponseEntity.getBody() != null) {
-                                                Map<String, Object> questionResponse = questionResponseEntity.getBody();
-                                                if (Boolean.TRUE.equals(questionResponse.get("result_ok"))) {
-                                                    Map<String, Object> questionData = (Map<String, Object>) questionResponse.get("data");
-                                                    if (questionData != null) {
-                                                        String questionTitle = "";
-                                                        // Tratar de obtener el título en español, o el título por defecto
-                                                        if (questionData.get("title") instanceof Map) {
-                                                            Map<String, String> titles = (Map<String, String>) questionData.get("title");
-                                                            questionTitle = titles.getOrDefault("Spanish", titles.getOrDefault("English", "Título no disponible"));
-                                                        } else if (questionData.get("title") != null) {
-                                                            questionTitle = String.valueOf(questionData.get("title"));
-                                                        }
-
-                                                        String questionVarname = String.valueOf(questionData.get("varname"));
-
-                                                        if (!questionTitle.isEmpty() && !questionVarname.isEmpty()) {
-                                                            Answer answer = new Answer();
-                                                            answer.setQuestion(questionTitle);
-                                                            answer.setQuestionCode(questionVarname);
-                                                            answer.setAnswer(answerValue);
-                                                            answer.setSurveyPanelistParticipation(participation);
-                                                            answerService.save(answer);
-                                                            log.info("Entidad Answer guardada para questionIdStr: {}, participationId: {}", questionIdStr, participation.getId());
-                                                        } else {
-                                                            log.warn("No se pudo obtener título o varname para la pregunta ID: {} en Survey ID: {}", questionIdStr, alchemerSurveyId);
-                                                        }
-                                                    } else {
-                                                        log.warn("El objeto 'data' es nulo en la respuesta de detalles de la pregunta {} para Survey ID: {}", questionIdStr, alchemerSurveyId);
-                                                    }
-                                                } else {
-                                                    log.error("La API de Alchemer (detalles pregunta) devolvió 'result_ok: false' para questionIdStr {}. Respuesta: {}", questionIdStr, questionResponse);
-                                                }
-                                            } else {
-                                                log.error("Error al obtener detalles de la pregunta {} desde Alchemer. Código de estado: {}", questionIdStr, questionResponseEntity.getStatusCode());
-                                            }
-                                        } catch (HttpClientErrorException qe) {
-                                            log.error("Error (HttpClientErrorException) obteniendo detalles de pregunta {}: {} - {}", questionIdStr, qe.getStatusCode(), qe.getResponseBodyAsString());
-                                        } catch (RestClientException qe) {
-                                            log.error("Error (RestClientException) obteniendo detalles de pregunta {}: {}", questionIdStr, qe.getMessage());
+                                    if (questionText != null && !questionText.isEmpty() && answerValue != null && !answerValue.isEmpty()) {
+                                        log.info("Pregunta encontrada: ID={}, Pregunta='{}', Respuesta='{}'", questionIdStr, questionText, answerValue);
+                                        Answer answer = new Answer();
+                                        answer.setQuestion(questionText);
+                                        answer.setQuestionCode(questionCode); // Usar el ID de la pregunta como código
+                                        answer.setAnswer(answerValue);
+                                        answer.setSurveyPanelistParticipation(participation);
+                                        answerService.save(answer);
+                                        log.info("Entidad Answer guardada para questionId: {}, participationId: {}", questionIdStr, participation.getId());
+                                    } else {
+                                        log.warn("No se pudo obtener texto de pregunta o respuesta para la pregunta ID: {} en Survey ID: {}", questionIdStr, alchemerSurveyId);
                                         }
+                                } else {
+                                    log.warn("Detalles de pregunta nulos para una entrada en survey_data. Survey ID: {}", alchemerSurveyId);
                                     }
                                 }
+                        } else {
+                            log.warn("El objeto 'survey_data' es nulo dentro de 'data' en la respuesta de Alchemer para Task ID: {}", task.getId());
                             }
                         } else {
-                            log.warn("El objeto 'data' es nulo en la respuesta de Alchemer para Task ID: {}", task.getId());
+                        log.warn("El objeto 'data' es nulo o no contiene 'survey_data' en la respuesta de Alchemer para Task ID: {}", task.getId());
                         }
                     } else {
                         log.error("La API de Alchemer devolvió 'result_ok: false' para Task ID: {}. Respuesta: {}", task.getId(), surveyResponse);
@@ -211,26 +178,26 @@ public class AlchemerAnswerRetriever {
         log.info("Finalizada tarea AlchemerAnswerRetriever. Tareas procesadas: {}", pendingTasks.size());
     }
 
-    private String extractQuestionId(String alchemerQuestionKey) {
-        // Ejemplo: survey_data.question[question_id="123",SKU="10001"] -> 123
-        // Ejemplo: question[123] -> 123
-        // Ejemplo: question(123) -> 123
-        // Ejemplo: [question(123)] -> 123
-        // Ejemplo: [question_id=123] -> 123
-        Pattern pattern = Pattern.compile("(?:question(?:_id)?(?:\\s*=\\s*|\\(|\\[))\"?(\\d+)\"?");
-        Matcher matcher = pattern.matcher(alchemerQuestionKey);
-        if (matcher.find()) {
-            return matcher.group(1);
-        }
-        // Fallback para claves simples que podrían ser solo el ID numérico de la pregunta si la respuesta viene anidada de forma diferente
-        // o si el formato es más directo como question_123_value
-        Pattern simpleIdPattern = Pattern.compile("question_(\\d+)");
-        Matcher simpleIdMatcher = simpleIdPattern.matcher(alchemerQuestionKey);
-        if (simpleIdMatcher.find()){
-            return simpleIdMatcher.group(1);
-        }
+    // private String extractQuestionId(String alchemerQuestionKey) {
+    //     // Ejemplo: survey_data.question[question_id="123",SKU="10001"] -> 123
+    //     // Ejemplo: question[123] -> 123
+    //     // Ejemplo: question(123) -> 123
+    //     // Ejemplo: [question(123)] -> 123
+    //     // Ejemplo: [question_id=123] -> 123
+    //     Pattern pattern = Pattern.compile("(?:question(?:_id)?(?:\\s*=\\s*|\\(|\\[))\"?(\\d+)\"?");
+    //     Matcher matcher = pattern.matcher(alchemerQuestionKey);
+    //     if (matcher.find()) {
+    //         return matcher.group(1);
+    //     }
+    //     // Fallback para claves simples que podrían ser solo el ID numérico de la pregunta si la respuesta viene anidada de forma diferente
+    //     // o si el formato es más directo como question_123_value
+    //     Pattern simpleIdPattern = Pattern.compile("question_(\\d+)");
+    //     Matcher simpleIdMatcher = simpleIdPattern.matcher(alchemerQuestionKey);
+    //     if (simpleIdMatcher.find()){
+    //         return simpleIdMatcher.group(1);
+    //     }
 
-        log.warn("No se pudo extraer el ID de la pregunta de la clave: {}", alchemerQuestionKey);
-        return null;
-    }
+    //     log.warn("No se pudo extraer el ID de la pregunta de la clave: {}", alchemerQuestionKey);
+    //     return null;
+    // }
 }
