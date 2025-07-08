@@ -12,6 +12,6 @@ public interface AnswerRepository extends JpaRepository<Answer, Long>, JpaSpecif
 
     Optional<Answer> findBySurveyPanelistParticipationAndQuestionCode(SurveyPanelistParticipation surveyPanelistParticipation, String questionCode);
 
-    @EntityGraph(attributePaths = { "surveyPanelistParticipation.panelist" })
+    @EntityGraph(attributePaths = { "surveyPanelistParticipation.panelist", "surveyPanelistParticipation.survey" })
     List<Answer> findAll();
 }
