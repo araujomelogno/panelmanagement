@@ -1,29 +1,31 @@
 package uy.com.equipos.panelmanagement.scheduler;
 
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
-import org.springframework.web.client.RestTemplate;
-import uy.com.equipos.panelmanagement.data.JobType;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
 import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestClientException;
+import org.springframework.web.client.RestTemplate;
 import org.springframework.web.util.UriComponentsBuilder;
-import uy.com.equipos.panelmanagement.data.*;
+
+import uy.com.equipos.panelmanagement.data.Answer;
+import uy.com.equipos.panelmanagement.data.JobType;
+import uy.com.equipos.panelmanagement.data.Survey;
+import uy.com.equipos.panelmanagement.data.SurveyPanelistParticipation;
+import uy.com.equipos.panelmanagement.data.Task;
+import uy.com.equipos.panelmanagement.data.TaskStatus;
 import uy.com.equipos.panelmanagement.services.AnswerService;
 import uy.com.equipos.panelmanagement.services.SurveyPanelistParticipationService;
 import uy.com.equipos.panelmanagement.services.TaskService;
-
-import java.util.List;
-import java.util.Map;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 @Component
 @EnableScheduling

@@ -821,7 +821,7 @@ public class PanelistsView extends Div implements BeforeEnterObserver {
 				// For example: panels/%s/edit
 				// If PanelsView.PANEL_EDIT_ROUTE_TEMPLATE exists, use it.
 				// Otherwise, construct the string directly.
-				UI.getCurrent().navigate(String.format("panels/%s/edit", selectedPanel.getId()));
+				UI.getCurrent().navigate(String.format("/%s/edit", selectedPanel.getId()));
 			}
 		});
 
