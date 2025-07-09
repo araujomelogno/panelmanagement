@@ -722,6 +722,17 @@ public class SurveysView extends Div implements BeforeEnterObserver {
 		dateCompletedFilter.addValueChangeListener(e -> participationsGrid.getDataProvider().refreshAll());
 		completedFilter.addValueChangeListener(e -> participationsGrid.getDataProvider().refreshAll());
 
+		// Add item click listener to navigate to PanelistsView for editing
+		participationsGrid.addItemClickListener(event -> {
+			SurveyPanelistParticipation participation = event.getItem();
+			if (participation != null && participation.getPanelist() != null) {
+				dialog.close(); // Close the current dialog
+				Panelist selectedPanelist = participation.getPanelist();
+				// Navigate to PanelistsView using its defined edit route template
+				UI.getCurrent().navigate(String.format(uy.com.equipos.panelmanagement.views.panelists.PanelistsView.PANELIST_EDIT_ROUTE_TEMPLATE, selectedPanelist.getId()));
+			}
+		});
+
 		dialog.add(participationsGrid);
 		Button closeButton = new Button("Cerrar", e -> dialog.close());
 		closeButton.addThemeVariants(ButtonVariant.LUMO_TERTIARY);

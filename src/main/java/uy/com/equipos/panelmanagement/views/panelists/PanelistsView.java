@@ -657,6 +657,20 @@ public class PanelistsView extends Div implements BeforeEnterObserver {
 			return surveyNameMatch && dateSentMatch && completedMatch;
 		});
 
+		// Add item click listener to navigate to SurveysView for editing
+		participationGrid.addItemClickListener(event -> {
+			uy.com.equipos.panelmanagement.data.SurveyPanelistParticipation participation = event.getItem();
+			if (participation != null && participation.getSurvey() != null) {
+				dialog.close(); // Close the current dialog
+				uy.com.equipos.panelmanagement.data.Survey selectedSurvey = participation.getSurvey();
+				// Assuming SurveysView has a similar route template for editing
+				// For example: surveys/%s/edit
+				// If SurveysView.SURVEY_EDIT_ROUTE_TEMPLATE exists, use it.
+				// Otherwise, construct the string directly.
+				UI.getCurrent().navigate(String.format("surveys/%s/edit", selectedSurvey.getId()));
+			}
+		});
+
 		dialog.add(participationGrid);
 		Button closeButton = new Button("Cerrar", e -> dialog.close());
 		closeButton.addThemeVariants(ButtonVariant.LUMO_TERTIARY);
@@ -796,6 +810,19 @@ public class PanelistsView extends Div implements BeforeEnterObserver {
 				activeMatch = panel.isActive() == isActiveSearch;
 			}
 			return nameMatch && createdMatch && activeMatch;
+		});
+
+		// Add item click listener to navigate to PanelsView for editing
+		participatingPanelsGrid.addItemClickListener(event -> {
+			Panel selectedPanel = event.getItem();
+			if (selectedPanel != null) {
+				viewPanelsDialog.close(); // Close the current dialog
+				// Assuming PanelsView has a similar route template for editing
+				// For example: panels/%s/edit
+				// If PanelsView.PANEL_EDIT_ROUTE_TEMPLATE exists, use it.
+				// Otherwise, construct the string directly.
+				UI.getCurrent().navigate(String.format("panels/%s/edit", selectedPanel.getId()));
+			}
 		});
 
 		viewPanelsDialog.add(participatingPanelsGrid);
