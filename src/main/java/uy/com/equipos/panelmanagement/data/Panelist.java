@@ -15,11 +15,16 @@ import jakarta.persistence.JoinTable;
 import jakarta.persistence.ManyToMany;
 // import jakarta.persistence.JoinColumn; // Not strictly needed by Panelist's own fields now
 // import jakarta.persistence.JoinTable; // Removed
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.OneToMany;
 import jakarta.validation.constraints.Email;
 
 @Entity
 public class Panelist extends AbstractEntity {
+
+	@Enumerated(EnumType.STRING)
+	private Status status = Status.PENDIENTE;
 
 	private String firstName;
 	private String lastName;
@@ -95,6 +100,14 @@ public class Panelist extends AbstractEntity {
 
 	public void setSource(String source) {
 		this.source = source;
+	}
+
+	public Status getStatus() {
+		return status;
+	}
+
+	public void setStatus(Status status) {
+		this.status = status;
 	}
 
 	@OneToMany(mappedBy = "panelist", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.EAGER)
