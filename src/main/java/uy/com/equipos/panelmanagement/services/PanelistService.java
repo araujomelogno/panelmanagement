@@ -16,6 +16,7 @@ import uy.com.equipos.panelmanagement.data.Panel;
 import uy.com.equipos.panelmanagement.data.Panelist;
 import uy.com.equipos.panelmanagement.data.PanelistProperty;
 import uy.com.equipos.panelmanagement.data.PanelistRepository;
+import uy.com.equipos.panelmanagement.data.Status;
 
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -76,7 +77,7 @@ public class PanelistService {
     }
 
     public Page<Panelist> list(Pageable pageable, String firstName, String lastName, String email, String phone,
-                               LocalDate lastContacted, LocalDate lastInterviewed) {
+                               LocalDate lastContacted, LocalDate lastInterviewed, Status status) {
         Specification<Panelist> spec = (root, query, cb) -> {
             List<Predicate> predicates = new ArrayList<>();
             if (firstName != null && !firstName.isEmpty()) {
@@ -98,6 +99,9 @@ public class PanelistService {
             }
             if (lastInterviewed != null) {
                 predicates.add(cb.equal(root.get("lastInterviewed"), lastInterviewed));
+            }
+            if (status != null) {
+                predicates.add(cb.equal(root.get("status"), status));
             }
             return cb.and(predicates.toArray(new Predicate[0]));
         };

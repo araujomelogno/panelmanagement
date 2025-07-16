@@ -61,6 +61,7 @@ import uy.com.equipos.panelmanagement.data.PanelistPropertyCode;
 import uy.com.equipos.panelmanagement.data.PanelistPropertyCodeRepository;
 import uy.com.equipos.panelmanagement.data.PanelistPropertyValue; // Added
 import uy.com.equipos.panelmanagement.data.PropertyType;
+import uy.com.equipos.panelmanagement.data.Status;
 import uy.com.equipos.panelmanagement.services.PanelService; // Added
 import uy.com.equipos.panelmanagement.services.PanelistPropertyService;
 import uy.com.equipos.panelmanagement.services.PanelistPropertyValueService;
@@ -90,12 +91,14 @@ public class PanelistsView extends Div implements BeforeEnterObserver {
 	private DatePicker lastContactedFilter = new DatePicker();
 	private DatePicker lastInterviewCompletedFilter = new DatePicker();
 	private TextField sourceFilter = new TextField(); // Added for source filter
+	private ComboBox<Status> statusFilter = new ComboBox<>();
 
 	private TextField firstName;
 	private TextField lastName;
 	private TextField email;
 	private TextField phone;
 	private TextField source; // Added for editor form
+	private ComboBox<Status> status;
 	// private DatePicker dateOfBirth; // Removed
 	// private TextField occupation; // Removed
 	private DatePicker lastContacted;
@@ -176,6 +179,7 @@ public class PanelistsView extends Div implements BeforeEnterObserver {
 		grid.addColumn(Panelist::getLastInterviewCompleted).setHeader("Última encuesta completa").setKey("lastInterviewCompleted")
 				.setAutoWidth(true).setSortable(true);
 		grid.addColumn(Panelist::getSource).setHeader("Fuente").setKey("source").setAutoWidth(true).setSortable(true);
+		grid.addColumn(Panelist::getStatus).setHeader("Estado").setKey("status").setAutoWidth(true).setSortable(true);
 		grid.addThemeVariants(GridVariant.LUMO_NO_BORDER);
 
 		// Create UI - SplitLayout
@@ -239,6 +243,8 @@ public class PanelistsView extends Div implements BeforeEnterObserver {
 		// dateOfBirthFilter.setPlaceholder("Filtrar por Fecha de Nacimiento"); //
 		// Removed
 		// occupationFilter.setPlaceholder("Filtrar por Ocupación"); // Removed
+		statusFilter.setPlaceholder("Filtrar por estado");
+		statusFilter.setItems(Status.values());
 		lastContactedFilter.setPlaceholder("dd/MM/yyyy");
 		lastContactedFilter.setLocale(new Locale("es", "UY"));
 		DatePicker.DatePickerI18n lastContactedI18n = new DatePicker.DatePickerI18n();
@@ -261,6 +267,7 @@ public class PanelistsView extends Div implements BeforeEnterObserver {
 		lastContactedFilter.addValueChangeListener(e -> grid.getDataProvider().refreshAll());
 		lastInterviewCompletedFilter.addValueChangeListener(e -> grid.getDataProvider().refreshAll());
 		sourceFilter.addValueChangeListener(e -> grid.getDataProvider().refreshAll()); // Added listener for source
+		statusFilter.addValueChangeListener(e -> grid.getDataProvider().refreshAll());
 																						// filter
 
 		// Configurar el DataProvider del Grid
@@ -274,6 +281,7 @@ public class PanelistsView extends Div implements BeforeEnterObserver {
 			LocalDate lastContactedVal = lastContactedFilter.getValue();
 			LocalDate lastInterviewCompletedVal = lastInterviewCompletedFilter.getValue();
 			String sourceVal = sourceFilter.getValue(); // Added source value
+			Status statusVal = statusFilter.getValue();
 
 			// Adjust the call to panelistService.list to exclude dateOfBirthVal and
 			// occupationVal
@@ -321,6 +329,9 @@ public class PanelistsView extends Div implements BeforeEnterObserver {
 				}
 				if (StringUtils.isNotBlank(sourceVal)) {
 					predicates.add(cb.like(cb.lower(root.get("source")), "%" + sourceVal.toLowerCase() + "%"));
+				}
+				if (statusVal != null) {
+					predicates.add(cb.equal(root.get("status"), statusVal));
 				}
 				return cb.and(predicates.toArray(new Predicate[0]));
 			};
@@ -430,6 +441,8 @@ public class PanelistsView extends Div implements BeforeEnterObserver {
 		email = new TextField("Correo Electrónico");
 		phone = new TextField("Teléfono");
 		source = new TextField("Fuente"); // Added source field to form
+		status = new ComboBox<>("Estado");
+		status.setItems(Status.values());
 		// dateOfBirth = new DatePicker("Fecha de Nacimiento"); // Removed
 		// occupation = new TextField("Ocupación"); // Removed
 		lastContacted = new DatePicker("Último encuesta enviada");
@@ -467,6 +480,7 @@ public class PanelistsView extends Div implements BeforeEnterObserver {
 																									// Removed
 																									// dateOfBirth,
 																									// occupation
+		formLayout.add(status);
 		formLayout.add(gestionarPropiedadesButton, viewParticipatingPanelsButton, viewParticipatingSurveysButton); // Added
 																													// viewParticipatingSurveysButton
 
@@ -503,6 +517,7 @@ public class PanelistsView extends Div implements BeforeEnterObserver {
 		headerRow.getCell(grid.getColumnByKey("lastContacted")).setComponent(lastContactedFilter);
 		headerRow.getCell(grid.getColumnByKey("lastInterviewCompleted")).setComponent(lastInterviewCompletedFilter);
 		headerRow.getCell(grid.getColumnByKey("source")).setComponent(sourceFilter); // Added source filter to header
+		headerRow.getCell(grid.getColumnByKey("status")).setComponent(statusFilter);
 	}
 
 	private void refreshGrid() {
