@@ -59,7 +59,7 @@ public class TaskView extends Div implements HasComponents, HasStyle {
         grid.addColumn(Task::getJobType).setHeader("Tarea").setAutoWidth(true).setSortable(true).setKey("jobType");
         grid.addColumn(Task::getCreated).setHeader("Creada").setAutoWidth(true).setSortable(true).setKey("created");
         grid.addColumn(Task::getStatus).setHeader("Estado").setAutoWidth(true).setSortable(true).setKey("status");
-        grid.addColumn(mt -> mt.getSurveyPanelistParticipation() != null ? mt.getSurveyPanelistParticipation().getPanelist().getFullName(): null)
+        grid.addColumn(mt -> mt.getPanelist() != null ? mt.getPanelist().getFullName() : null)
             .setHeader("Panelista").setAutoWidth(true).setSortable(true).setKey("panelist");
         grid.addColumn(mt -> mt.getSurvey() != null ? mt.getSurvey().getName() : null)
             .setHeader("Encuesta").setAutoWidth(true).setSortable(true).setKey("surveyName");
@@ -80,8 +80,8 @@ public class TaskView extends Div implements HasComponents, HasStyle {
         ComboBox<TaskStatus> statusComboBox = createComboBoxFilter("status_filter_key", TaskStatus.class, TaskStatus.values(), Task::getStatus);
         filterRow.getCell(grid.getColumnByKey("status")).setComponent(statusComboBox);
 
-        TextField participationIdFilter = createTextFieldFilter("participationId_filter_key", mt -> mt.getSurveyPanelistParticipation() != null ? mt.getSurveyPanelistParticipation().getId() : "");
-        filterRow.getCell(grid.getColumnByKey("panelist")).setComponent(participationIdFilter);
+        TextField panelistFilter = createTextFieldFilter("panelist_filter_key", mt -> mt.getPanelist() != null ? mt.getPanelist().getFullName() : "");
+        filterRow.getCell(grid.getColumnByKey("panelist")).setComponent(panelistFilter);
 
         TextField surveyFilter = createTextFieldFilter("surveyName_filter_key", mt -> mt.getSurvey() != null ? mt.getSurvey().getName() : "");
         filterRow.getCell(grid.getColumnByKey("surveyName")).setComponent(surveyFilter);
