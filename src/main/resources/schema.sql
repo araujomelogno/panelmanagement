@@ -14,7 +14,6 @@ CREATE TABLE IF NOT EXISTS panelist_property_code (
 -- For now, focusing only on panelist_property_code as it's the one causing the immediate error.
 
 -- Add the tool column to the survey table
-ALTER TABLE survey ADD COLUMN tool VARCHAR(255) NOT NULL DEFAULT 'SURVEYTOGO';
 
 -- Update existing rows to have a default value if necessary (optional, depending on policy)
 -- UPDATE survey SET tool = 'SURVEYTOGO' WHERE tool IS NULL;
@@ -36,5 +35,3 @@ CREATE TABLE IF NOT EXISTS survey_panelist_participation (
     FOREIGN KEY (panelist_id) REFERENCES panelist(id)
 );
 -- Add survey_id column to message_task
-ALTER TABLE message_task ADD COLUMN survey_id BIGINT;
-ALTER TABLE message_task ADD CONSTRAINT fk_message_task_survey FOREIGN KEY (survey_id) REFERENCES survey(id);
