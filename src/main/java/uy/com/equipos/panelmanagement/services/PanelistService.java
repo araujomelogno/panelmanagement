@@ -108,6 +108,29 @@ public class PanelistService {
         return repository.findAll(spec, pageable);
     }
 
+    public Page<Panelist> listByStatus(Pageable pageable, String firstName, String lastName, String email, String phone, Status status) {
+        Specification<Panelist> spec = (root, query, cb) -> {
+            List<Predicate> predicates = new ArrayList<>();
+            if (firstName != null && !firstName.isEmpty()) {
+                predicates.add(cb.like(cb.lower(root.get("firstName")), "%" + firstName.toLowerCase() + "%"));
+            }
+            if (lastName != null && !lastName.isEmpty()) {
+                predicates.add(cb.like(cb.lower(root.get("lastName")), "%" + lastName.toLowerCase() + "%"));
+            }
+            if (email != null && !email.isEmpty()) {
+                predicates.add(cb.like(cb.lower(root.get("email")), "%" + email.toLowerCase() + "%"));
+            }
+            if (phone != null && !phone.isEmpty()) {
+                predicates.add(cb.like(cb.lower(root.get("phone")), "%" + phone.toLowerCase() + "%"));
+            }
+            if (status != null) {
+                predicates.add(cb.equal(root.get("status"), status));
+            }
+            return cb.and(predicates.toArray(new Predicate[0]));
+        };
+        return repository.findAll(spec, pageable);
+    }
+
     public int count() {
         return (int) repository.count();
     }
