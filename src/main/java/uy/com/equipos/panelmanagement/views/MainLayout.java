@@ -71,39 +71,46 @@ public class MainLayout extends AppLayout {
 	}
 
 	private SideNav createNavigation() {
-		SideNav nav = new SideNav();
+    SideNav nav = new SideNav();
 
-		// Add other menu items, excluding "Usuarios"
-		List<MenuEntry> menuEntries = MenuConfiguration.getMenuEntries();
-		menuEntries.stream().filter(entry -> !entry.title().equals("Usuarios")).forEach(entry -> {
-			if (entry.icon() != null) {
-				nav.addItem(new SideNavItem(entry.title(), entry.path(), new SvgIcon(entry.icon())));
-			} else {
-				nav.addItem(new SideNavItem(entry.title(), entry.path()));
-			}
-		});
+    // Add "Panelistas Pendientes"
+    SideNavItem pendingPanelistsItem = new SideNavItem("Panelistas Pendientes", "pending-panelists");
+    pendingPanelistsItem.setPrefixComponent(new Icon("vaadin", "bell"));
+    nav.addItem(pendingPanelistsItem);
 
-		// Add "Respuestas"
-		SideNavItem answersItem = new SideNavItem("Respuestas", "answers");
-		answersItem.setPrefixComponent(new Icon("vaadin", "comments-o"));
-		nav.addItem(answersItem);
+    // Add other menu items, excluding "Usuarios" and "Solicitudes de panelistas"
+    List<MenuEntry> menuEntries = MenuConfiguration.getMenuEntries();
+    menuEntries.stream()
+        .filter(entry -> !entry.title().equals("Usuarios") && !entry.title().equals("Solicitudes de panelistas"))
+        .forEach(entry -> {
+        if (entry.icon() != null) {
+            nav.addItem(new SideNavItem(entry.title(), entry.path(), new SvgIcon(entry.icon())));
+        } else {
+            nav.addItem(new SideNavItem(entry.title(), entry.path()));
+        }
+    });
 
-		// Add "Configuración" with "Usuarios" and "Tareas" as sub-items
-		SideNavItem configuracionItem = new SideNavItem("Configuración");
-		configuracionItem.setPrefixComponent(new Icon("vaadin", "tools"));
+    // Add "Respuestas"
+    SideNavItem answersItem = new SideNavItem("Respuestas", "answers");
+    answersItem.setPrefixComponent(new Icon("vaadin", "comments-o"));
+    nav.addItem(answersItem);
 
-		SideNavItem usuariosItem = new SideNavItem("Usuarios", "users");
-		usuariosItem.setPrefixComponent(new Icon("vaadin", "users"));
-		configuracionItem.addItem(usuariosItem);
+    // Add "Configuración" with "Usuarios" and "Tareas" as sub-items
+    SideNavItem configuracionItem = new SideNavItem("Configuración");
+    configuracionItem.setPrefixComponent(new Icon("vaadin", "tools"));
 
-		SideNavItem tareasItem = new SideNavItem("Tareas", "tasks");
-		tareasItem.setPrefixComponent(new Icon("vaadin", "envelope-o")); // Icon for "Tareas"
-		configuracionItem.addItem(tareasItem); // Add "Tareas" under "Configuración"
+    SideNavItem usuariosItem = new SideNavItem("Usuarios", "users");
+    usuariosItem.setPrefixComponent(new Icon("vaadin", "users"));
+    configuracionItem.addItem(usuariosItem);
 
-		nav.addItem(configuracionItem);
+    SideNavItem tareasItem = new SideNavItem("Tareas", "tasks");
+    tareasItem.setPrefixComponent(new Icon("vaadin", "envelope-o")); // Icon for "Tareas"
+    configuracionItem.addItem(tareasItem); // Add "Tareas" under "Configuración"
 
-		return nav;
-	}
+    nav.addItem(configuracionItem);
+
+    return nav;
+}
 
 	private Footer createFooter() {
 		Footer layout = new Footer();
