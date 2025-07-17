@@ -176,4 +176,15 @@ public class Panelist extends AbstractEntity {
 	// public void setMessageTasks(Set<MessageTask> messageTasks) {
 	// this.messageTasks = messageTasks;
 	// }
+
+    @OneToMany(mappedBy = "panelist")
+    private Set<Task> tasks = new HashSet<>();
+
+    public Set<Task> getTasks() {
+        return tasks;
+    }
+
+    public void setTasks(Set<Task> tasks) {
+        this.tasks = tasks;
+    }
 }

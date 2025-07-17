@@ -32,6 +32,18 @@ public class Task extends AbstractEntity {
     @JoinColumn(name = "survey_id")
     private Survey survey;
 
+    @ManyToOne
+    @JoinColumn(name = "panelist_id")
+    private Panelist panelist;
+
+    public Panelist getPanelist() {
+        return panelist;
+    }
+
+    public void setPanelist(Panelist panelist) {
+        this.panelist = panelist;
+    }
+
     public JobType getJobType() {
         return jobType;
     }
