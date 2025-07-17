@@ -73,10 +73,10 @@ public class MainLayout extends AppLayout {
 	private SideNav createNavigation() {
     SideNav nav = new SideNav();
 
-    // Add "Panelistas Pendientes"
-    SideNavItem pendingPanelistsItem = new SideNavItem("Panelistas Pendientes", "pending-panelists");
-    pendingPanelistsItem.setPrefixComponent(new Icon("vaadin", "bell"));
-    nav.addItem(pendingPanelistsItem);
+//    // Add "Panelistas Pendientes"
+//    SideNavItem pendingPanelistsItem = new SideNavItem("Panelistas Pendientes", "pending-panelists");
+//    pendingPanelistsItem.setPrefixComponent(new Icon("vaadin", "bell"));
+//    nav.addItem(pendingPanelistsItem);
 
     // Add other menu items, excluding "Usuarios" and "Solicitudes de panelistas"
     List<MenuEntry> menuEntries = MenuConfiguration.getMenuEntries();
