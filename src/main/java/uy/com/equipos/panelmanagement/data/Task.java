@@ -30,7 +30,6 @@ public class Task extends AbstractEntity {
 
     @ManyToOne
     @JoinColumn(name = "survey_id")
-    @NotNull
     private Survey survey;
 
     public JobType getJobType() {
