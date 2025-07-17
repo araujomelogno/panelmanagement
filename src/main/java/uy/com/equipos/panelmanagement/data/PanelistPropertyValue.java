@@ -10,6 +10,7 @@ import jakarta.validation.constraints.NotNull;
 public class PanelistPropertyValue extends AbstractEntity {
 
     @NotNull
+    @jakarta.persistence.Column(name = "property_value")
     private String value;
 
     @ManyToOne(fetch = FetchType.LAZY) // LAZY es generalmente preferible para relaciones ManyToOne
