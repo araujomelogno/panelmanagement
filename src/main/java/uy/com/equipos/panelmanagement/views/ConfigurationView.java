@@ -22,6 +22,7 @@ import com.vaadin.flow.router.Route;
 import com.vaadin.flow.spring.data.VaadinSpringDataHelpers;
 import jakarta.annotation.security.PermitAll;
 import java.util.Optional;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.orm.ObjectOptimisticLockingFailureException;
 import uy.com.equipos.panelmanagement.data.ConfigurationItem;
 import uy.com.equipos.panelmanagement.services.ConfigurationItemService;
@@ -35,6 +36,9 @@ public class ConfigurationView extends Div implements BeforeEnterObserver {
     private final String CONFIGURATIONITEM_EDIT_ROUTE_TEMPLATE = "configuration-items/%s/edit";
 
     private final Grid<ConfigurationItem> grid = new Grid<>(ConfigurationItem.class, false);
+
+    private TextField nameFilter = new TextField();
+    private TextField valueFilter = new TextField();
 
     private TextField name;
     private TextField value;
@@ -58,17 +62,41 @@ public class ConfigurationView extends Div implements BeforeEnterObserver {
         // Create UI
         SplitLayout splitLayout = new SplitLayout();
 
+        Button newButton = new Button("New Configuration Item");
+        newButton.addClickListener(e -> {
+            grid.asSingleSelect().clear();
+            populateForm(new ConfigurationItem());
+            editorLayoutDiv.setVisible(true);
+        });
+
         createGridLayout(splitLayout);
         createEditorLayout(splitLayout);
 
-        add(splitLayout);
+        HorizontalLayout buttonLayout = new HorizontalLayout(newButton);
+        add(buttonLayout, splitLayout);
+
+        editorLayoutDiv.setVisible(false);
 
         // Configure Grid
-        grid.addColumn("name").setAutoWidth(true);
-        grid.addColumn("value").setAutoWidth(true);
-        grid.setItems(query -> configurationItemService.list(
+        grid.addColumn("name").setAutoWidth(true).setKey("name");
+        grid.addColumn("value").setAutoWidth(true).setKey("value");
+        nameFilter.addValueChangeListener(e -> this.refreshGrid());
+        valueFilter.addValueChangeListener(e -> this.refreshGrid());
+        grid.setItems(query -> {
+            Specification<ConfigurationItem> spec = (root, cbQuery, cb) -> {
+                java.util.List<jakarta.persistence.criteria.Predicate> predicates = new java.util.ArrayList<>();
+                if (nameFilter.getValue() != null && !nameFilter.getValue().isEmpty()) {
+                    predicates.add(cb.like(cb.lower(root.get("name")), "%" + nameFilter.getValue().toLowerCase() + "%"));
+                }
+                if (valueFilter.getValue() != null && !valueFilter.getValue().isEmpty()) {
+                    predicates.add(cb.like(cb.lower(root.get("value")), "%" + valueFilter.getValue().toLowerCase() + "%"));
+                }
+                return cb.and(predicates.toArray(new jakarta.persistence.criteria.Predicate[0]));
+            };
+            return configurationItemService.list(
                 VaadinSpringDataHelpers.toSpringPageRequest(query),
-                (root, q, cb) -> cb.and()).stream());
+                spec).stream();
+        });
         grid.addThemeVariants(GridVariant.LUMO_NO_BORDER);
 
         // when a row is selected or deselected, populate form
@@ -131,6 +159,7 @@ public class ConfigurationView extends Div implements BeforeEnterObserver {
             Optional<ConfigurationItem> configurationItemFromBackend = configurationItemService.get(configurationItemId.get());
             if (configurationItemFromBackend.isPresent()) {
                 populateForm(configurationItemFromBackend.get());
+                editorLayoutDiv.setVisible(true);
             } else {
                 Notification.show(
                         String.format("The requested configurationItem was not found, ID = %s", configurationItemId.get()), 3000,
@@ -176,6 +205,14 @@ public class ConfigurationView extends Div implements BeforeEnterObserver {
         wrapper.setClassName("grid-wrapper");
         splitLayout.addToPrimary(wrapper);
         wrapper.add(grid);
+
+        // Add filters
+        Grid.Column<ConfigurationItem> nameColumn = grid.getColumnByKey("name");
+        Grid.Column<ConfigurationItem> valueColumn = grid.getColumnByKey("value");
+
+        com.vaadin.flow.component.grid.HeaderRow headerRow = grid.appendHeaderRow();
+        headerRow.getCell(nameColumn).setComponent(nameFilter);
+        headerRow.getCell(valueColumn).setComponent(valueFilter);
     }
 
     private void refreshGrid() {
