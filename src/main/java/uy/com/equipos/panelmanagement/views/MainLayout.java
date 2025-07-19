@@ -107,6 +107,10 @@ public class MainLayout extends AppLayout {
     tareasItem.setPrefixComponent(new Icon("vaadin", "envelope-o")); // Icon for "Tareas"
     configuracionItem.addItem(tareasItem); // Add "Tareas" under "Configuración"
 
+    SideNavItem systemPropertiesItem = new SideNavItem("Propiedades de sistema", "configuration-items");
+    systemPropertiesItem.setPrefixComponent(new Icon("vaadin", "cog-o"));
+    configuracionItem.addItem(systemPropertiesItem);
+
     nav.addItem(configuracionItem);
 
     return nav;
