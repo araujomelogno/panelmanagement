@@ -1,5 +1,6 @@
 package uy.com.equipos.panelmanagement.data;
 
+import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.JoinColumn;
@@ -11,6 +12,7 @@ import java.util.Date;
 public class PanelistPropertyValue extends AbstractEntity {
 
     @NotNull
+    @Column(name = "\"value\"")
     private String value;
 
     private Date updated;
