@@ -36,7 +36,12 @@ public class SecurityConfiguration extends VaadinWebSecurity {
         
         http.authorizeHttpRequests(authorize -> authorize
                 .requestMatchers(new AntPathRequestMatcher("/api/webhook/survey-response", HttpMethod.POST.toString())).permitAll());
+        
+        
 
+        http.authorizeHttpRequests(authorize -> authorize
+                .requestMatchers(new AntPathRequestMatcher("/api/webhook/landing-response", HttpMethod.POST.toString())).permitAll());
+        
         super.configure(http); // Llamada a la configuración base de VaadinWebSecurity
         setLoginView(http, LoginView.class); // Configura tu vista de login
     }

@@ -25,6 +25,7 @@ import java.util.Optional;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.orm.ObjectOptimisticLockingFailureException;
 import uy.com.equipos.panelmanagement.data.ConfigurationItem;
+import uy.com.equipos.panelmanagement.data.Panelist;
 import uy.com.equipos.panelmanagement.services.ConfigurationItemService;
 
 @PageTitle("Propiedades de sistema")
@@ -69,6 +70,11 @@ public class ConfigurationView extends Div implements BeforeEnterObserver {
             editorLayoutDiv.setVisible(true);
         });
 
+        // Configure Grid 
+
+		grid.addColumn(ConfigurationItem::getName).setHeader("Nombre").setKey("name").setAutoWidth(true).setSortable(true);
+		grid.addColumn(ConfigurationItem::getValue).setHeader("Valor").setKey("value").setAutoWidth(true).setSortable(true);
+
         createGridLayout(splitLayout);
         createEditorLayout(splitLayout);
 
@@ -77,9 +83,6 @@ public class ConfigurationView extends Div implements BeforeEnterObserver {
 
         editorLayoutDiv.setVisible(false);
 
-        // Configure Grid
-        grid.addColumn("name").setAutoWidth(true).setKey("name");
-        grid.addColumn("value").setAutoWidth(true).setKey("value");
         nameFilter.addValueChangeListener(e -> this.refreshGrid());
         valueFilter.addValueChangeListener(e -> this.refreshGrid());
         grid.setItems(query -> {
@@ -176,6 +179,7 @@ public class ConfigurationView extends Div implements BeforeEnterObserver {
         editorLayoutDiv = new Div();
         editorLayoutDiv.setClassName("editor-layout");
 
+ 
         Div editorDiv = new Div();
         editorDiv.setClassName("editor");
         editorLayoutDiv.add(editorDiv);
