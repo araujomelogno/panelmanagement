@@ -5,12 +5,15 @@ import jakarta.persistence.FetchType;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.validation.constraints.NotNull;
+import java.util.Date;
 
 @Entity
 public class PanelistPropertyValue extends AbstractEntity {
 
-    @NotNull 
+    @NotNull
     private String value;
+
+    private Date updated;
 
     @ManyToOne(fetch = FetchType.LAZY) // LAZY es generalmente preferible para relaciones ManyToOne
     @JoinColumn(name = "panelist_id")
@@ -44,5 +47,13 @@ public class PanelistPropertyValue extends AbstractEntity {
 
     public void setPanelistProperty(PanelistProperty panelistProperty) {
         this.panelistProperty = panelistProperty;
+    }
+
+    public Date getUpdated() {
+        return updated;
+    }
+
+    public void setUpdated(Date updated) {
+        this.updated = updated;
     }
 }
