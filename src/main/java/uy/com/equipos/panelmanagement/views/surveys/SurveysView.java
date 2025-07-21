@@ -122,7 +122,7 @@ public class SurveysView extends Div implements BeforeEnterObserver {
 		sortearPanelistasButton = new Button("Sortear participantes");
 		sortearPanelistasButton.addClickListener(e -> openSortearPanelistasDialog());
 
-		addParticipantsButton = new Button("Agregar un participantes");
+		addParticipantsButton = new Button("Agregar participantes");
 		addParticipantsButton.addClickListener(e -> openAddParticipantsDialog());
 
 		sendSurveysButton = new Button("Enviar encuestas");
@@ -771,7 +771,7 @@ public class SurveysView extends Div implements BeforeEnterObserver {
 		Grid<Panelist> panelistsGrid = new Grid<>(Panelist.class, false);
 		panelistsGrid.setSelectionMode(SelectionMode.MULTI);
 
-		panelistsGrid.addComponentColumn(panelist -> new com.vaadin.flow.component.checkbox.Checkbox()).setHeader("");
+		//panelistsGrid.addComponentColumn(panelist -> new com.vaadin.flow.component.checkbox.Checkbox()).setHeader("");
 		panelistsGrid.addColumn(Panelist::getFirstName).setHeader("Nombre").setSortable(true);
 		panelistsGrid.addColumn(Panelist::getLastName).setHeader("Apellido").setSortable(true);
 		panelistsGrid.addColumn(Panelist::getEmail).setHeader("Email").setSortable(true);
