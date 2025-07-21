@@ -1,5 +1,6 @@
 package uy.com.equipos.panelmanagement.data;
 
+import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.validation.constraints.NotBlank;
 
@@ -10,6 +11,7 @@ public class ConfigurationItem extends AbstractEntity {
     private String name;
 
     @NotBlank
+    @Column(name = "\"value\"")
     private String value;
 
     public String getName() {

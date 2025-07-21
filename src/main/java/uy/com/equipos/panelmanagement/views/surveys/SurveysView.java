@@ -52,12 +52,15 @@ import uy.com.equipos.panelmanagement.data.Panelist;
 import uy.com.equipos.panelmanagement.data.Survey;
 import uy.com.equipos.panelmanagement.data.SurveyPanelistParticipation; // Nueva importación
 import uy.com.equipos.panelmanagement.data.Tool;
+import uy.com.equipos.panelmanagement.services.PanelistPropertyService;
 import uy.com.equipos.panelmanagement.services.TaskService; // Nueva importación
 import uy.com.equipos.panelmanagement.data.Status;
 import uy.com.equipos.panelmanagement.services.PanelService;
 import uy.com.equipos.panelmanagement.services.PanelistService;
 import uy.com.equipos.panelmanagement.services.SurveyPanelistParticipationService; // Nueva importación
+import uy.com.equipos.panelmanagement.services.SurveyPropertyMatchingService;
 import uy.com.equipos.panelmanagement.services.SurveyService;
+import uy.com.equipos.panelmanagement.views.dialogs.VincularPropiedadesDialog;
 
 @PageTitle("Encuestas")
 @Route("surveys/:surveyID?/:action?(edit)")
@@ -88,6 +91,7 @@ public class SurveysView extends Div implements BeforeEnterObserver {
 	private Button nuevaEncuestaButton;
 	private Button viewParticipantsButton;
 	private Button sortearPanelistasButton; // New button for drawing panelists
+	private Button vincularPropiedadesButton;
 	private Button addParticipantsButton;
 	private Button sendSurveysButton; // New button for sending surveys
 	private Button sendReminderButton; // New button for sending reminders
@@ -101,14 +105,20 @@ public class SurveysView extends Div implements BeforeEnterObserver {
 	private final PanelService panelService; // Service for Panel entities
 	private final PanelistService panelistService;
 	private final TaskService messageTaskService; // Service for MessageTask entities
+	private final PanelistPropertyService panelistPropertyService;
+	private final SurveyPropertyMatchingService surveyPropertyMatchingService;
 
 	public SurveysView(SurveyService surveyService, SurveyPanelistParticipationService participationService,
-			PanelService panelService, PanelistService panelistService, TaskService messageTaskService) {
+			PanelService panelService, PanelistService panelistService, TaskService messageTaskService,
+			PanelistPropertyService panelistPropertyService,
+			SurveyPropertyMatchingService surveyPropertyMatchingService) {
 		this.surveyService = surveyService;
 		this.participationService = participationService; // Inyectar nuevo servicio
 		this.panelService = panelService; // Inyectar PanelService
 		this.panelistService = panelistService;
 		this.messageTaskService = messageTaskService; // Inyectar MessageTaskService
+		this.panelistPropertyService = panelistPropertyService;
+		this.surveyPropertyMatchingService = surveyPropertyMatchingService;
 		addClassNames("surveys-view");
 
 		// Initialize deleteButton EARLIER
@@ -121,6 +131,9 @@ public class SurveysView extends Div implements BeforeEnterObserver {
 
 		sortearPanelistasButton = new Button("Sortear participantes");
 		sortearPanelistasButton.addClickListener(e -> openSortearPanelistasDialog());
+
+		vincularPropiedadesButton = new Button("Vincular Propiedades");
+		vincularPropiedadesButton.addClickListener(e -> openVincularPropiedadesDialog());
 
 		addParticipantsButton = new Button("Agregar participantes");
 		addParticipantsButton.addClickListener(e -> openAddParticipantsDialog());
@@ -319,8 +332,8 @@ public class SurveysView extends Div implements BeforeEnterObserver {
 		tool = new ComboBox<>("Herramienta");
 		tool.setItems(Tool.values());
 		tool.setItemLabelGenerator(Tool::name);
-		formLayout.add(name, initDate, link, tool, viewParticipantsButton, sortearPanelistasButton, addParticipantsButton, sendSurveysButton,
-				sendReminderButton);
+		formLayout.add(name, initDate, link, tool, viewParticipantsButton, sortearPanelistasButton,
+				vincularPropiedadesButton, addParticipantsButton, sendSurveysButton, sendReminderButton);
 
 		editorDiv.add(formLayout);
 		createButtonLayout(editorLayoutDiv);
@@ -368,6 +381,9 @@ public class SurveysView extends Div implements BeforeEnterObserver {
 		if (sortearPanelistasButton != null) {
 			sortearPanelistasButton.setEnabled(value != null && value.getId() != null);
 		}
+		if (vincularPropiedadesButton != null) {
+			vincularPropiedadesButton.setEnabled(value != null && value.getId() != null);
+		}
 		if (addParticipantsButton != null) {
 			addParticipantsButton.setEnabled(value != null && value.getId() != null);
 		}
@@ -392,6 +408,9 @@ public class SurveysView extends Div implements BeforeEnterObserver {
 		}
 		if (sortearPanelistasButton != null) {
 			sortearPanelistasButton.setEnabled(false);
+		}
+		if (vincularPropiedadesButton != null) {
+			vincularPropiedadesButton.setEnabled(false);
 		}
 		if (addParticipantsButton != null) {
 			addParticipantsButton.setEnabled(false);
@@ -858,6 +877,17 @@ public class SurveysView extends Div implements BeforeEnterObserver {
 						Notification.Position.MIDDLE).addThemeVariants(NotificationVariant.LUMO_ERROR);
 			}
 		});
+		dialog.open();
+	}
+
+	private void openVincularPropiedadesDialog() {
+		if (this.survey == null || this.survey.getId() == null) {
+			Notification.show("No hay encuesta seleccionada para vincular propiedades.", 3000,
+					Notification.Position.MIDDLE);
+			return;
+		}
+		VincularPropiedadesDialog dialog = new VincularPropiedadesDialog(this.survey, panelistPropertyService,
+				surveyPropertyMatchingService);
 		dialog.open();
 	}
 }
