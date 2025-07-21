@@ -6,6 +6,9 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
+
+import uy.com.equipos.panelmanagement.data.Panelist;
+import uy.com.equipos.panelmanagement.data.Survey;
 import uy.com.equipos.panelmanagement.data.SurveyPanelistParticipation;
 import uy.com.equipos.panelmanagement.data.SurveyPanelistParticipationRepository;
 
@@ -44,6 +47,10 @@ public class SurveyPanelistParticipationService {
         // List<SurveyPanelistParticipation> findBySurveyId(Long surveyId);
         // O usar Specification:
         return repository.findAll((root, query, cb) -> cb.equal(root.get("survey").get("id"), surveyId));
+    }
+
+    public boolean existsBySurveyAndPanelist(Survey survey, Panelist panelist) {
+        return repository.findBySurveyAndPanelist(survey, panelist).isPresent();
     }
 
     public int count() {

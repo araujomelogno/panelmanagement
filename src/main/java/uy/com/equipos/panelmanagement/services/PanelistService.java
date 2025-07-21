@@ -131,6 +131,17 @@ public class PanelistService {
         return repository.findAll(spec, pageable);
     }
 
+    public List<Panelist> findByStatus(Status status) {
+        Specification<Panelist> spec = (root, query, cb) -> {
+            List<Predicate> predicates = new ArrayList<>();
+            if (status != null) {
+                predicates.add(cb.equal(root.get("status"), status));
+            }
+            return cb.and(predicates.toArray(new Predicate[0]));
+        };
+        return repository.findAll(spec);
+    }
+
     public int count() {
         return (int) repository.count();
     }
