@@ -965,6 +965,13 @@ public class PanelistsView extends Div implements BeforeEnterObserver {
 				.setHeader("Propiedad").setKey("name").setFlexGrow(1);
 		Grid.Column<PanelistProperty> typeColumn = propertiesGrid.addColumn(PanelistProperty::getType).setHeader("Tipo")
 				.setKey("type").setFlexGrow(1);
+		propertiesGrid.addColumn(pp -> {
+			Optional<PanelistPropertyValue> ppv = panelistPropertyValueService.findByPanelistAndPanelistProperty(panelist, pp);
+			if (ppv.isPresent()) {
+				return ppv.get().getUpdated();
+			}
+			return null;
+		}).setHeader("Actualizado").setKey("updated").setFlexGrow(1);
 
 		Grid.Column<PanelistProperty> valueColumn = propertiesGrid.addComponentColumn(panelistProperty -> {
 			PropertyType type = panelistProperty.getType();
@@ -1126,6 +1133,7 @@ public class PanelistsView extends Div implements BeforeEnterObserver {
 						ppvToProcess.setPanelistProperty(prop);
 						ppvToProcess.setValue(newValue);
 					}
+					ppvToProcess.setUpdated(new java.util.Date());
 					finalPpvSet.add(ppvToProcess);
 				} else {
 					// NOT CHECKED: If it existed, it will not be added to finalPpvSet.
