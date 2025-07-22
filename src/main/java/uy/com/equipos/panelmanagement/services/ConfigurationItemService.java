@@ -21,6 +21,10 @@ public class ConfigurationItemService {
         return repository.findById(id);
     }
 
+    public ConfigurationItem getByName(String name) {
+        return repository.findByName(name);
+    }
+
     public ConfigurationItem update(ConfigurationItem entity) {
         return repository.save(entity);
     }

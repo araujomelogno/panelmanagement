@@ -8,4 +8,6 @@ public interface ConfigurationItemRepository
             JpaRepository<ConfigurationItem, Long>,
             JpaSpecificationExecutor<ConfigurationItem> {
 
+    ConfigurationItem findByName(String name);
+
 }
