@@ -13,7 +13,7 @@ import com.vaadin.flow.component.grid.HeaderRow;
 import com.vaadin.flow.component.orderedlayout.FlexComponent;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.textfield.TextField;
-
+import com.vaadin.flow.data.value.ValueChangeMode;
 import uy.com.equipos.panelmanagement.data.PanelistProperty;
 import uy.com.equipos.panelmanagement.data.Survey;
 import uy.com.equipos.panelmanagement.data.SurveyPropertyMatching;
@@ -62,8 +62,12 @@ public class VincularPropiedadesDialog extends Dialog {
          TextField nameFilter = new TextField();
          nameFilter.setPlaceholder("Filtrar...");
          nameFilter.setClearButtonVisible(true);
+         nameFilter.setValueChangeMode(ValueChangeMode.LAZY);
          nameFilter.addValueChangeListener(e -> {
-             // Logic to update the grid will be here
+             String filterValue = e.getValue();
+             grid.setItems(panelistPropertyService.findAll().stream()
+                     .filter(property -> property.getName().toLowerCase().contains(filterValue.toLowerCase()))
+                     .toList());
          });
 
          grid.getHeaderRows().clear();
