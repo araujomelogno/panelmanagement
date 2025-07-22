@@ -43,18 +43,14 @@ public class RecruitmentMessageView extends Div {
     }
 
     private void loadRecruitmentMessage() {
-        ConfigurationItem recruitmentMessage = configurationItemService.getByName(RECRUITMENT_MESSAGE_NAME);
-        if (recruitmentMessage != null) {
-            messageArea.setValue(recruitmentMessage.getValue());
-        }
+        Optional<ConfigurationItem> recruitmentMessage = configurationItemService.getByName(RECRUITMENT_MESSAGE_NAME);
+        recruitmentMessage.ifPresent(item -> messageArea.setValue(item.getValue()));
     }
 
     private void saveRecruitmentMessage() {
-        ConfigurationItem recruitmentMessage = configurationItemService.getByName(RECRUITMENT_MESSAGE_NAME);
-        if (recruitmentMessage == null) {
-            recruitmentMessage = new ConfigurationItem();
-            recruitmentMessage.setName(RECRUITMENT_MESSAGE_NAME);
-        }
+        Optional<ConfigurationItem> optionalRecruitmentMessage = configurationItemService.getByName(RECRUITMENT_MESSAGE_NAME);
+        ConfigurationItem recruitmentMessage = optionalRecruitmentMessage.orElse(new ConfigurationItem());
+        recruitmentMessage.setName(RECRUITMENT_MESSAGE_NAME);
         recruitmentMessage.setValue(messageArea.getValue());
         configurationItemService.update(recruitmentMessage);
         Notification.show("Mensaje de reclutamiento guardado.");

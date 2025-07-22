@@ -21,7 +21,7 @@ public class ConfigurationItemService {
         return repository.findById(id);
     }
 
-    public ConfigurationItem getByName(String name) {
+    public Optional<ConfigurationItem> getByName(String name) {
         return repository.findByName(name);
     }
 
