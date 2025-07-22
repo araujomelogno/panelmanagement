@@ -333,7 +333,7 @@ public class SurveysView extends Div implements BeforeEnterObserver {
 		tool.setItems(Tool.values());
 		tool.setItemLabelGenerator(Tool::name);
 		formLayout.add(name, initDate, link, tool, viewParticipantsButton, sortearPanelistasButton,
-				vincularPropiedadesButton, addParticipantsButton, sendSurveysButton, sendReminderButton);
+				 addParticipantsButton, vincularPropiedadesButton, sendSurveysButton, sendReminderButton);
 
 		editorDiv.add(formLayout);
 		createButtonLayout(editorLayoutDiv);

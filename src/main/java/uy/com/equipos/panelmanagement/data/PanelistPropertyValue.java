@@ -11,8 +11,7 @@ import java.util.Date;
 @Entity
 public class PanelistPropertyValue extends AbstractEntity {
 
-    @NotNull
-    @Column(name = "\"value\"")
+    @NotNull 
     private String value;
 
     private Date updated;
