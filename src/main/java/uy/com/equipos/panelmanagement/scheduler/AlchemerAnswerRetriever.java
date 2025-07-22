@@ -23,8 +23,12 @@ import uy.com.equipos.panelmanagement.data.Survey;
 import uy.com.equipos.panelmanagement.data.SurveyPanelistParticipation;
 import uy.com.equipos.panelmanagement.data.Task;
 import uy.com.equipos.panelmanagement.data.TaskStatus;
+import uy.com.equipos.panelmanagement.data.PanelistPropertyValue;
+import uy.com.equipos.panelmanagement.data.SurveyPropertyMatching;
 import uy.com.equipos.panelmanagement.services.AnswerService;
+import uy.com.equipos.panelmanagement.services.PanelistPropertyValueService;
 import uy.com.equipos.panelmanagement.services.SurveyPanelistParticipationService;
+import uy.com.equipos.panelmanagement.services.SurveyPropertyMatchingService;
 import uy.com.equipos.panelmanagement.services.TaskService;
 
 @Component
@@ -36,6 +40,8 @@ public class AlchemerAnswerRetriever {
     private final TaskService taskService;
     private final SurveyPanelistParticipationService surveyPanelistParticipationService;
     private final AnswerService answerService;
+    private final SurveyPropertyMatchingService surveyPropertyMatchingService;
+    private final PanelistPropertyValueService panelistPropertyValueService;
     private final RestTemplate restTemplate;
 
     @Value("${alchemer.api.token}")
@@ -48,10 +54,14 @@ public class AlchemerAnswerRetriever {
 
     public AlchemerAnswerRetriever(TaskService taskService,
                                    SurveyPanelistParticipationService surveyPanelistParticipationService,
-                                   AnswerService answerService) {
+                                   AnswerService answerService,
+                                   SurveyPropertyMatchingService surveyPropertyMatchingService,
+                                   PanelistPropertyValueService panelistPropertyValueService) {
         this.taskService = taskService;
         this.surveyPanelistParticipationService = surveyPanelistParticipationService;
         this.answerService = answerService;
+        this.surveyPropertyMatchingService = surveyPropertyMatchingService;
+        this.panelistPropertyValueService = panelistPropertyValueService;
         this.restTemplate = new RestTemplate();
     }
 
@@ -129,25 +139,41 @@ public class AlchemerAnswerRetriever {
                                         // Check if an answer already exists
                                         Optional<Answer> existingAnswerOpt = answerService.findBySurveyPanelistParticipationAndQuestionCode(participation, questionCode);
 
+                                        Answer answer;
                                         if (existingAnswerOpt.isPresent()) {
                                             // Update existing answer
-                                            Answer existingAnswer = existingAnswerOpt.get();
-                                            if (!existingAnswer.getAnswer().equals(answerValue)) {
-                                                existingAnswer.setAnswer(answerValue);
-                                                answerService.save(existingAnswer);
+                                            answer = existingAnswerOpt.get();
+                                            if (!answer.getAnswer().equals(answerValue)) {
+                                                answer.setAnswer(answerValue);
+                                                answerService.save(answer);
                                                 log.info("Entidad Answer actualizada para questionCode: {}, participationId: {}", questionCode, participation.getId());
                                             } else {
                                                 log.info("Entidad Answer sin cambios para questionCode: {}, participationId: {}", questionCode, participation.getId());
                                             }
                                         } else {
                                             // Create new answer
-                                            Answer newAnswer = new Answer();
-                                            newAnswer.setQuestion(questionText);
-                                            newAnswer.setQuestionCode(questionCode);
-                                            newAnswer.setAnswer(answerValue);
-                                            newAnswer.setSurveyPanelistParticipation(participation);
-                                            answerService.save(newAnswer);
+                                            answer = new Answer();
+                                            answer.setQuestion(questionText);
+                                            answer.setQuestionCode(questionCode);
+                                            answer.setAnswer(answerValue);
+                                            answer.setSurveyPanelistParticipation(participation);
+                                            answerService.save(answer);
                                             log.info("Nueva entidad Answer guardada para questionCode: {}, participationId: {}", questionCode, participation.getId());
+                                        }
+                                        List<SurveyPropertyMatching> propertyMatchings = surveyPropertyMatchingService.findBySurvey(survey);
+                                        for (SurveyPropertyMatching spm : propertyMatchings) {
+                                            PanelistPropertyValue ppv = panelistPropertyValueService
+                                                .findByPanelistAndPanelistProperty(
+                                                    participation.getPanelist(), spm.getProperty())
+                                                .orElseGet(() -> {
+                                                    PanelistPropertyValue newPpv = new PanelistPropertyValue();
+                                                    newPpv.setPanelist(participation.getPanelist());
+                                                    newPpv.setPanelistProperty(spm.getProperty());
+                                                    return newPpv;
+                                                });
+                                            ppv.setValue(answer.getAnswer());
+                                            ppv.setUpdated(new java.util.Date());
+                                            panelistPropertyValueService.save(ppv);
                                         }
                                     } else {
                                         log.warn("No se pudo obtener texto de pregunta o el valor de la respuesta es nulo (pero puede ser vacío) para la pregunta ID: {} en Survey ID: {}", questionIdStr, alchemerSurveyId);
