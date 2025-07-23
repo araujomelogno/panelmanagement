@@ -17,7 +17,7 @@ import uy.com.equipos.panelmanagement.services.ConfigurationItemService;
 @PageTitle("Reclutamiento")
 @Route(value = "recruitment", layout = MainLayout.class)
 @PermitAll
-public class RecruitmentMessageView extends Div {
+public class RecruitmentView extends Div {
 
     private final ConfigurationItemService configurationItemService;
 
@@ -26,7 +26,7 @@ public class RecruitmentMessageView extends Div {
     private TextArea messageArea;
     private Button saveButton;
 
-    public RecruitmentMessageView(ConfigurationItemService configurationItemService) {
+    public RecruitmentView(ConfigurationItemService configurationItemService) {
         this.configurationItemService = configurationItemService;
         addClassName("recruitment-message-view");
 
