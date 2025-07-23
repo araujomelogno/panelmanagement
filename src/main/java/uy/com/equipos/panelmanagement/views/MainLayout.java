@@ -111,8 +111,8 @@ public class MainLayout extends AppLayout {
     systemPropertiesItem.setPrefixComponent(new Icon("vaadin", "cog-o"));
     configuracionItem.addItem(systemPropertiesItem);
 
-    SideNavItem recruitmentMessageItem = new SideNavItem("Mensaje de reclutamiento", "recruitment-message");
-    recruitmentMessageItem.setPrefixComponent(new Icon("vaadin", "envelope-o"));
+    SideNavItem recruitmentMessageItem = new SideNavItem("Reclutamiento", "recruitment");
+    recruitmentMessageItem.setPrefixComponent(new Icon("vaadin", "megaphone"));
     configuracionItem.addItem(recruitmentMessageItem);
 
     nav.addItem(configuracionItem);

@@ -14,8 +14,8 @@ import jakarta.annotation.security.PermitAll;
 import uy.com.equipos.panelmanagement.data.ConfigurationItem;
 import uy.com.equipos.panelmanagement.services.ConfigurationItemService;
 
-@PageTitle("Mensaje de Reclutamiento")
-@Route(value = "recruitment-message", layout = MainLayout.class)
+@PageTitle("Reclutamiento")
+@Route(value = "recruitment", layout = MainLayout.class)
 @PermitAll
 public class RecruitmentMessageView extends Div {
 

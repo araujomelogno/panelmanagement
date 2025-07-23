@@ -37,7 +37,7 @@ import uy.com.equipos.panelmanagement.services.IncentiveService;
 
 @PageTitle("Incentivos")
 @Route("incentives/:incentiveID?/:action?(edit)")
-@Menu(order = 4, icon = LineAwesomeIconUrl.COLUMNS_SOLID)
+@Menu(order = 4, icon = LineAwesomeIconUrl.GIFT_SOLID)
 @AnonymousAllowed
 public class IncentivesView extends Div implements BeforeEnterObserver {
 
@@ -91,7 +91,7 @@ public class IncentivesView extends Div implements BeforeEnterObserver {
 		// Crear barra de título
 		nuevoIncentivoButton = new Button("Nuevo Incentivo");
 		nuevoIncentivoButton.getStyle().set("margin-left", "18px");
-		
+
 		VerticalLayout mainLayout = new VerticalLayout(nuevoIncentivoButton, splitLayout);
 		mainLayout.setSizeFull();
 		mainLayout.setPadding(false);
@@ -148,8 +148,7 @@ public class IncentivesView extends Div implements BeforeEnterObserver {
 		binder = new BeanValidationBinder<>(Incentive.class);
 
 		// Bind fields. This is where you'd define e.g. validation rules
-		binder.forField(quantityAvailable)
-				.withConverter(new StringToIntegerConverter(null, "Solo se permiten números"))
+		binder.forField(quantityAvailable).withConverter(new StringToIntegerConverter(null, "Solo se permiten números"))
 				.bind("quantityAvailable");
 
 		binder.bindInstanceFields(this);
@@ -262,7 +261,7 @@ public class IncentivesView extends Div implements BeforeEnterObserver {
 		binder.readBean(this.incentive);
 
 		if (deleteButton != null) { // Check if button is initialized
-			 deleteButton.setEnabled(value != null && value.getId() != null);
+			deleteButton.setEnabled(value != null && value.getId() != null);
 		}
 	}
 
@@ -285,7 +284,7 @@ public class IncentivesView extends Div implements BeforeEnterObserver {
 		com.vaadin.flow.component.confirmdialog.ConfirmDialog dialog = new com.vaadin.flow.component.confirmdialog.ConfirmDialog();
 		dialog.setHeader("Confirmar Eliminación");
 		dialog.setText("¿Está seguro de que desea eliminar el incentivo '" + this.incentive.getName() + "'?");
-		
+
 		dialog.setConfirmText("Eliminar");
 		dialog.setConfirmButtonTheme("error primary");
 		dialog.setCancelText("Cancelar");
@@ -298,11 +297,12 @@ public class IncentivesView extends Div implements BeforeEnterObserver {
 				Notification.show("Incentivo eliminado correctamente.", 3000, Notification.Position.BOTTOM_START);
 				UI.getCurrent().navigate(IncentivesView.class);
 			} catch (org.springframework.dao.DataIntegrityViolationException ex) {
-				Notification.show("No se puede eliminar el incentivo. Es posible que esté siendo referenciado por otras entidades.", 5000, Notification.Position.MIDDLE)
-					.addThemeVariants(NotificationVariant.LUMO_ERROR);
+				Notification.show(
+						"No se puede eliminar el incentivo. Es posible que esté siendo referenciado por otras entidades.",
+						5000, Notification.Position.MIDDLE).addThemeVariants(NotificationVariant.LUMO_ERROR);
 			} catch (Exception ex) {
-				Notification.show("Ocurrió un error al intentar eliminar el incentivo: " + ex.getMessage(), 5000, Notification.Position.MIDDLE)
-					.addThemeVariants(NotificationVariant.LUMO_ERROR);
+				Notification.show("Ocurrió un error al intentar eliminar el incentivo: " + ex.getMessage(), 5000,
+						Notification.Position.MIDDLE).addThemeVariants(NotificationVariant.LUMO_ERROR);
 			}
 		});
 		dialog.open();
