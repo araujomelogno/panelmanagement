@@ -1,5 +1,10 @@
 package uy.com.equipos.panelmanagement.views;
 
+import java.util.Optional;
+
+import org.springframework.data.jpa.domain.Specification;
+import org.springframework.orm.ObjectOptimisticLockingFailureException;
+
 import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
@@ -11,6 +16,7 @@ import com.vaadin.flow.component.notification.Notification;
 import com.vaadin.flow.component.notification.Notification.Position;
 import com.vaadin.flow.component.notification.NotificationVariant;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
+import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.splitlayout.SplitLayout;
 import com.vaadin.flow.component.textfield.TextArea;
 import com.vaadin.flow.component.textfield.TextField;
@@ -21,12 +27,9 @@ import com.vaadin.flow.router.BeforeEnterObserver;
 import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
 import com.vaadin.flow.spring.data.VaadinSpringDataHelpers;
+
 import jakarta.annotation.security.PermitAll;
-import java.util.Optional;
-import org.springframework.data.jpa.domain.Specification;
-import org.springframework.orm.ObjectOptimisticLockingFailureException;
 import uy.com.equipos.panelmanagement.data.ConfigurationItem;
-import uy.com.equipos.panelmanagement.data.Panelist;
 import uy.com.equipos.panelmanagement.services.ConfigurationItemService;
 
 @PageTitle("Propiedades de sistema")
@@ -46,8 +49,8 @@ public class ConfigurationView extends Div implements BeforeEnterObserver {
     private TextArea value;
 
     private final Button cancel = new Button("Cerrar");
-    private final Button save = new Button("Save");
-    private final Button delete = new Button("Delete");
+    private final Button save = new Button("Guardar");
+    private final Button delete = new Button("Borrar");
 
     private final BeanValidationBinder<ConfigurationItem> binder;
 
@@ -64,7 +67,7 @@ public class ConfigurationView extends Div implements BeforeEnterObserver {
         // Create UI
         SplitLayout splitLayout = new SplitLayout();
 
-        Button newButton = new Button("New Configuration Item");
+        Button newButton = new Button("Nuevo item de configuración");
         newButton.addClickListener(e -> {
             grid.asSingleSelect().clear();
             populateForm(new ConfigurationItem());
@@ -187,9 +190,16 @@ public class ConfigurationView extends Div implements BeforeEnterObserver {
         editorLayoutDiv.add(editorDiv);
 
         FormLayout formLayout = new FormLayout();
+        
         name = new TextField("Name");
         value = new TextArea("Value");
-        formLayout.add(name, value);
+        value.setMinRows(8);
+        
+        
+        VerticalLayout layout = new VerticalLayout();
+        layout.add(name, value);
+
+        formLayout.add(layout);
 
         editorDiv.add(formLayout);
         createButtonLayout(editorLayoutDiv);
