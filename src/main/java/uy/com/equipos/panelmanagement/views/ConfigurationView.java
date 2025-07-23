@@ -194,7 +194,7 @@ public class ConfigurationView extends Div implements BeforeEnterObserver {
         name = new TextField("Name");
         value = new TextArea("Value");
         value.setMinRows(8);
-        
+        value.setWidthFull();
         
         VerticalLayout layout = new VerticalLayout();
         layout.add(name, value);
