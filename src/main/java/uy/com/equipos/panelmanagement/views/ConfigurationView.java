@@ -12,6 +12,7 @@ import com.vaadin.flow.component.notification.Notification.Position;
 import com.vaadin.flow.component.notification.NotificationVariant;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.splitlayout.SplitLayout;
+import com.vaadin.flow.component.textfield.TextArea;
 import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.data.binder.BeanValidationBinder;
 import com.vaadin.flow.data.binder.ValidationException;
@@ -42,9 +43,9 @@ public class ConfigurationView extends Div implements BeforeEnterObserver {
     private TextField valueFilter = new TextField();
 
     private TextField name;
-    private TextField value;
+    private TextArea value;
 
-    private final Button cancel = new Button("Cancel");
+    private final Button cancel = new Button("Cerrar");
     private final Button save = new Button("Save");
     private final Button delete = new Button("Delete");
 
@@ -121,6 +122,7 @@ public class ConfigurationView extends Div implements BeforeEnterObserver {
         cancel.addClickListener(e -> {
             clearForm();
             refreshGrid();
+            editorLayoutDiv.setVisible(false);
         });
 
         save.addClickListener(e -> {
@@ -186,7 +188,7 @@ public class ConfigurationView extends Div implements BeforeEnterObserver {
 
         FormLayout formLayout = new FormLayout();
         name = new TextField("Name");
-        value = new TextField("Value");
+        value = new TextArea("Value");
         formLayout.add(name, value);
 
         editorDiv.add(formLayout);
