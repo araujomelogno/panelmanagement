@@ -64,7 +64,7 @@ public class LandingWebhookController {
 	            LOG.info("New panelist created with ID: {}", newPanelist.getId());
 
 	            Task task = new Task();
-	            task.setJobType(JobType.SCREENING);
+	            task.setJobType(JobType.RECRUITMENT_CONFIRMATION);
 	            task.setStatus(TaskStatus.PENDING);
 	            task.setCreated(LocalDateTime.now());
 	            task.setPanelist(newPanelist);
