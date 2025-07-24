@@ -56,7 +56,10 @@ public class AlchemerSurveyCompletionController {
         // Extract survey_id and convert to String for alchemerSurveyId
         String alchemerSurveyId = String.valueOf(payload.getData().getSurveyId());
         String email = payload.getData().getContact().getEmail();
-
+        //ACAAA !!! 
+        // ACA PÖNER SI ES IGUAL A la propiedad de "estudio de reclutamietno" 
+        // si es igual a esa propiedad  hacer un metodo que procese la repsuesta marcadno esa persona comoactiva
+        //ver que pasa con la encuesta cuando esta descalificada 
         if (email == null || email.trim().isEmpty()) {
             logger.warn("Email is missing in payload for alchemer_survey_id: {}", alchemerSurveyId);
             return ResponseEntity.badRequest().body("Email is missing in contact data.");

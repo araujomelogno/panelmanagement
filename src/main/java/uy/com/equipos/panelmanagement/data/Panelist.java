@@ -34,6 +34,8 @@ public class Panelist extends AbstractEntity {
 	private LocalDate lastContacted;
 	private LocalDate lastInterviewCompleted;
 	private String source;
+	private Integer recruitmentRetries;
+	private LocalDate lastRecruitmentSent;
 
 	// Standard getters and setters for the above fields...
 	public String getFirstName() {
@@ -157,26 +159,9 @@ public class Panelist extends AbstractEntity {
 		}
 		return this.participations.stream().map(SurveyPanelistParticipation::getSurvey).collect(Collectors.toSet());
 	}
-
-	// The relationship from Panelist to MessageTask is now indirect via
-	// SurveyPanelistParticipation.
-	// Similar to the Survey entity, direct access to MessageTasks from Panelist
-	// might be re-evaluated.
-	// Access would typically be: panelist.getParticipations().stream().flatMap(p ->
-	// p.getMessageTasks().stream()).collect(Collectors.toSet());
-	// Commenting out for now.
-	// @OneToMany(mappedBy = "panelist", cascade = CascadeType.ALL, orphanRemoval =
-	// true)
-	// private Set<MessageTask> messageTasks = new HashSet<>();
-
-	// public Set<MessageTask> getMessageTasks() {
-	// return messageTasks;
-	// }
-
-	// public void setMessageTasks(Set<MessageTask> messageTasks) {
-	// this.messageTasks = messageTasks;
-	// }
-
+ 
+	
+	
     @OneToMany(mappedBy = "panelist")
     private Set<Task> tasks = new HashSet<>();
 
@@ -187,4 +172,20 @@ public class Panelist extends AbstractEntity {
     public void setTasks(Set<Task> tasks) {
         this.tasks = tasks;
     }
+
+	public Integer getRecruitmentRetries() {
+		return recruitmentRetries;
+	}
+
+	public void setRecruitmentRetries(Integer recruitmentRetries) {
+		this.recruitmentRetries = recruitmentRetries;
+	}
+
+	public LocalDate getLastRecruitmentSent() {
+		return lastRecruitmentSent;
+	}
+
+	public void setLastRecruitmentSent(LocalDate lastRecruitmentSent) {
+		this.lastRecruitmentSent = lastRecruitmentSent;
+	}
 }

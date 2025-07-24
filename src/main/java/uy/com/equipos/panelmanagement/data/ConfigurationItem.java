@@ -7,26 +7,25 @@ import jakarta.validation.constraints.NotBlank;
 @Entity
 public class ConfigurationItem extends AbstractEntity {
 
-    @NotBlank
-    private String name;
+	@NotBlank
+	private String name;
 
-    @NotBlank
-    @Column(name = "\"value\"")
-    private String value;
+	@Column(name = "\"value\"", columnDefinition = "MEDIUMTEXT")
+	private String value;
 
-    public String getName() {
-        return name;
-    }
+	public String getName() {
+		return name;
+	}
 
-    public void setName(String name) {
-        this.name = name;
-    }
+	public void setName(String name) {
+		this.name = name;
+	}
 
-    public String getValue() {
-        return value;
-    }
+	public String getValue() {
+		return value;
+	}
 
-    public void setValue(String value) {
-        this.value = value;
-    }
+	public void setValue(String value) {
+		this.value = value;
+	}
 }

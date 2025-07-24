@@ -24,9 +24,8 @@ public class RecruitmentView extends Div {
 
     private static final String RECRUITMENT_INTRODUCTION_NAME = "recruitment.introduction";
     private static final String RECRUITMENT_LANDING_URL_NAME = "recruitment.landing.url";
-    private static final String RECRUITMENT_ALCHEMER_STUDY_ID_NAME = "recruitment.alchemer.study.id";
+    private static final String RECRUITMENT_ALCHEMER_STUDY_ID_NAME = "recruitment.alchemer.campaign.link";
     private static final String RECRUITMENT_RETRY_NAME = "recruitment.retry";
-
     private TextArea introductionArea;
     private TextField landingUrlField;
     private TextField alchemerStudyIdField;
@@ -44,7 +43,7 @@ public class RecruitmentView extends Div {
         landingUrlField = new TextField("Url del Landing Page:");
         landingUrlField.setWidthFull();
 
-        alchemerStudyIdField = new TextField("Id de estudio de Alchemer");
+        alchemerStudyIdField = new TextField("Link de mail campaign Alchemer");
         alchemerStudyIdField.setWidthFull();
         alchemerStudyIdField.setPattern("[0-9]*");
 
@@ -52,6 +51,7 @@ public class RecruitmentView extends Div {
         retryField.setWidthFull();
         retryField.setPattern("[0-9]*");
 
+        
         saveButton = new Button("Guardar");
         saveButton.addClickListener(e -> saveConfiguration());
 
