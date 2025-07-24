@@ -198,4 +198,8 @@ public class PanelistService {
             throw new EntityNotFoundException("Panelist with ID " + panelistId + " not found.");
         }
     }
+
+    public List<Panelist> findByStatusAndRecruitmentRetries(Status status, Integer recruitmentRetries) {
+        return repository.findByStatusAndRecruitmentRetries(status, recruitmentRetries);
+    }
 }
