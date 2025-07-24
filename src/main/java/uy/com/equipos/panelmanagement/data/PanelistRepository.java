@@ -5,6 +5,7 @@ import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import java.util.List;
 import java.util.Optional;
 
 public interface PanelistRepository extends JpaRepository<Panelist, Long>, JpaSpecificationExecutor<Panelist>, PanelistRepositoryCustom {
@@ -17,4 +18,6 @@ public interface PanelistRepository extends JpaRepository<Panelist, Long>, JpaSp
     Optional<Panelist> findByEmail(String email);
 
     boolean existsByEmail(String email);
+
+    List<Panelist> findByStatusAndRecruitmentRetries(Status status, Integer recruitmentRetries);
 }
