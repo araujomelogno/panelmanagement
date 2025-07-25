@@ -32,92 +32,88 @@ import uy.com.equipos.panelmanagement.services.PanelistService;
 @EnableScheduling
 public class RecruitmentConfirmationRemainderSender {
 
-    private static final Logger log = LoggerFactory.getLogger(RecruitmentConfirmationRemainderSender.class);
+	private static final Logger log = LoggerFactory.getLogger(RecruitmentConfirmationRemainderSender.class);
 
 	private final PanelistService panelistService;
-    private final RestTemplate restTemplate;
-    private final ConfigurationItemService configurationItemService;
+	private final RestTemplate restTemplate;
+	private final ConfigurationItemService configurationItemService;
 
-    @Value("${alchemer.api.token}")
+	@Value("${alchemer.api.token}")
 	private String apiToken;
 
 	@Value("${alchemer.api.token.secret}")
 	private String apiTokenSecret;
 
-    private static final String ALCHEMER_API_BASE_URL = "https://api.alchemer.com";
+	private static final String ALCHEMER_API_BASE_URL = "https://api.alchemer.com";
 
-    public RecruitmentConfirmationRemainderSender(PanelistService panelistService, ConfigurationItemService configurationItemService) {
+	public RecruitmentConfirmationRemainderSender(PanelistService panelistService,
+			ConfigurationItemService configurationItemService) {
 		this.panelistService = panelistService;
-        this.configurationItemService = configurationItemService;
+		this.configurationItemService = configurationItemService;
 		this.restTemplate = new RestTemplate();
 	}
 
-    @Scheduled(cron = "0 0 10 * * *")
-    public void sendRecruitmentConfirmationRemainder(){
-        log.info("Iniciando tarea RecruitmentConfirmationRemainderSender");
-        List<Panelist> pendingPanelists = panelistService.findByStatus(Status.PENDIENTE);
+	@Scheduled(cron = "0 0 10 * * *")
+	public void sendRecruitmentConfirmationRemainder() {
+		log.info("Iniciando tarea RecruitmentConfirmationRemainderSender");
+		List<Panelist> pendingPanelists = panelistService.findByStatus(Status.PENDIENTE);
 
-        Optional<ConfigurationItem> campaignLinkItem = configurationItemService.getByName("recruitment.alchemer.campaign.link");
-        if(campaignLinkItem.isEmpty()){
-            log.error("No se encontró el item de configuracion 'recruitment.alchemer.campaign.link'");
-            return;
-        }
-        String campaignLink = campaignLinkItem.get().getValue();
+		Optional<ConfigurationItem> campaignLinkItem = configurationItemService
+				.getByName("recruitment.alchemer.campaign.link");
+		if (campaignLinkItem.isEmpty()) {
+			log.error("No se encontró el item de configuracion 'recruitment.alchemer.campaign.link'");
+			return;
+		}
+		String campaignLink = campaignLinkItem.get().getValue();
 
-        String surveyId = extractSurveyId(campaignLink);
+		String surveyId = extractSurveyId(campaignLink);
 		String campaignId = extractCampaignId(campaignLink);
 
-        if (surveyId == null || campaignId == null) {
-            log.error("No se pudo extraer SurveyID o CampaignID del link {}",
-            campaignLink);
-            return;
-        }
+		if (surveyId == null || campaignId == null) {
+			log.error("No se pudo extraer SurveyID o CampaignID del link {}", campaignLink);
+			return;
+		}
 
-        String emailMessageId = getReminderEmailMessageId(surveyId, campaignId);
-        if (emailMessageId == null) {
-			log.error(
-					"No se pudo obtener EmailMessageID de tipo 'reminder' para SurveyID: {}, CampaignID: {}.",
+		String emailMessageId = getReminderEmailMessageId(surveyId, campaignId);
+		if (emailMessageId == null) {
+			log.error("No se pudo obtener EmailMessageID de tipo 'reminder' para SurveyID: {}, CampaignID: {}.",
 					surveyId, campaignId);
 			return;
 		}
 
-        Optional<ConfigurationItem> recruitmentRetryItem = configurationItemService.getByName("recruitment.retry");
-        if(recruitmentRetryItem.isEmpty()){
-            log.error("No se encontró el item de configuracion 'recruitment.retry'");
-            return;
-        }
-        Integer recruitmentRetry = Integer.parseInt(recruitmentRetryItem.get().getValue());
+		Optional<ConfigurationItem> recruitmentRetryItem = configurationItemService.getByName("recruitment.retry");
+		if (recruitmentRetryItem.isEmpty()) {
+			log.error("No se encontró el item de configuracion 'recruitment.retry'");
+			return;
+		}
+		Integer recruitmentRetry = Integer.parseInt(recruitmentRetryItem.get().getValue());
+		sendReminderEmail(surveyId, campaignId, emailMessageId);
+		for (Panelist panelist : pendingPanelists) {
+			panelist.setLastRecruitmentSent(LocalDate.now());
+			panelist.setRecruitmentRetries(panelist.getRecruitmentRetries() + 1);
+			if (panelist.getRecruitmentRetries() > recruitmentRetry) {
+				panelist.setStatus(Status.INACTIVO);
+				String contactId = getContactId(campaignLink, panelist.getEmail());
+				if (contactId != null) {
+					deleteContact(surveyId, campaignId, contactId);
+				}
+			}
+			panelistService.save(panelist);
+		}
+		log.info("Finalizada tarea RecruitmentConfirmationRemainderSender. Tareas procesadas: {}",
+				pendingPanelists.size());
+	}
 
-        for (Panelist panelist : pendingPanelists) {
-
-            sendReminderEmail(surveyId, campaignId, emailMessageId);
-            panelist.setLastRecruitmentSent(LocalDate.now());
-            panelist.setRecruitmentRetries(panelist.getRecruitmentRetries() + 1);
-
-            if(panelist.getRecruitmentRetries() > recruitmentRetry){
-                panelist.setStatus(Status.INACTIVO);
-            }
-
-            String contactId = getContactId(campaignLink, panelist.getEmail());
-            if(contactId != null){
-                deleteContact(surveyId, campaignId, contactId);
-            }
-            panelistService.save(panelist);
-        }
-        log.info("Finalizada tarea RecruitmentConfirmationRemainderSender. Tareas procesadas: {}", pendingPanelists.size());
-
-    }
-
-    private void deleteContact(String surveyId, String campaignId, String contactId) {
-        UriComponentsBuilder builder = UriComponentsBuilder.fromHttpUrl(ALCHEMER_API_BASE_URL)
+	private void deleteContact(String surveyId, String campaignId, String contactId) {
+		UriComponentsBuilder builder = UriComponentsBuilder.fromHttpUrl(ALCHEMER_API_BASE_URL)
 				.pathSegment("v5", "survey", surveyId, "surveycampaign", campaignId, "surveycontact", contactId)
 				.queryParam("api_token", apiToken).queryParam("api_token_secret", apiTokenSecret)
-                .queryParam("_method", "DELETE");
+				.queryParam("_method", "DELETE");
 
-        String url = builder.toUriString();
+		String url = builder.toUriString();
 		log.info("deleteContact URL: {}", url);
 
-        HttpHeaders headers = new HttpHeaders();
+		HttpHeaders headers = new HttpHeaders();
 		headers.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
 		HttpEntity<String> requestEntity = new HttpEntity<>(null, headers);
 
@@ -127,30 +123,25 @@ public class RecruitmentConfirmationRemainderSender {
 			if (response.getStatusCode() == HttpStatus.OK && response.getBody() != null) {
 				log.debug("deleteContact response body: {}", response.getBody());
 				if (Boolean.TRUE.equals(response.getBody().get("result_ok"))) {
-					log.info(
-							"Contacto: " + contactId + " eliminado exitosamente");
+					log.info("Contacto: " + contactId + " eliminado exitosamente");
 				} else {
-					log.error(
-							"API error (result_ok=false) when deleting contact {} (CampaignID {}). Response: {}",
+					log.error("API error (result_ok=false) when deleting contact {} (CampaignID {}). Response: {}",
 							contactId, campaignId, response.getBody());
 				}
 			} else {
-				log.error(
-						"Server error ({}) when deleting contact {} (CampaignID {}). Body: {}",
+				log.error("Server error ({}) when deleting contact {} (CampaignID {}). Body: {}",
 						response.getStatusCode(), contactId, campaignId, response.getBody());
 			}
 		} catch (HttpClientErrorException e) {
-			log.error(
-					"Error (HttpClientErrorException) deleting contact {} (CampaignID {}): {} - {}",
-					contactId, campaignId, e.getStatusCode(), e.getResponseBodyAsString(), e);
+			log.error("Error (HttpClientErrorException) deleting contact {} (CampaignID {}): {} - {}", contactId,
+					campaignId, e.getStatusCode(), e.getResponseBodyAsString(), e);
 		} catch (org.springframework.web.client.RestClientException e) {
-			log.error(
-					"Error (RestClientException) deleting contact {} (CampaignID {}): {}",
-					contactId, campaignId, e.getMessage(), e);
+			log.error("Error (RestClientException) deleting contact {} (CampaignID {}): {}", contactId, campaignId,
+					e.getMessage(), e);
 		}
 	}
 
-    private String getContactId(String surveyLinkOrSurveyId, String email) {
+	private String getContactId(String surveyLinkOrSurveyId, String email) {
 		String surveyId = extractSurveyId(surveyLinkOrSurveyId);
 		String campaignId = extractCampaignId(surveyLinkOrSurveyId);
 
@@ -168,8 +159,8 @@ public class RecruitmentConfirmationRemainderSender {
 		UriComponentsBuilder builder = UriComponentsBuilder.fromHttpUrl(ALCHEMER_API_BASE_URL)
 				.pathSegment("v5", "survey", surveyId, "surveycampaign", campaignId, "surveycontact")
 				.queryParam("filter[field][0]", "semailaddress").queryParam("filter[operator][0]", "=")
-				.queryParam("filter[value][0]", email)
-				.queryParam("api_token", apiToken).queryParam("api_token_secret", apiTokenSecret);
+				.queryParam("filter[value][0]", email).queryParam("api_token", apiToken)
+				.queryParam("api_token_secret", apiTokenSecret);
 
 		String url = builder.toUriString();
 		log.debug("getContactId URL: {}", url);
@@ -232,12 +223,11 @@ public class RecruitmentConfirmationRemainderSender {
 		return null;
 	}
 
-    private boolean sendReminderEmail(String surveyId, String campaignId, String emailMessageId) {
+	private boolean sendReminderEmail(String surveyId, String campaignId, String emailMessageId) {
 		UriComponentsBuilder builder = UriComponentsBuilder.fromHttpUrl(ALCHEMER_API_BASE_URL)
 				.pathSegment("v5", "survey", surveyId, "surveycampaign", campaignId, "emailmessage", emailMessageId)
 				.queryParam("api_token", apiToken).queryParam("api_token_secret", apiTokenSecret)
-				.queryParam("_method", "POST")
-				.queryParam("send", "true");
+				.queryParam("_method", "POST").queryParam("send", "true");
 
 		String url = builder.toUriString();
 		log.info("sendReminderEmail URL: {}", url);
@@ -279,7 +269,7 @@ public class RecruitmentConfirmationRemainderSender {
 		return false;
 	}
 
-    private String getReminderEmailMessageId(String surveyId, String campaignId) {
+	private String getReminderEmailMessageId(String surveyId, String campaignId) {
 		UriComponentsBuilder builder = UriComponentsBuilder.fromHttpUrl(ALCHEMER_API_BASE_URL)
 				.pathSegment("v5", "survey", surveyId, "surveycampaign", campaignId, "emailmessage")
 				.queryParam("api_token", apiToken).queryParam("api_token_secret", apiTokenSecret);
@@ -329,7 +319,7 @@ public class RecruitmentConfirmationRemainderSender {
 		return null;
 	}
 
-    private String extractCampaignId(String surveyLink) {
+	private String extractCampaignId(String surveyLink) {
 		if (surveyLink == null) {
 			return null;
 		}
