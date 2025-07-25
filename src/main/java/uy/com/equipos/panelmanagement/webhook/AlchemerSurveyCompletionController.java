@@ -14,6 +14,8 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import uy.com.equipos.panelmanagement.data.ConfigurationItem;
+import uy.com.equipos.panelmanagement.data.ConfigurationItemRepository;
 import uy.com.equipos.panelmanagement.data.Panelist;
 import uy.com.equipos.panelmanagement.data.PanelistRepository;
 import uy.com.equipos.panelmanagement.data.Survey;
@@ -36,13 +38,16 @@ public class AlchemerSurveyCompletionController {
 	private final PanelistRepository panelistRepository;
 	private final SurveyPanelistParticipationRepository surveyPanelistParticipationRepository;
 	private final TaskRepository taskRepository;
+	private final ConfigurationItemRepository configurationItemRepository;
 
 	public AlchemerSurveyCompletionController(SurveyRepository surveyRepository, PanelistRepository panelistRepository,
-			SurveyPanelistParticipationRepository surveyPanelistParticipationRepository, TaskRepository taskRepository) {
+			SurveyPanelistParticipationRepository surveyPanelistParticipationRepository, TaskRepository taskRepository,
+			ConfigurationItemRepository configurationItemRepository) {
 		this.surveyRepository = surveyRepository;
 		this.panelistRepository = panelistRepository;
 		this.surveyPanelistParticipationRepository = surveyPanelistParticipationRepository;
 		this.taskRepository = taskRepository;
+		this.configurationItemRepository = configurationItemRepository;
 	}
 
 	@PostMapping("/survey-response")
@@ -56,10 +61,15 @@ public class AlchemerSurveyCompletionController {
         // Extract survey_id and convert to String for alchemerSurveyId
         String alchemerSurveyId = String.valueOf(payload.getData().getSurveyId());
         String email = payload.getData().getContact().getEmail();
-        //ACAAA !!! 
-        // ACA PÖNER SI ES IGUAL A la propiedad de "estudio de reclutamietno" 
-        // si es igual a esa propiedad  hacer un metodo que procese la repsuesta marcadno esa persona comoactiva
-        //ver que pasa con la encuesta cuando esta descalificada 
+
+        Optional<ConfigurationItem> recruitmentCampaignLink = configurationItemRepository.findByName("recruitment.alchemer.campaign.link");
+        if (recruitmentCampaignLink.isPresent()) {
+		String recruitmentSurveyId = extractSurveyId(recruitmentCampaignLink.get().getValue());
+		if (recruitmentSurveyId != null && recruitmentSurveyId.equals(alchemerSurveyId)) {
+			return confirmRecruitment(email);
+		}
+        }
+
         if (email == null || email.trim().isEmpty()) {
             logger.warn("Email is missing in payload for alchemer_survey_id: {}", alchemerSurveyId);
             return ResponseEntity.badRequest().body("Email is missing in contact data.");
@@ -125,4 +135,52 @@ public class AlchemerSurveyCompletionController {
 
         return ResponseEntity.ok("Webhook processed successfully. Participation updated and task created.");
     }
+
+    private ResponseEntity<String> confirmRecruitment(String email) {
+        Optional<Panelist> panelistOpt = panelistRepository.findByEmail(email);
+        if (!panelistOpt.isPresent()) {
+            logger.warn("Panelist not found with email: {}", email);
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Panelist not found for email: " + email);
+        }
+        Panelist panelist = panelistOpt.get();
+        panelist.setStatus(uy.com.equipos.panelmanagement.data.Status.ACTIVO);
+        panelistRepository.save(panelist);
+        logger.info("Panelist {} confirmed and set to ACTIVO", email);
+        return ResponseEntity.ok("Panelist confirmed successfully.");
+    }
+
+	private String extractSurveyId(String surveyLink) {
+		if (surveyLink == null) {
+			return null;
+		}
+
+		// 1. Try the new URL pattern:
+		// https://app.alchemer.com/invite/messages/id/SURVEY_ID/link/CAMPAIGN_ID
+		// Example: "https://app.alchemer.com/invite/messages/id/8367882/link/24099873"
+		// -> "8367882"
+		java.util.regex.Pattern newUrlPattern = java.util.regex.Pattern.compile("/id/(\\d+)/link/(\\d+)");
+		java.util.regex.Matcher newMatcher = newUrlPattern.matcher(surveyLink);
+		if (newMatcher.find()) {
+			return newMatcher.group(1); // SURVEY_ID
+		}
+
+		// 2. Try common older Alchemer URL pattern: e.g., /s3/SURVEY_ID/... or
+		// /survey/SURVEY_ID/...
+		// Example: "https://app.alchemer.com/s3/1234567/My-Survey" -> "1234567"
+		java.util.regex.Pattern oldUrlPattern = java.util.regex.Pattern.compile("/(?:s3|survey)/(\\d+)");
+		java.util.regex.Matcher oldMatcher = oldUrlPattern.matcher(surveyLink);
+		if (oldMatcher.find()) {
+			return oldMatcher.group(1); // SURVEY_ID
+		}
+
+		// 3. Check if the surveyLink itself is a plain numeric ID
+		// Example: "8367882" -> "8367882"
+		if (surveyLink.matches("\\d+")) {
+			return surveyLink;
+		}
+
+		// 4. If no pattern matched and it's not a plain number, we couldn't extract a
+		// survey ID.
+		return null;
+	}
 }
