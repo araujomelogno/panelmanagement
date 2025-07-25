@@ -34,7 +34,7 @@ public class Panelist extends AbstractEntity {
 	private LocalDate lastContacted;
 	private LocalDate lastInterviewCompleted;
 	private String source;
-	private Integer recruitmentRetries;
+	private Integer recruitmentRetries = 0;
 	private LocalDate lastRecruitmentSent;
 
 	// Standard getters and setters for the above fields...
