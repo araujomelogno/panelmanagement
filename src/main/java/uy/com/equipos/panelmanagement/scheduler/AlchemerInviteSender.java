@@ -28,6 +28,7 @@ import uy.com.equipos.panelmanagement.data.Task;
 import uy.com.equipos.panelmanagement.data.TaskStatus;
 import uy.com.equipos.panelmanagement.data.Panelist;
 import uy.com.equipos.panelmanagement.data.SurveyPanelistParticipation;
+import uy.com.equipos.panelmanagement.services.AlchemerService;
 import uy.com.equipos.panelmanagement.services.TaskService;
 import uy.com.equipos.panelmanagement.services.PanelistService;
 import uy.com.equipos.panelmanagement.services.SurveyPanelistParticipationService;
@@ -41,6 +42,7 @@ public class AlchemerInviteSender {
 	private final TaskService messageTaskService;
 	private final SurveyPanelistParticipationService surveyPanelistParticipationService;
 	private final PanelistService panelistService;
+	private final AlchemerService alchemerService;
 	private final RestTemplate restTemplate;
 
 	@Value("${alchemer.api.token}")
@@ -52,10 +54,11 @@ public class AlchemerInviteSender {
 	private static final String ALCHEMER_API_BASE_URL = "https://api.alchemer.com";
 
 	public AlchemerInviteSender(TaskService messageTaskService,
-			SurveyPanelistParticipationService surveyPanelistParticipationService, PanelistService panelistService) {
+			SurveyPanelistParticipationService surveyPanelistParticipationService, PanelistService panelistService, AlchemerService alchemerService) {
 		this.messageTaskService = messageTaskService;
 		this.surveyPanelistParticipationService = surveyPanelistParticipationService;
 		this.panelistService = panelistService;
+		this.alchemerService = alchemerService;
 		this.restTemplate = new RestTemplate();
 	}
 
@@ -149,8 +152,8 @@ public class AlchemerInviteSender {
 	}
 
 	private String getContactId(String surveyLinkOrSurveyId, String email) {
-		String surveyId = extractSurveyId(surveyLinkOrSurveyId);
-		String campaignId = extractCampaignId(surveyLinkOrSurveyId);
+		String surveyId = alchemerService.extractSurveyId(surveyLinkOrSurveyId);
+		String campaignId = alchemerService.extractCampaignId(surveyLinkOrSurveyId);
 
 		if (surveyId == null) {
 			log.error("getContactId: Could not extract Survey ID from input: {}", surveyLinkOrSurveyId);
@@ -236,8 +239,8 @@ public class AlchemerInviteSender {
 	}
 
 	private String addContactToCampaign(String surveyLinkOrSurveyId, String email, String firstName, String lastName) {
-		String surveyId = extractSurveyId(surveyLinkOrSurveyId);
-		String campaignId = extractCampaignId(surveyLinkOrSurveyId);
+		String surveyId = alchemerService.extractSurveyId(surveyLinkOrSurveyId);
+		String campaignId = alchemerService.extractCampaignId(surveyLinkOrSurveyId);
 
 		if (surveyId == null) {
 			log.error("addContactToCampaign: Could not extract Survey ID from input: {}", surveyLinkOrSurveyId);
@@ -353,8 +356,8 @@ public class AlchemerInviteSender {
 	private boolean sendInvitation(String surveyLinkOrSurveyId, String contactId) { // contactId is no longer directly
 																					// used in the API call here but
 																					// good for logging
-		String surveyId = extractSurveyId(surveyLinkOrSurveyId);
-		String campaignId = extractCampaignId(surveyLinkOrSurveyId);
+		String surveyId = alchemerService.extractSurveyId(surveyLinkOrSurveyId);
+		String campaignId = alchemerService.extractCampaignId(surveyLinkOrSurveyId);
 
 		if (surveyId == null) {
 			log.error("sendInvitation: Could not extract Survey ID from input: {}", surveyLinkOrSurveyId);
@@ -434,78 +437,4 @@ public class AlchemerInviteSender {
 		return false;
 	}
 
-	private String extractCampaignId(String surveyLink) {
-		if (surveyLink == null) {
-			return null;
-		}
-
-		// Pattern for the new URL format:
-		// https://app.alchemer.com/invite/messages/id/SURVEY_ID/link/CAMPAIGN_ID
-		// We are interested in the CAMPAIGN_ID, which is the last numeric part.
-		// Example: "https://app.alchemer.com/invite/messages/id/8367882/link/24099873"
-		// -> "24099873"
-		Pattern newUrlPattern = Pattern.compile("/id/(\\d+)/link/(\\d+)$");
-		Matcher matcher = newUrlPattern.matcher(surveyLink);
-
-		if (matcher.find()) {
-			// Group 2 is the CAMPAIGN_ID
-			return matcher.group(2);
-		}
-
-		// Fallback to existing logic for other URL formats or direct IDs
-		if (surveyLink.contains("/")) {
-			String[] parts = surveyLink.split("/");
-			for (int i = parts.length - 1; i >= 0; i--) {
-				// Check if the part is purely numeric and not empty
-				if (!parts[i].isEmpty() && parts[i].matches("\\d+")) {
-					return parts[i];
-				}
-			}
-		}
-		// If not a recognized URL pattern or no numeric part found by fallback,
-		// and it's not null and doesn't contain '/', assume it's the ID directly.
-		// Also, if it contained '/' but no numeric part was extracted, it might be a
-		// malformed URL
-		// or a direct ID with an accidental slash. If it's numeric, treat as ID.
-		if (surveyLink.matches("\\d+")) {
-			return surveyLink;
-		}
-		// If no ID could be parsed, return null.
-		return null;
-	}
-
-	private String extractSurveyId(String surveyLink) {
-		if (surveyLink == null) {
-			return null;
-		}
-
-		// 1. Try the new URL pattern:
-		// https://app.alchemer.com/invite/messages/id/SURVEY_ID/link/CAMPAIGN_ID
-		// Example: "https://app.alchemer.com/invite/messages/id/8367882/link/24099873"
-		// -> "8367882"
-		Pattern newUrlPattern = Pattern.compile("/id/(\\d+)/link/(\\d+)");
-		Matcher newMatcher = newUrlPattern.matcher(surveyLink);
-		if (newMatcher.find()) {
-			return newMatcher.group(1); // SURVEY_ID
-		}
-
-		// 2. Try common older Alchemer URL pattern: e.g., /s3/SURVEY_ID/... or
-		// /survey/SURVEY_ID/...
-		// Example: "https://app.alchemer.com/s3/1234567/My-Survey" -> "1234567"
-		Pattern oldUrlPattern = Pattern.compile("/(?:s3|survey)/(\\d+)");
-		Matcher oldMatcher = oldUrlPattern.matcher(surveyLink);
-		if (oldMatcher.find()) {
-			return oldMatcher.group(1); // SURVEY_ID
-		}
-
-		// 3. Check if the surveyLink itself is a plain numeric ID
-		// Example: "8367882" -> "8367882"
-		if (surveyLink.matches("\\d+")) {
-			return surveyLink;
-		}
-
-		// 4. If no pattern matched and it's not a plain number, we couldn't extract a
-		// survey ID.
-		return null;
-	}
 }

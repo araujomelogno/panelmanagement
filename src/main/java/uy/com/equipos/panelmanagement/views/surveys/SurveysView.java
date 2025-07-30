@@ -58,8 +58,11 @@ import uy.com.equipos.panelmanagement.data.Status;
 import uy.com.equipos.panelmanagement.services.PanelService;
 import uy.com.equipos.panelmanagement.services.PanelistService;
 import uy.com.equipos.panelmanagement.services.SurveyPanelistParticipationService; // Nueva importación
+import uy.com.equipos.panelmanagement.services.AlchemerService;
 import uy.com.equipos.panelmanagement.services.SurveyPropertyMatchingService;
 import uy.com.equipos.panelmanagement.services.SurveyService;
+import uy.com.equipos.panelmanagement.services.dtos.AlchemerContactDto;
+import uy.com.equipos.panelmanagement.views.dialogs.AlchemerSubmissionsDialog;
 import uy.com.equipos.panelmanagement.views.dialogs.VincularPropiedadesDialog;
 
 @PageTitle("Encuestas")
@@ -95,6 +98,7 @@ public class SurveysView extends Div implements BeforeEnterObserver {
 	private Button addParticipantsButton;
 	private Button sendSurveysButton; // New button for sending surveys
 	private Button sendReminderButton; // New button for sending reminders
+	private Button viewAlchemerSubmissionsButton;
 
 	private final BeanValidationBinder<Survey> binder;
 
@@ -107,11 +111,12 @@ public class SurveysView extends Div implements BeforeEnterObserver {
 	private final TaskService messageTaskService; // Service for MessageTask entities
 	private final PanelistPropertyService panelistPropertyService;
 	private final SurveyPropertyMatchingService surveyPropertyMatchingService;
+	private final AlchemerService alchemerService;
 
 	public SurveysView(SurveyService surveyService, SurveyPanelistParticipationService participationService,
 			PanelService panelService, PanelistService panelistService, TaskService messageTaskService,
 			PanelistPropertyService panelistPropertyService,
-			SurveyPropertyMatchingService surveyPropertyMatchingService) {
+			SurveyPropertyMatchingService surveyPropertyMatchingService, AlchemerService alchemerService) {
 		this.surveyService = surveyService;
 		this.participationService = participationService; // Inyectar nuevo servicio
 		this.panelService = panelService; // Inyectar PanelService
@@ -119,6 +124,7 @@ public class SurveysView extends Div implements BeforeEnterObserver {
 		this.messageTaskService = messageTaskService; // Inyectar MessageTaskService
 		this.panelistPropertyService = panelistPropertyService;
 		this.surveyPropertyMatchingService = surveyPropertyMatchingService;
+		this.alchemerService = alchemerService;
 		addClassNames("surveys-view");
 
 		// Initialize deleteButton EARLIER
@@ -143,6 +149,9 @@ public class SurveysView extends Div implements BeforeEnterObserver {
 
 		sendReminderButton = new Button("Enviar recordatorio");
 		sendReminderButton.addClickListener(e -> sendReminderAction());
+
+		viewAlchemerSubmissionsButton = new Button("Ver envíos Alchemer");
+		viewAlchemerSubmissionsButton.addClickListener(e -> openAlchemerSubmissionsDialog());
 
 		// Configurar columnas del Grid PRIMERO
 		grid.addColumn(Survey::getName).setHeader("Nombre").setKey("name").setAutoWidth(true).setSortable(true);
@@ -333,7 +342,7 @@ public class SurveysView extends Div implements BeforeEnterObserver {
 		tool.setItems(Tool.values());
 		tool.setItemLabelGenerator(Tool::name);
 		formLayout.add(name, initDate, link, tool, viewParticipantsButton, sortearPanelistasButton,
-				 addParticipantsButton, vincularPropiedadesButton, sendSurveysButton, sendReminderButton);
+				 addParticipantsButton, vincularPropiedadesButton, sendSurveysButton, sendReminderButton, viewAlchemerSubmissionsButton);
 
 		editorDiv.add(formLayout);
 		createButtonLayout(editorLayoutDiv);
@@ -393,6 +402,9 @@ public class SurveysView extends Div implements BeforeEnterObserver {
 		if (sendReminderButton != null) {
 			sendReminderButton.setEnabled(value != null && value.getId() != null);
 		}
+		if (viewAlchemerSubmissionsButton != null) {
+			viewAlchemerSubmissionsButton.setEnabled(value != null && value.getId() != null && value.getAlchemerSurveyId() != null && !value.getAlchemerSurveyId().isBlank());
+		}
 	}
 
 	private void clearForm() {
@@ -420,6 +432,9 @@ public class SurveysView extends Div implements BeforeEnterObserver {
 		}
 		if (sendReminderButton != null) {
 			sendReminderButton.setEnabled(false);
+		}
+		if (viewAlchemerSubmissionsButton != null) {
+			viewAlchemerSubmissionsButton.setEnabled(false);
 		}
 	}
 
@@ -888,6 +903,20 @@ public class SurveysView extends Div implements BeforeEnterObserver {
 		}
 		VincularPropiedadesDialog dialog = new VincularPropiedadesDialog(this.survey, panelistPropertyService,
 				surveyPropertyMatchingService);
+		dialog.open();
+	}
+
+	private void openAlchemerSubmissionsDialog() {
+		if (this.survey == null || this.survey.getAlchemerSurveyId() == null || this.survey.getAlchemerSurveyId().isBlank()) {
+			Notification.show("La encuesta no tiene un ID de Alchemer asociado o no se ha guardado.", 3000, Notification.Position.MIDDLE);
+			return;
+		}
+		List<AlchemerContactDto> contacts = alchemerService.getSurveyContacts(this.survey.getAlchemerSurveyId());
+		if (contacts.isEmpty()) {
+			Notification.show("No se encontraron envíos en Alchemer para esta encuesta.", 3000, Notification.Position.MIDDLE);
+			return;
+		}
+		AlchemerSubmissionsDialog dialog = new AlchemerSubmissionsDialog(contacts);
 		dialog.open();
 	}
 }
