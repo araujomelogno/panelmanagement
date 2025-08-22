@@ -911,7 +911,7 @@ public class SurveysView extends Div implements BeforeEnterObserver {
 			Notification.show("La encuesta no tiene un ID de Alchemer asociado o no se ha guardado.", 3000, Notification.Position.MIDDLE);
 			return;
 		}
-		List<AlchemerContactDto> contacts = alchemerService.getSurveyContacts(this.survey.getAlchemerSurveyId());
+		List<AlchemerContactDto> contacts = alchemerService.getSurveyContacts(this.survey.getLink());
 		if (contacts.isEmpty()) {
 			Notification.show("No se encontraron envíos en Alchemer para esta encuesta.", 3000, Notification.Position.MIDDLE);
 			return;

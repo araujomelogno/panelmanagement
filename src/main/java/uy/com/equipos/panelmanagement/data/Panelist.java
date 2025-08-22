@@ -30,10 +30,11 @@ public class Panelist extends AbstractEntity {
 	private String lastName;
 	@Email
 	private String email;
-	private String phone; 
+	private String phone;
 	private LocalDate lastContacted;
 	private LocalDate lastInterviewCompleted;
 	private String source;
+	private String originalSourceId;
 	private Integer recruitmentRetries = 0;
 	private LocalDate lastRecruitmentSent;
 
@@ -159,19 +160,17 @@ public class Panelist extends AbstractEntity {
 		}
 		return this.participations.stream().map(SurveyPanelistParticipation::getSurvey).collect(Collectors.toSet());
 	}
- 
-	
-	
-    @OneToMany(mappedBy = "panelist")
-    private Set<Task> tasks = new HashSet<>();
 
-    public Set<Task> getTasks() {
-        return tasks;
-    }
+	@OneToMany(mappedBy = "panelist")
+	private Set<Task> tasks = new HashSet<>();
 
-    public void setTasks(Set<Task> tasks) {
-        this.tasks = tasks;
-    }
+	public Set<Task> getTasks() {
+		return tasks;
+	}
+
+	public void setTasks(Set<Task> tasks) {
+		this.tasks = tasks;
+	}
 
 	public Integer getRecruitmentRetries() {
 		return recruitmentRetries;
@@ -188,4 +187,13 @@ public class Panelist extends AbstractEntity {
 	public void setLastRecruitmentSent(LocalDate lastRecruitmentSent) {
 		this.lastRecruitmentSent = lastRecruitmentSent;
 	}
+
+	public String getOriginalSourceId() {
+		return originalSourceId;
+	}
+
+	public void setOriginalSourceId(String originalSourceId) {
+		this.originalSourceId = originalSourceId;
+	}
+	
 }

@@ -1,49 +1,65 @@
 package uy.com.equipos.panelmanagement.security;
 
-import com.vaadin.flow.spring.security.VaadinWebSecurity;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.http.HttpMethod; // Asegúrate de importar esto
+import org.springframework.core.annotation.Order;
+import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
+import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
+import org.springframework.security.web.util.matcher.OrRequestMatcher;
+import org.springframework.security.web.util.matcher.RegexRequestMatcher;
+import org.springframework.security.web.util.matcher.RequestMatcher;
+
+import com.vaadin.flow.spring.security.VaadinWebSecurity;
+
+import jakarta.servlet.http.HttpServletResponse;
 import uy.com.equipos.panelmanagement.views.login.LoginView;
 
 @EnableWebSecurity
 @Configuration
 public class SecurityConfiguration extends VaadinWebSecurity {
 
+    // Recomendado en prod (usa {bcrypt}, {noop}, etc.)
     @Bean
     public PasswordEncoder passwordEncoder() {
-        return new BCryptPasswordEncoder();
+    	return new BCryptPasswordEncoder();
+    }
+    @Bean
+    @Order(1)
+    public SecurityFilterChain webhookChain(HttpSecurity http) throws Exception {
+      // Matchea /api/webhook/** con o SIN context path (/utiles, /lo-que-sea)
+      RequestMatcher r1 = new RegexRequestMatcher(".*/api/webhook/.*", null);
+      RequestMatcher r2 = new AntPathRequestMatcher("/api/webhook/**");         // por si acaso
+      RequestMatcher r3 = new AntPathRequestMatcher("/paneles/api/webhook/**");  // por si acaso
+      
+      
+      
+      RequestMatcher matcher = new OrRequestMatcher(r1, r2, r3);
+
+      http
+        .securityMatcher(matcher)
+        .csrf(csrf -> csrf.disable())
+        .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+        .requestCache(rc -> rc.disable())
+        .formLogin(form -> form.disable())
+        .logout(lo -> lo.disable())
+        .exceptionHandling(eh -> eh.authenticationEntryPoint(
+            (req, res, ex) -> res.sendError(HttpServletResponse.SC_FORBIDDEN)))
+        .authorizeHttpRequests(auth -> auth.anyRequest().permitAll())
+        .httpBasic(Customizer.withDefaults());
+
+      return http.build();
     }
 
     @Override
     protected void configure(HttpSecurity http) throws Exception {
-
-        http.authorizeHttpRequests(
-                authorize -> authorize.requestMatchers(new AntPathRequestMatcher("/images/*.png")).permitAll());
-
-        // Icons from the line-awesome addon
-        http.authorizeHttpRequests(authorize -> authorize
-                .requestMatchers(new AntPathRequestMatcher("/line-awesome/**/*.svg")).permitAll());
-
-        // Permitir acceso anónimo a tu endpoint de webhook para solicitudes POST
-        // y deshabilitar CSRF para esta ruta específica.
-        http.csrf(csrf -> csrf.ignoringRequestMatchers(new AntPathRequestMatcher("/api/webhook/**")));
-        
-        http.authorizeHttpRequests(authorize -> authorize
-                .requestMatchers(new AntPathRequestMatcher("/api/webhook/survey-response", HttpMethod.POST.toString())).permitAll());
-        
-        
-
-        http.authorizeHttpRequests(authorize -> authorize
-                .requestMatchers(new AntPathRequestMatcher("/api/webhook/landing-response", HttpMethod.POST.toString())).permitAll());
-        
-        super.configure(http); // Llamada a la configuración base de VaadinWebSecurity
-        setLoginView(http, LoginView.class); // Configura tu vista de login
+      // (si querés, dejá estáticos en permitAll)
+      super.configure(http);
+      setLoginView(http, LoginView.class);
     }
-
-}
+  }
