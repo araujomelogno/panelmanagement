@@ -1,8 +1,16 @@
-package uy.com.equipos.panelmanagement.webhook.dto;
+package uy.com.equipos.panelmanagement.data;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import jakarta.persistence.Entity;
+import jakarta.persistence.OneToOne;
+import jakarta.persistence.Table;
 
-public class AlchemerSurveyCompletionContactDto {
+@Entity
+@Table(name = "alchemer_contact")
+public class AlchemerContact extends AbstractEntity {
+
+    @OneToOne(mappedBy = "contact")
+    private AlchemerSurveyResponseData surveyResponseData;
 
     @JsonProperty("Email")
     private String email;
@@ -47,6 +55,7 @@ public class AlchemerSurveyCompletionContactDto {
     private String team;
 
     @JsonProperty("Group")
+    @jakarta.persistence.Column(name = "contact_group")
     private String group;
 
     @JsonProperty("Role")
@@ -102,9 +111,6 @@ public class AlchemerSurveyCompletionContactDto {
 
     @JsonProperty("Invite Custom 10")
     private String inviteCustom10;
-
-
-    // Getters and Setters for all fields
 
     public String getEmail() {
         return email;
@@ -368,5 +374,13 @@ public class AlchemerSurveyCompletionContactDto {
 
     public void setInviteCustom10(String inviteCustom10) {
         this.inviteCustom10 = inviteCustom10;
+    }
+
+    public AlchemerSurveyResponseData getSurveyResponseData() {
+        return surveyResponseData;
+    }
+
+    public void setSurveyResponseData(AlchemerSurveyResponseData surveyResponseData) {
+        this.surveyResponseData = surveyResponseData;
     }
 }

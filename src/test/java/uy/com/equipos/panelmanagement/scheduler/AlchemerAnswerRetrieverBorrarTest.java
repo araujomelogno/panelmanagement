@@ -20,7 +20,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.client.RestTemplate;
 
-import uy.com.equipos.panelmanagement.data.Answer;
+import uy.com.equipos.panelmanagement.data.AlchemerAnswer;
 import uy.com.equipos.panelmanagement.data.JobType;
 import uy.com.equipos.panelmanagement.data.Panelist;
 import uy.com.equipos.panelmanagement.data.PanelistProperty;
@@ -37,7 +37,7 @@ import uy.com.equipos.panelmanagement.services.SurveyPropertyMatchingService;
 import uy.com.equipos.panelmanagement.services.TaskService;
 
 @ExtendWith(MockitoExtension.class)
-public class AlchemerAnswerRetrieverTest {
+public class AlchemerAnswerRetrieverBorrarTest {
 
     @Mock
     private TaskService taskService;
@@ -52,11 +52,11 @@ public class AlchemerAnswerRetrieverTest {
     @Mock
     private RestTemplate restTemplate;
 
-    private AlchemerAnswerRetriever alchemerAnswerRetriever;
+    private AlchemerAnswerRetrieverBorrar alchemerAnswerRetriever;
 
     @BeforeEach
     void setUp() {
-        alchemerAnswerRetriever = new AlchemerAnswerRetriever(taskService, surveyPanelistParticipationService, answerService, surveyPropertyMatchingService, panelistPropertyValueService);
+        alchemerAnswerRetriever = new AlchemerAnswerRetrieverBorrar(taskService, surveyPanelistParticipationService, answerService, surveyPropertyMatchingService, panelistPropertyValueService);
         org.springframework.test.util.ReflectionTestUtils.setField(alchemerAnswerRetriever, "restTemplate", restTemplate);
     }
 
@@ -119,7 +119,7 @@ public class AlchemerAnswerRetrieverTest {
         verify(taskService).save(task);
         assertEquals(TaskStatus.DONE, task.getStatus());
 
-        verify(answerService).save(any(Answer.class));
+        verify(answerService).save(any(AlchemerAnswer.class));
 
         verify(panelistPropertyValueService).save(any(PanelistPropertyValue.class));
     }

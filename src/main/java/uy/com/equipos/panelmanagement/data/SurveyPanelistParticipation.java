@@ -82,7 +82,7 @@ public class SurveyPanelistParticipation extends AbstractEntity {
     private Set<Task> messageTasks = new HashSet<>();
 
     @OneToMany(mappedBy = "surveyPanelistParticipation", cascade = CascadeType.ALL, orphanRemoval = true)
-    private Set<Answer> answers = new HashSet<>();
+    private Set<AlchemerAnswer> answers = new HashSet<>();
 
     public Set<Task> getMessageTasks() {
         return messageTasks;
@@ -92,11 +92,11 @@ public class SurveyPanelistParticipation extends AbstractEntity {
         this.messageTasks = messageTasks;
     }
 
-    public Set<Answer> getAnswers() {
+    public Set<AlchemerAnswer> getAnswers() {
         return answers;
     }
 
-    public void setAnswers(Set<Answer> answers) {
+    public void setAnswers(Set<AlchemerAnswer> answers) {
         this.answers = answers;
     }
 

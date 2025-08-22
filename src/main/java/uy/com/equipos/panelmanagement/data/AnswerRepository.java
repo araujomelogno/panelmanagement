@@ -8,10 +8,10 @@ import uy.com.equipos.panelmanagement.data.SurveyPanelistParticipation; // Added
 import java.util.List;
 import java.util.Optional; // Added import
 
-public interface AnswerRepository extends JpaRepository<Answer, Long>, JpaSpecificationExecutor<Answer> {
+public interface AnswerRepository extends JpaRepository<AlchemerAnswer, Long>, JpaSpecificationExecutor<AlchemerAnswer> {
 
-    Optional<Answer> findBySurveyPanelistParticipationAndQuestionCode(SurveyPanelistParticipation surveyPanelistParticipation, String questionCode);
+    Optional<AlchemerAnswer> findBySurveyPanelistParticipationAndQuestionCode(SurveyPanelistParticipation surveyPanelistParticipation, String questionCode);
 
     @EntityGraph(attributePaths = { "surveyPanelistParticipation.panelist", "surveyPanelistParticipation.survey" })
-    List<Answer> findAll();
+    List<AlchemerAnswer> findAll();
 }

@@ -1,7 +1,8 @@
-package uy.com.equipos.panelmanagement.webhook.dto;
+package uy.com.equipos.panelmanagement.data;
+
+import java.util.List;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-import java.util.List;
 
 public class FormResponsePayload {
 

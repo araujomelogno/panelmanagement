@@ -1,13 +1,14 @@
 package uy.com.equipos.panelmanagement.scheduler;
 
-import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
@@ -15,9 +16,6 @@ import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.util.UriComponentsBuilder;
-
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
 
 import uy.com.equipos.panelmanagement.data.AlchemerAnswer;
 import uy.com.equipos.panelmanagement.data.JobType;
@@ -35,9 +33,9 @@ import uy.com.equipos.panelmanagement.services.TaskService;
 
 @Component
 @EnableScheduling
-public class AlchemerAnswerRetriever {
+public class AlchemerAnswerRetrieverBorrar {
 
-	private static final Logger log = LoggerFactory.getLogger(AlchemerAnswerRetriever.class);
+	private static final Logger log = LoggerFactory.getLogger(AlchemerAnswerRetrieverBorrar.class);
 
 	private final TaskService taskService;
 	private final SurveyPanelistParticipationService surveyPanelistParticipationService;
@@ -54,7 +52,7 @@ public class AlchemerAnswerRetriever {
 
 	private static final String ALCHEMER_API_BASE_URL = "https://api.alchemer.com/v5";
 
-	public AlchemerAnswerRetriever(TaskService taskService,
+	public AlchemerAnswerRetrieverBorrar(TaskService taskService,
 			SurveyPanelistParticipationService surveyPanelistParticipationService, AnswerService answerService,
 			SurveyPropertyMatchingService surveyPropertyMatchingService,
 			PanelistPropertyValueService panelistPropertyValueService) {
@@ -66,7 +64,7 @@ public class AlchemerAnswerRetriever {
 		this.restTemplate = new RestTemplate();
 	}
 
-	@Scheduled(cron = "0 */5 * * * *") // Cada 5 minutos
+	// @Scheduled(cron = "0 */5 * * * *") // Cada 5 minutos
 	public void retrieveAnswers() {
 		log.info("Iniciando tarea AlchemerAnswerRetriever");
 		List<Task> pendingTasks = taskService.findAllByJobTypeAndStatus(JobType.ALCHEMER_ANSWER_RETRIEVAL,
@@ -111,66 +109,122 @@ public class AlchemerAnswerRetriever {
 
 				String surveyResponseUrl = surveyResponseUrlBuilder.toUriString();
 				log.info("Obteniendo respuesta de Alchemer: {}", surveyResponseUrl);
-				String response = restTemplate.getForObject(surveyResponseUrl, String.class);
 
-				ObjectMapper mapper = new ObjectMapper();
-				JsonNode root = mapper.readTree(response);
-				JsonNode surveyData = root.path("data").path("survey_data");
+				ResponseEntity<Map> responseEntity = restTemplate.getForEntity(surveyResponseUrl, Map.class);
 
-				Iterator<Map.Entry<String, JsonNode>> fields = surveyData.fields();
-				while (fields.hasNext()) {
-					Map.Entry<String, JsonNode> entry = fields.next();
-					JsonNode answerNode = entry.getValue();
+				if (responseEntity.getStatusCode() == HttpStatus.OK && responseEntity.getBody() != null) {
+					Map<String, Object> surveyResponse = responseEntity.getBody();
+					log.debug("Respuesta JSON de Alchemer: {}", surveyResponse);
 
-					String type = answerNode.path("type").asText();
-					List<AlchemerAnswer> result = new ArrayList<AlchemerAnswer>();
-					if (answerNode.path("shown").asBoolean()) {
-						switch (type) {
-						case "RADIO":
-						case "MENU":
-						case "TEXTBOX":
-							AlchemerAnswer answer = new AlchemerAnswer();
-							answer.setQuestion(answerNode.path("question").asText());
-							answer.setAnswer(answerNode.path("answer").asText());
-							log.info("Nueva entidad Answer guardada para questionCode: {}, participationId: {}",
-									answer.getQuestion(), participation.getId());
-							result.add(answer);
-							break;
-						case "parent":
-							result = processParentAnswer(answerNode, task);
-							break;
-						default:
-							log.warn("Unknown answer type: {}", type);
-							break;
-						}
+					if (Boolean.TRUE.equals(surveyResponse.get("result_ok"))) {
+						Map<String, Object> data = (Map<String, Object>) surveyResponse.get("data");
+						if (data != null && data.containsKey("survey_data")) {
+							Map<String, Object> surveyData = (Map<String, Object>) data.get("survey_data");
+							if (surveyData != null) {
+								for (Map.Entry<String, Object> entry : surveyData.entrySet()) {
+									Map<String, Object> questionDetails = (Map<String, Object>) entry.getValue();
+									if (questionDetails != null) {
+										String questionText = String.valueOf(questionDetails.get("question"));
+										String answerValue = String.valueOf(questionDetails.get("answer"));
+										// El ID de la pregunta en este contexto es la clave de la entrada en surveyData
+										String questionIdStr = entry.getKey();
+										// El varname no está directamente en este nivel, se necesitaría si se quiere
+										// mantener questionCode
+										// Por ahora, podemos usar el ID como questionCode o dejarlo vacío si no es
+										// crucial.
+										// Para este refactor, asumiremos que questionCode puede ser el ID de la
+										// pregunta si varname no está disponible.
+										String questionCode = questionIdStr; // O buscar una alternativa si es
+																				// necesario.
 
-						for (AlchemerAnswer answer : result) {
-							answer.setSurveyPanelistParticipation(participation);
-							answerService.save(answer);
-							log.info("Nueva entidad Answer guardada para questionCode: {}, participationId: {}",
-									answer.getQuestion(), participation.getId());
-							List<SurveyPropertyMatching> propertyMatchings = surveyPropertyMatchingService
-									.findBySurvey(survey);
-							for (SurveyPropertyMatching spm : propertyMatchings) {
-								if (spm.getQuestionLabel().equals(answer.getQuestion())) {
-									PanelistPropertyValue ppv = panelistPropertyValueService
-											.findByPanelistAndPanelistProperty(participation.getPanelist(),
-													spm.getProperty())
-											.orElseGet(() -> {
-												PanelistPropertyValue newPpv = new PanelistPropertyValue();
-												newPpv.setPanelist(participation.getPanelist());
-												newPpv.setPanelistProperty(spm.getProperty());
-												return newPpv;
-											});
-									ppv.setValue(answer.getAnswer());
-									ppv.setUpdated(new java.util.Date());
-									panelistPropertyValueService.save(ppv);
+										if (questionText != null && !questionText.isEmpty() && answerValue != null) { // Allow
+																														// empty
+																														// answerValue
+																														// for
+																														// updates
+											log.info("Procesando pregunta: ID={}, Pregunta='{}', Respuesta='{}'",
+													questionIdStr, questionText, answerValue);
+
+											// Check if an answer already exists
+											Optional<AlchemerAnswer> existingAnswerOpt = answerService
+													.findBySurveyPanelistParticipationAndQuestionCode(participation,
+															questionCode);
+
+											AlchemerAnswer answer;
+											if (existingAnswerOpt.isPresent()) {
+												// Update existing answer
+												answer = existingAnswerOpt.get();
+												if (!answer.getAnswer().equals(answerValue)) {
+													answer.setAnswer(answerValue);
+													answerService.save(answer);
+													log.info(
+															"Entidad Answer actualizada para questionCode: {}, participationId: {}",
+															questionCode, participation.getId());
+												} else {
+													log.info(
+															"Entidad Answer sin cambios para questionCode: {}, participationId: {}",
+															questionCode, participation.getId());
+												}
+											} else {
+												// Create new answer
+												answer = new AlchemerAnswer();
+												answer.setQuestion(questionText);
+
+												answer.setAnswer(answerValue);
+												answer.setSurveyPanelistParticipation(participation);
+												answerService.save(answer);
+												log.info(
+														"Nueva entidad Answer guardada para questionCode: {}, participationId: {}",
+														questionCode, participation.getId());
+											}
+											List<SurveyPropertyMatching> propertyMatchings = surveyPropertyMatchingService
+													.findBySurvey(survey);
+											for (SurveyPropertyMatching spm : propertyMatchings) {
+												PanelistPropertyValue ppv = panelistPropertyValueService
+														.findByPanelistAndPanelistProperty(participation.getPanelist(),
+																spm.getProperty())
+														.orElseGet(() -> {
+															PanelistPropertyValue newPpv = new PanelistPropertyValue();
+															newPpv.setPanelist(participation.getPanelist());
+															newPpv.setPanelistProperty(spm.getProperty());
+															return newPpv;
+														});
+												ppv.setValue(answer.getAnswer());
+												ppv.setUpdated(new java.util.Date());
+												panelistPropertyValueService.save(ppv);
+											}
+										} else {
+											log.warn(
+													"No se pudo obtener texto de pregunta o el valor de la respuesta es nulo (pero puede ser vacío) para la pregunta ID: {} en Survey ID: {}",
+													questionIdStr, alchemerSurveyId);
+										}
+									} else {
+										log.warn(
+												"Detalles de pregunta nulos para una entrada en survey_data. Survey ID: {}",
+												alchemerSurveyId);
+									}
 								}
-
+							} else {
+								log.warn(
+										"El objeto 'survey_data' es nulo dentro de 'data' en la respuesta de Alchemer para Task ID: {}",
+										task.getId());
 							}
+						} else {
+							log.warn(
+									"El objeto 'data' es nulo o no contiene 'survey_data' en la respuesta de Alchemer para Task ID: {}",
+									task.getId());
 						}
-
+					} else {
+						log.error("La API de Alchemer devolvió 'result_ok: false' para Task ID: {}. Respuesta: {}",
+								task.getId(), surveyResponse);
+						task.setStatus(TaskStatus.ERROR);
+						taskService.save(task);
 					}
+				} else {
+					log.error("Error al obtener la respuesta de Alchemer para Task ID: {}. Código de estado: {}",
+							task.getId(), responseEntity.getStatusCode());
+					task.setStatus(TaskStatus.ERROR);
+					taskService.save(task);
 				}
 				// Si todo el procesamiento de respuestas para esta tarea fue exitoso (sin
 				// entrar en los catch anteriores que setean ERROR)
@@ -201,52 +255,4 @@ public class AlchemerAnswerRetriever {
 		log.info("Finalizada tarea AlchemerAnswerRetriever. Tareas procesadas: {}", pendingTasks.size());
 	}
 
-	private List<AlchemerAnswer> processParentAnswer(JsonNode answerNode, Task task) {
-		List<AlchemerAnswer> result = new ArrayList<AlchemerAnswer>();
-		if (answerNode.has("options")) {
-			Iterator<Map.Entry<String, JsonNode>> options = answerNode.path("options").fields();
-			while (options.hasNext()) {
-				Map.Entry<String, JsonNode> optionEntry = options.next();
-				JsonNode optionNode = optionEntry.getValue();
-				if (optionNode.path("shown").asBoolean(true)) { // Assume shown if not present
-					AlchemerAnswer alchemerAnswer = new AlchemerAnswer();
-					alchemerAnswer.setId(optionNode.path("id").asLong());
-					alchemerAnswer.setType(optionNode.path("type").asText("parent_option"));
-					alchemerAnswer.setQuestion(answerNode.path("question").asText());
-					alchemerAnswer.setAnswer(optionNode.path("answer").asText());
-					alchemerAnswer.setSectionId(answerNode.path("section_id").asInt());
-					alchemerAnswer.setShown(true);
-					result.add(alchemerAnswer);
-					log.info("Saved answer for parent question ID: {}, option ID: {}", answerNode.path("id").asLong(),
-							alchemerAnswer.getId());
-				}
-			}
-		}
-
-		if (answerNode.has("subquestions")) {
-			Iterator<Map.Entry<String, JsonNode>> subquestions = answerNode.path("subquestions").fields();
-			while (subquestions.hasNext()) {
-				Map.Entry<String, JsonNode> subquestionEntry = subquestions.next();
-				JsonNode subquestionNode = subquestionEntry.getValue();
-				Iterator<Map.Entry<String, JsonNode>> answers = subquestionNode.fields();
-				while (answers.hasNext()) {
-					Map.Entry<String, JsonNode> answerEntry = answers.next();
-					JsonNode answer = answerEntry.getValue();
-					if (answer.path("shown").asBoolean(true)) { // Assume shown if not present
-						AlchemerAnswer alchemerAnswer = new AlchemerAnswer();
-						alchemerAnswer.setId(answer.path("id").asLong());
-						alchemerAnswer.setType(answer.path("type").asText("parent_subquestion"));
-						alchemerAnswer.setQuestion(answer.path("question").asText());
-						alchemerAnswer.setAnswer(answer.path("answer").asText());
-						alchemerAnswer.setSectionId(answerNode.path("section_id").asInt());
-						alchemerAnswer.setShown(true);
-						result.add(alchemerAnswer);
-						log.info("Saved answer for parent question ID: {}, subquestion ID: {}",
-								answerNode.path("id").asLong(), alchemerAnswer.getId());
-					}
-				}
-			}
-		}
-		return result;
-	}
 }

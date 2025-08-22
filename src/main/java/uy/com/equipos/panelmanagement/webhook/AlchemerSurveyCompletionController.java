@@ -1,21 +1,29 @@
 package uy.com.equipos.panelmanagement.webhook;
 
-import java.time.LocalDate; // Changed from LocalDateTime to LocalDate
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.Optional;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonMappingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+
+import jakarta.servlet.http.HttpServletRequest;
+import uy.com.equipos.panelmanagement.data.AlchemerSurveyResponse;
 import uy.com.equipos.panelmanagement.data.ConfigurationItem;
 import uy.com.equipos.panelmanagement.data.ConfigurationItemRepository;
+import uy.com.equipos.panelmanagement.data.JobType;
 import uy.com.equipos.panelmanagement.data.Panelist;
 import uy.com.equipos.panelmanagement.data.PanelistRepository;
 import uy.com.equipos.panelmanagement.data.Survey;
@@ -24,9 +32,7 @@ import uy.com.equipos.panelmanagement.data.SurveyPanelistParticipationRepository
 import uy.com.equipos.panelmanagement.data.SurveyRepository;
 import uy.com.equipos.panelmanagement.data.Task;
 import uy.com.equipos.panelmanagement.data.TaskRepository;
-import uy.com.equipos.panelmanagement.data.JobType;
 import uy.com.equipos.panelmanagement.data.TaskStatus;
-import uy.com.equipos.panelmanagement.webhook.dto.AlchemerSurveyCompletionPayloadDto;
 
 @RestController
 @RequestMapping("/api/webhook")
@@ -50,104 +56,169 @@ public class AlchemerSurveyCompletionController {
 		this.configurationItemRepository = configurationItemRepository;
 	}
 
-	@PostMapping("/survey-response")
-    @Transactional // Important for database operations
-    public ResponseEntity<String> handleSurveyResponse(@RequestBody AlchemerSurveyCompletionPayloadDto payload) {
-        if (payload == null || payload.getData() == null || payload.getData().getContact() == null) {
-            logger.warn("Received incomplete payload");
-            return ResponseEntity.badRequest().body("Incomplete payload: 'data' or 'contact' field is missing.");
-        }
+	private static final Logger log = LoggerFactory.getLogger(AlchemerSurveyCompletionController.class);
 
-        // Extract survey_id and convert to String for alchemerSurveyId
-        String alchemerSurveyId = String.valueOf(payload.getData().getSurveyId());
-        String email = payload.getData().getContact().getEmail();
+	// 1) application/x-www-form-urlencoded (Alchemer suele mandar esto)
+	@PostMapping(path = "/survey-response", consumes = MediaType.APPLICATION_FORM_URLENCODED_VALUE, produces = MediaType.TEXT_PLAIN_VALUE)
+	public ResponseEntity<String> receiveForm(@RequestParam org.springframework.util.MultiValueMap<String, String> form,
+			HttpServletRequest req) {
+		log.error("NO debería  invocar este servicio: webhook FORM ct={} fields={}", req.getContentType(), form);
+		// TODO: tu lógica (form.getFirst("survey_id"), etc.)
+		return ResponseEntity.ok("ok");
+	}
 
-        Optional<ConfigurationItem> recruitmentCampaignLink = configurationItemRepository.findByName("recruitment.alchemer.campaign.link");
-        if (recruitmentCampaignLink.isPresent()) {
-		String recruitmentSurveyId = extractSurveyId(recruitmentCampaignLink.get().getValue());
-		if (recruitmentSurveyId != null && recruitmentSurveyId.equals(alchemerSurveyId)) {
-			return confirmRecruitment(email);
+	// 2) JSON
+	@PostMapping(path = "/survey-response", consumes = { MediaType.APPLICATION_JSON_VALUE,
+			"application/*+json" }, produces = MediaType.TEXT_PLAIN_VALUE)
+	public ResponseEntity<String> receiveJson(@RequestBody AlchemerSurveyResponse response, HttpServletRequest req) {
+		log.info("Received Alchemer survey response with response_id: {} and survey_id: {}",
+				response.getData().getResponseId(), response.getData().getSurveyId());
+		return this.process(response);
+	}
+
+	// 3) application/octet-stream (a veces mandan JSON pero con este CT)
+	@PostMapping(path = "/survey-response", consumes = MediaType.APPLICATION_OCTET_STREAM_VALUE, produces = MediaType.TEXT_PLAIN_VALUE)
+	public ResponseEntity<String> receiveBytes(@RequestBody byte[] raw, HttpServletRequest req) {
+		// Intento de mostrar como texto (si no es texto, verá binario)
+		String preview = new String(raw, java.nio.charset.StandardCharsets.UTF_8);
+		log.info("este es el string:" + preview);
+		ObjectMapper mapper = new ObjectMapper();
+
+		AlchemerSurveyResponse response;
+
+		try {
+			response = mapper.readValue(preview, AlchemerSurveyResponse.class);
+			return this.process(response);
+		} catch (JsonMappingException e) {
+			e.printStackTrace();
+			log.error("errror al parsear respusta de alchemer" + e.getMessage());
+			return ResponseEntity.internalServerError().build();
+		} catch (JsonProcessingException e) {
+			log.error("errror al parsear respusta de alchemer" + e.getMessage());
+			e.printStackTrace();
+			return ResponseEntity.internalServerError().build();
 		}
-        }
+	}
 
-        if (email == null || email.trim().isEmpty()) {
-            logger.warn("Email is missing in payload for alchemer_survey_id: {}", alchemerSurveyId);
-            return ResponseEntity.badRequest().body("Email is missing in contact data.");
-        }
+	@PostMapping(path = "/survey-response", consumes = MediaType.TEXT_PLAIN_VALUE, produces = MediaType.TEXT_PLAIN_VALUE)
+	public ResponseEntity<String> receiveText(@RequestBody String raw, HttpServletRequest req) {
+		log.error("NO debería  invocar este servicio TEXT ct={} len={} body={}", req.getContentType(),
+				raw == null ? 0 : raw.length(), raw);
+		// TODO: si realmente es JSON en texto, podés parsearlo:
+		// var node = new ObjectMapper().readTree(raw);
+		return ResponseEntity.ok("ok");
+	}
 
-        logger.info("Processing webhook for alchemer_survey_id: {} and email: {}", alchemerSurveyId, email);
+	// 4) Fallback (por si llega cualquier otro Content-Type)
+	@PostMapping(path = "/survey-response", consumes = MediaType.ALL_VALUE, produces = MediaType.TEXT_PLAIN_VALUE)
+	public ResponseEntity<String> receiveFallback(@RequestBody(required = false) byte[] raw, HttpServletRequest req) {
+		int len = raw == null ? 0 : raw.length;
+		String preview = raw == null ? "null" : new String(raw, java.nio.charset.StandardCharsets.UTF_8);
+		log.error("NO debería  invocar este servicio FALLBACK ct={} bytes={} preview={}", req.getContentType(), len,
+				preview);
+		return ResponseEntity.ok("ok");
+	}
 
-        Optional<Survey> surveyOpt = surveyRepository.findByAlchemerSurveyId(alchemerSurveyId);
-        if (!surveyOpt.isPresent()) {
-            logger.warn("Survey not found with alchemer_survey_id: {}", alchemerSurveyId);
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Survey not found for alchemer_survey_id: " + alchemerSurveyId);
-        }
-        Survey survey = surveyOpt.get();
+	private ResponseEntity<String> confirmRecruitment(String email) {
+		Optional<Panelist> panelistOpt = panelistRepository.findByEmail(email);
+		if (!panelistOpt.isPresent()) {
+			logger.warn("Panelist not found with email: {}", email);
+			return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Panelist not found for email: " + email);
+		}
+		Panelist panelist = panelistOpt.get();
+		panelist.setStatus(uy.com.equipos.panelmanagement.data.Status.ACTIVO);
+		panelistRepository.save(panelist);
+		logger.info("Panelist {} confirmed and set to ACTIVO", email);
+		return ResponseEntity.ok("Panelist confirmed successfully.");
+	}
 
-        Optional<Panelist> panelistOpt = panelistRepository.findByEmail(email);
-        if (!panelistOpt.isPresent()) {
-            logger.warn("Panelist not found with email: {}", email);
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Panelist not found for email: " + email);
-        }
-        Panelist panelist = panelistOpt.get();
-        
-        if(panelist.getLastInterviewCompleted()==null || panelist.getLastInterviewCompleted().isBefore(LocalDate.now())){
-        	panelist.setLastInterviewCompleted(LocalDate.now());
-        	this.panelistRepository.save(panelist);
-        }
-        Optional<SurveyPanelistParticipation> participationOpt =
-                surveyPanelistParticipationRepository.findBySurveyAndPanelist(survey, panelist);
+	private ResponseEntity<String> process(AlchemerSurveyResponse response) {
+		log.info("Received Alchemer survey response with response_id: {} and survey_id: {}",
+				response.getData().getResponseId(), response.getData().getSurveyId());
+		String alchemerSurveyId = Integer.valueOf(response.getData().getSurveyId()).toString();
+		String email = response.getData().getContact().getEmail();
+		Optional<ConfigurationItem> recruitmentCampaignLink = configurationItemRepository
+				.findByName("recruitment.alchemer.campaign.link");
 
-        if (!participationOpt.isPresent()) {
-            logger.warn("SurveyPanelistParticipation not found for survey_id: {} (internal id: {}) and panelist_id: {} (email: {})",
-                        alchemerSurveyId, survey.getId(), panelist.getId(), email);
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Participation record not found for the given survey and panelist.");
-        }
-        SurveyPanelistParticipation participation = participationOpt.get();
+		if (recruitmentCampaignLink.isPresent()) {
+			String recruitmentSurveyId = extractSurveyId(recruitmentCampaignLink.get().getValue());
+			if (recruitmentSurveyId != null && recruitmentSurveyId.equals(alchemerSurveyId)) {
+				return confirmRecruitment(email);
+			}
+		}
 
-        if (participation.isCompleted()) {
-            logger.info("Participation for survey_id: {} and panelist_id: {} is already marked as completed on {}. No update needed.",
-                        survey.getId(), panelist.getId(), participation.getDateCompleted());
-            return ResponseEntity.ok("Participation already marked as completed. No update performed.");
-        }
+		if (email == null || email.trim().isEmpty()) {
+			logger.warn("Email is missing in payload for alchemer_survey_id: {}", alchemerSurveyId);
+			return ResponseEntity.badRequest().body("Email is missing in contact data.");
+		}
 
-        
-        participation.setResponseId(payload.getData().getResponseId());
-        participation.setCompleted(true);
-        participation.setDateCompleted(LocalDate.now()); // Using LocalDate as per entity definition
+		logger.info("Processing webhook for alchemer_survey_id: {} and email: {}", alchemerSurveyId, email);
 
-        surveyPanelistParticipationRepository.save(participation);
+		Optional<Survey> surveyOpt = surveyRepository.findByAlchemerSurveyId(alchemerSurveyId);
+		if (!surveyOpt.isPresent()) {
+			logger.warn("Survey not found with alchemer_survey_id: {}", alchemerSurveyId);
+			return ResponseEntity.status(HttpStatus.NOT_FOUND)
+					.body("Survey not found for alchemer_survey_id: " + alchemerSurveyId);
+		}
+		Survey survey = surveyOpt.get();
 
-        logger.info("Successfully updated participation. Survey internal_id: {}, Panelist internal_id: {}. Marked as completed on {}",
-                    survey.getId(), panelist.getId(), participation.getDateCompleted());
+		Optional<Panelist> panelistOpt = panelistRepository.findByEmail(email);
+		if (!panelistOpt.isPresent()) {
+			logger.warn("Panelist not found with email: {}", email);
+			return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Panelist not found for email: " + email);
+		}
+		Panelist panelist = panelistOpt.get();
 
-        // Create and save the new Task
-        Task task = new Task();
-        task.setJobType(JobType.ALCHEMER_ANSWER_RETRIEVAL);
-        task.setCreated(LocalDateTime.now());
-        task.setStatus(TaskStatus.PENDING);
-        task.setSurveyPanelistParticipation(participation);
-        task.setSurvey(survey); // survey object is already available from earlier in the method
-        taskRepository.save(task);
+		if (panelist.getLastInterviewCompleted() == null
+				|| panelist.getLastInterviewCompleted().isBefore(LocalDate.now())) {
+			panelist.setLastInterviewCompleted(LocalDate.now());
+			this.panelistRepository.save(panelist);
+		}
+		Optional<SurveyPanelistParticipation> participationOpt = surveyPanelistParticipationRepository
+				.findBySurveyAndPanelist(survey, panelist);
 
-        logger.info("Successfully created Task for answer retrieval. Task id: {}, Survey internal_id: {}, Panelist internal_id: {}",
-                    task.getId(), survey.getId(), panelist.getId());
+		if (!participationOpt.isPresent()) {
+			logger.warn(
+					"SurveyPanelistParticipation not found for survey_id: {} (internal id: {}) and panelist_id: {} (email: {})",
+					alchemerSurveyId, survey.getId(), panelist.getId(), email);
+			return ResponseEntity.status(HttpStatus.NOT_FOUND)
+					.body("Participation record not found for the given survey and panelist.");
+		}
+		SurveyPanelistParticipation participation = participationOpt.get();
 
-        return ResponseEntity.ok("Webhook processed successfully. Participation updated and task created.");
-    }
+		if (participation.isCompleted()) {
+			logger.info(
+					"Participation for survey_id: {} and panelist_id: {} is already marked as completed on {}. No update needed.",
+					survey.getId(), panelist.getId(), participation.getDateCompleted());
+			return ResponseEntity.ok("Participation already marked as completed. No update performed.");
+		}
 
-    private ResponseEntity<String> confirmRecruitment(String email) {
-        Optional<Panelist> panelistOpt = panelistRepository.findByEmail(email);
-        if (!panelistOpt.isPresent()) {
-            logger.warn("Panelist not found with email: {}", email);
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Panelist not found for email: " + email);
-        }
-        Panelist panelist = panelistOpt.get();
-        panelist.setStatus(uy.com.equipos.panelmanagement.data.Status.ACTIVO);
-        panelistRepository.save(panelist);
-        logger.info("Panelist {} confirmed and set to ACTIVO", email);
-        return ResponseEntity.ok("Panelist confirmed successfully.");
-    }
+		participation.setResponseId(response.getData().getResponseId());
+		participation.setCompleted(true);
+		participation.setDateCompleted(LocalDate.now()); // Using LocalDate as per entity definition
+
+		surveyPanelistParticipationRepository.save(participation);
+
+		logger.info(
+				"Successfully updated participation. Survey internal_id: {}, Panelist internal_id: {}. Marked as completed on {}",
+				survey.getId(), panelist.getId(), participation.getDateCompleted());
+
+		// Create and save the new Task
+		Task task = new Task();
+		task.setJobType(JobType.ALCHEMER_ANSWER_RETRIEVAL);
+		task.setCreated(LocalDateTime.now());
+		task.setStatus(TaskStatus.PENDING);
+		task.setSurveyPanelistParticipation(participation);
+		task.setSurvey(survey); // survey object is already available from earlier in the method
+		taskRepository.save(task);
+
+		logger.info(
+				"Successfully created Task for answer retrieval. Task id: {}, Survey internal_id: {}, Panelist internal_id: {}",
+				task.getId(), survey.getId(), panelist.getId());
+
+		return ResponseEntity.ok("Webhook processed successfully. Participation updated and task created.");
+
+	}
 
 	private String extractSurveyId(String surveyLink) {
 		if (surveyLink == null) {

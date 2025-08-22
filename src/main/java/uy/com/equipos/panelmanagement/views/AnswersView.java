@@ -13,7 +13,7 @@ import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
 import jakarta.annotation.security.RolesAllowed;
 import org.springframework.beans.factory.annotation.Autowired;
-import uy.com.equipos.panelmanagement.data.Answer;
+import uy.com.equipos.panelmanagement.data.AlchemerAnswer;
 import uy.com.equipos.panelmanagement.services.AnswerService; // Asumiendo que existirá un AnswerService
 
 import java.util.HashMap;
@@ -26,9 +26,9 @@ import java.util.Objects;
 @RolesAllowed("ADMIN") // O el rol que corresponda
 public class AnswersView extends Div implements HasComponents, HasStyle {
 
-    private Grid<Answer> grid = new Grid<>(Answer.class, false);
-    private GridListDataView<Answer> gridListDataView;
-    private final Map<String, SerializablePredicate<Answer>> activeFilters = new HashMap<>();
+    private Grid<AlchemerAnswer> grid = new Grid<>(AlchemerAnswer.class, false);
+    private GridListDataView<AlchemerAnswer> gridListDataView;
+    private final Map<String, SerializablePredicate<AlchemerAnswer>> activeFilters = new HashMap<>();
 
     private final AnswerService answerService;
 
@@ -45,9 +45,9 @@ public class AnswersView extends Div implements HasComponents, HasStyle {
     private void configureGrid() {
         // Se elimina la columna Id
         // grid.addColumn(Answer::getId).setHeader("Id").setAutoWidth(true).setSortable(true).setKey("id");
-        grid.addColumn(Answer::getQuestion).setHeader("Pregunta").setAutoWidth(true).setSortable(true).setKey("question");
-        grid.addColumn(Answer::getQuestionCode).setHeader("Código Pregunta").setAutoWidth(true).setSortable(true).setKey("questionCode");
-        grid.addColumn(Answer::getAnswer).setHeader("Respuesta").setAutoWidth(true).setSortable(true).setKey("answer");
+        grid.addColumn(AlchemerAnswer::getQuestion).setHeader("Pregunta").setAutoWidth(true).setSortable(true).setKey("question");
+        //grid.addColumn(Answer::getQuestionCode).setHeader("Código Pregunta").setAutoWidth(true).setSortable(true).setKey("questionCode");
+        grid.addColumn(AlchemerAnswer::getAnswer).setHeader("Respuesta").setAutoWidth(true).setSortable(true).setKey("answer");
         grid.addColumn(answer -> answer.getSurveyPanelistParticipation() != null && answer.getSurveyPanelistParticipation().getPanelist() != null ?
                         answer.getSurveyPanelistParticipation().getPanelist().getFullName() : null)
                 .setHeader("Panelista").setAutoWidth(true).setSortable(true).setKey("panelist");
@@ -62,13 +62,13 @@ public class AnswersView extends Div implements HasComponents, HasStyle {
         // TextField idFilter = createTextFieldFilter("id_filter", Answer::getId);
         // filterRow.getCell(grid.getColumnByKey("id")).setComponent(idFilter);
 
-        TextField questionFilter = createTextFieldFilter("question_filter", Answer::getQuestion);
+        TextField questionFilter = createTextFieldFilter("question_filter", AlchemerAnswer::getQuestion);
         filterRow.getCell(grid.getColumnByKey("question")).setComponent(questionFilter);
 
-        TextField questionCodeFilter = createTextFieldFilter("questionCode_filter", Answer::getQuestionCode);
-        filterRow.getCell(grid.getColumnByKey("questionCode")).setComponent(questionCodeFilter);
+//        TextField questionCodeFilter = createTextFieldFilter("questionCode_filter", Answer::getQuestionCode);
+//        filterRow.getCell(grid.getColumnByKey("questionCode")).setComponent(questionCodeFilter);
 
-        TextField answerFilter = createTextFieldFilter("answer_filter", Answer::getAnswer);
+        TextField answerFilter = createTextFieldFilter("answer_filter", AlchemerAnswer::getAnswer);
         filterRow.getCell(grid.getColumnByKey("answer")).setComponent(answerFilter);
 
         TextField panelistFilter = createTextFieldFilter("panelist_filter", answer ->
@@ -84,7 +84,7 @@ public class AnswersView extends Div implements HasComponents, HasStyle {
         grid.setSizeFull();
     }
 
-    private TextField createTextFieldFilter(String filterKey, ValueProvider<Answer, ?> valueProvider) {
+    private TextField createTextFieldFilter(String filterKey, ValueProvider<AlchemerAnswer, ?> valueProvider) {
         TextField filterField = new TextField();
         filterField.setWidthFull();
         filterField.setPlaceholder("Filtrar...");
@@ -95,7 +95,7 @@ public class AnswersView extends Div implements HasComponents, HasStyle {
             if (filterValue.isEmpty()) {
                 activeFilters.remove(filterKey);
             } else {
-                activeFilters.put(filterKey, (SerializablePredicate<Answer>) answer ->
+                activeFilters.put(filterKey, (SerializablePredicate<AlchemerAnswer>) answer ->
                         Objects.toString(valueProvider.apply(answer), "").toLowerCase().contains(filterValue)
                 );
             }
@@ -108,7 +108,7 @@ public class AnswersView extends Div implements HasComponents, HasStyle {
         if (gridListDataView == null) {
             return;
         }
-        SerializablePredicate<Answer> combinedFilter = activeFilters.values().stream()
+        SerializablePredicate<AlchemerAnswer> combinedFilter = activeFilters.values().stream()
                 .reduce(SerializablePredicate::and)
                 .orElse(task -> true);
         gridListDataView.setFilter(combinedFilter);
@@ -120,7 +120,7 @@ public class AnswersView extends Div implements HasComponents, HasStyle {
     }
 
     private void loadGridData() {
-        List<Answer> answers = answerService.findAll(); // Asumiendo que AnswerService tiene un método findAll()
+        List<AlchemerAnswer> answers = answerService.findAll(); // Asumiendo que AnswerService tiene un método findAll()
         gridListDataView = grid.setItems(answers);
         applyFilters();
     }

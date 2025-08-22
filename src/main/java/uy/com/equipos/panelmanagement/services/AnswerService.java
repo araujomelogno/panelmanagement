@@ -2,7 +2,7 @@ package uy.com.equipos.panelmanagement.services;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-import uy.com.equipos.panelmanagement.data.Answer;
+import uy.com.equipos.panelmanagement.data.AlchemerAnswer;
 import uy.com.equipos.panelmanagement.data.AnswerRepository;
 
 import java.util.List;
@@ -18,15 +18,15 @@ public class AnswerService {
         this.answerRepository = answerRepository;
     }
 
-    public List<Answer> findAll() {
+    public List<AlchemerAnswer> findAll() {
         return answerRepository.findAll();
     }
 
-    public Optional<Answer> findById(Long id) {
+    public Optional<AlchemerAnswer> findById(Long id) {
         return answerRepository.findById(id);
     }
 
-    public Answer save(Answer answer) {
+    public AlchemerAnswer save(AlchemerAnswer answer) {
         return answerRepository.save(answer);
     }
 
@@ -34,7 +34,7 @@ public class AnswerService {
         answerRepository.deleteById(id);
     }
 
-    public Optional<Answer> findBySurveyPanelistParticipationAndQuestionCode(
+    public Optional<AlchemerAnswer> findBySurveyPanelistParticipationAndQuestionCode(
             uy.com.equipos.panelmanagement.data.SurveyPanelistParticipation participation, String questionCode) {
         return answerRepository.findBySurveyPanelistParticipationAndQuestionCode(participation, questionCode);
     }
