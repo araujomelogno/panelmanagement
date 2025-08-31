@@ -63,4 +63,8 @@ public class PanelistPropertyService {
         return repository.findAll();
     }
 
+    public PanelistProperty findByName(String name) {
+        return repository.findByName(name);
+    }
+
 }

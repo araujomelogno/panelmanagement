@@ -8,4 +8,5 @@ public interface PanelistPropertyRepository
             JpaRepository<PanelistProperty, Long>,
             JpaSpecificationExecutor<PanelistProperty> {
 
+    PanelistProperty findByName(String name);
 }
