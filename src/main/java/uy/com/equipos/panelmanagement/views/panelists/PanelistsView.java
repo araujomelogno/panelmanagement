@@ -66,6 +66,7 @@ import uy.com.equipos.panelmanagement.services.PanelService; // Added
 import uy.com.equipos.panelmanagement.services.PanelistPropertyService;
 import uy.com.equipos.panelmanagement.services.PanelistPropertyValueService;
 import uy.com.equipos.panelmanagement.services.PanelistService;
+import uy.com.equipos.panelmanagement.views.dialogs.ImportPanelistsDialog;
 import uy.com.equipos.panelmanagement.views.dialogs.PanelistResultsDialog; // Importar el nuevo diálogo
 import uy.com.equipos.panelmanagement.views.panels.PanelistPropertyFilterDialog; // Importar la clase del diálogo
 
@@ -110,6 +111,7 @@ public class PanelistsView extends Div implements BeforeEnterObserver {
 	private final Button save = new Button("Guardar");
 	private Button deleteButton; // Add this with other button declarations
 	private Button nuevoPanelistaButton;
+	private Button importPanelistsButton;
 	// private Button gestionarPropiedadesButton; // Removed duplicate declaration
 	private Button viewParticipatingPanelsButton;
 	private Button viewParticipatingSurveysButton; // Added
@@ -194,6 +196,12 @@ public class PanelistsView extends Div implements BeforeEnterObserver {
 		nuevoPanelistaButton = new Button("Nuevo Panelista");
 		nuevoPanelistaButton.getStyle().set("margin-left", "18px");
 
+		importPanelistsButton = new Button("Importar panelistas");
+        importPanelistsButton.addClickListener(e -> {
+            ImportPanelistsDialog dialog = new ImportPanelistsDialog(panelistService, panelistPropertyService, this::refreshGrid);
+            dialog.open();
+        });
+
 		Button filtrarPanelistasButton = new Button("Filtrar Panelistas");
 		filtrarPanelistasButton.addClickListener(e -> {
 			PanelistPropertyFilterDialog filterDialog = new PanelistPropertyFilterDialog(panelistPropertyService,
@@ -209,7 +217,7 @@ public class PanelistsView extends Div implements BeforeEnterObserver {
 			filterDialog.open();
 		});
 
-		HorizontalLayout buttonBar = new HorizontalLayout(nuevoPanelistaButton, filtrarPanelistasButton);
+		HorizontalLayout buttonBar = new HorizontalLayout(nuevoPanelistaButton, importPanelistsButton, filtrarPanelistasButton);
 		buttonBar.setAlignItems(Alignment.CENTER); // Alinea los botones verticalmente si tienen diferentes alturas
 		buttonBar.getStyle().set("margin-left", "18px");
 

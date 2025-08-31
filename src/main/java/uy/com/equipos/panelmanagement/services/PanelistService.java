@@ -21,13 +21,28 @@ import uy.com.equipos.panelmanagement.data.Status;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+import org.apache.poi.ss.usermodel.Cell;
+import org.apache.poi.ss.usermodel.Row;
+import org.apache.poi.ss.usermodel.Sheet;
+import org.apache.poi.ss.usermodel.Workbook;
+import org.apache.poi.ss.usermodel.WorkbookFactory;
+import uy.com.equipos.panelmanagement.data.PanelistPropertyRepository;
+import uy.com.equipos.panelmanagement.data.PanelistPropertyValue;
+
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.HashMap;
+
 @Service
 public class PanelistService {
 
     private final PanelistRepository repository;
+    private final PanelistPropertyRepository panelistPropertyRepository;
 
-    public PanelistService(PanelistRepository repository) {
+    public PanelistService(PanelistRepository repository, PanelistPropertyRepository panelistPropertyRepository) {
         this.repository = repository;
+        this.panelistPropertyRepository = panelistPropertyRepository;
     }
 
     @Transactional(readOnly = true)
@@ -201,5 +216,79 @@ public class PanelistService {
 
     public List<Panelist> findByStatusAndRecruitmentRetries(Status status, Integer recruitmentRetries) {
         return repository.findByStatusAndRecruitmentRetries(status, recruitmentRetries);
+    }
+
+    @Transactional
+    public int importPanelistsFromData(Map<String, String> mappings, byte[] fileContent) throws IOException {
+        List<Panelist> panelistsToSave = new ArrayList<>();
+        try (InputStream inputStream = new ByteArrayInputStream(fileContent)) {
+            Workbook workbook = WorkbookFactory.create(inputStream);
+            Sheet sheet = workbook.getSheetAt(0);
+
+            Row headerRow = sheet.getRow(0);
+            if (headerRow == null) {
+                throw new IOException("El archivo Excel no tiene una fila de encabezado.");
+            }
+
+            Map<String, Integer> headerMap = new HashMap<>();
+            for (Cell cell : headerRow) {
+                headerMap.put(cell.getStringCellValue(), cell.getColumnIndex());
+            }
+
+            for (int i = 1; i <= sheet.getLastRowNum(); i++) {
+                Row row = sheet.getRow(i);
+                if (row == null || isRowEmpty(row)) continue;
+
+                Panelist panelist = new Panelist();
+
+                for (Map.Entry<String, String> mapping : mappings.entrySet()) {
+                    Integer colIndex = headerMap.get(mapping.getKey());
+                    if (colIndex == null) continue;
+
+                    Cell cell = row.getCell(colIndex, Row.MissingCellPolicy.RETURN_BLANK_AS_NULL);
+                    String excelValue = (cell == null) ? "" : cell.toString().trim();
+
+                    switch (mapping.getValue()) {
+                        case "Nombre": panelist.setFirstName(excelValue); break;
+                        case "Apellido": panelist.setLastName(excelValue); break;
+                        case "E-mail": panelist.setEmail(excelValue); break;
+                        case "Celular": panelist.setPhone(excelValue); break;
+                        case "Fuente": panelist.setSource(excelValue); break;
+                        case "Id_En_Fuente": panelist.setOriginalSourceId(excelValue); break;
+                        default:
+                            PanelistProperty prop = panelistPropertyRepository.findByName(mapping.getValue());
+                            if (prop != null) {
+                                PanelistPropertyValue propValue = new PanelistPropertyValue();
+                                propValue.setPanelist(panelist);
+                                propValue.setPanelistProperty(prop);
+                                propValue.setValue(excelValue);
+                                propValue.setUpdated(new java.util.Date());
+                                panelist.getPropertyValues().add(propValue);
+                            }
+                            break;
+                    }
+                }
+                panelistsToSave.add(panelist);
+            }
+
+            repository.saveAll(panelistsToSave);
+            return panelistsToSave.size();
+        }
+    }
+
+    private boolean isRowEmpty(Row row) {
+        if (row == null) {
+            return true;
+        }
+        if (row.getLastCellNum() <= 0) {
+            return true;
+        }
+        for (int cellNum = row.getFirstCellNum(); cellNum < row.getLastCellNum(); cellNum++) {
+            Cell cell = row.getCell(cellNum);
+            if (cell != null && cell.getCellType() != org.apache.poi.ss.usermodel.CellType.BLANK && !cell.toString().trim().isEmpty()) {
+                return false;
+            }
+        }
+        return true;
     }
 }
